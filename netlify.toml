@@ -7,57 +7,68 @@
   to = "/index.html"
   status = 200
 
-[headers]
-  # Headers for all assets
+# Headers for all assets
+[[headers]]
   for = "/*"
-    [headers.values]
+  [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, OPTIONS"
     Access-Control-Allow-Headers = "*"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     
-  # Cache settings for immutable assets
+# Cache settings for immutable assets
+[[headers]]
   for = "/*.js"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.css"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.svg"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.png"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.jpg"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.jpeg"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.webp"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.woff2"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.woff"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.ttf"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     
+[[headers]]
   for = "/*.eot"
-    [headers.values]
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
