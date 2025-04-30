@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import SearchForm from './SearchForm';
 import { motion } from 'framer-motion';
-import { getFallbackImageUrl } from '../utils/imageFallbacks';
+import { getFallbackImageUrl, getPrimaryDomainUrl } from '../utils/imageFallbacks';
 import ImageWithFallback from './ImageWithFallback';
 
 const Hero = () => {
   // Preload critical images
   useEffect(() => {
     const imagesToPreload = [
-      'https://files.royaltransfer.eu/assets/mobileherotest.webp',
-      'https://files.royaltransfer.eu/assets/newherotest.webp'
+      getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/mobileherotest.webp'),
+      getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/newherotest.webp')
     ];
 
     // Also prepare fallback images
@@ -39,13 +39,13 @@ const Hero = () => {
           {/* Mobile Image */}
           <source
             media="(max-width: 767px)"
-            srcSet="https://files.royaltransfer.eu/assets/mobileherotest.webp"
+            srcSet={getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/mobileherotest.webp')}
             type="image/webp"
             fetchpriority="high"
           />
           <source
             media="(max-width: 767px)"
-            srcSet={getFallbackImageUrl("https://files.royaltransfer.eu/assets/mobileherotest.png")}
+            srcSet={getFallbackImageUrl(getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/mobileherotest.png'))}
             type="image/png"
             fetchpriority="high"
           />
@@ -53,20 +53,20 @@ const Hero = () => {
           {/* Desktop Image */}
           <source
             media="(min-width: 768px)"
-            srcSet="https://files.royaltransfer.eu/assets/newherotest.webp"
+            srcSet={getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/newherotest.webp')}
             type="image/webp"
             fetchpriority="high"
           />
           <source
             media="(min-width: 768px)"
-            srcSet={getFallbackImageUrl("https://files.royaltransfer.eu/assets/newherotest.png")}
+            srcSet={getFallbackImageUrl(getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/newherotest.png'))}
             type="image/png"
             fetchpriority="high"
           />
           
           {/* Fallback Image */}
           <img 
-            src="https://files.royaltransfer.eu/assets/newherotest.png"
+            src={getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/newherotest.png')}
             alt="Luxury sedan transfer service by Royal Transfer EU - professional driver waiting by an elegant black car on a scenic European road"
             className="w-full h-full object-cover"
             loading="eager"

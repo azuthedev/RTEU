@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, User, Loader2, Briefcase } from 'lucide-react';
+import { Crown, User, Loader2, Briefcase as Suitcase } from 'lucide-react';
 import { smoothScrollTo } from '../utils/smoothScroll';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { getPrimaryDomainUrl } from '../utils/imageFallbacks';
 
 interface HeaderProps {
   isAboutPage?: boolean;
@@ -149,7 +150,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             aria-label="Royal Transfer EU Homepage"
           >
             <img 
-              src="https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png" 
+              src={getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png')}
               alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
               className="h-full w-auto object-contain max-h-16"
               width={170}
@@ -272,7 +273,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
                         >
-                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <Suitcase className="w-4 h-4 mr-2" aria-hidden="true" />
                           Partner Portal
                         </a>
                       )}
@@ -364,7 +365,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               <div className="flex flex-col h-full">
                 <div className="flex justify-center items-center p-4 border-b">
                   <img
-                    src="https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png"
+                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png")}
                     alt="Royal Transfer EU Logo - Professional taxi and transfer services"
                     className="h-12 w-auto object-contain"
                     width={150}

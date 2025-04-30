@@ -2,60 +2,99 @@
  * Utility to help with image loading issues by providing fallback URLs
  */
 
+// Primary and backup image domains
+const PRIMARY_IMAGE_DOMAIN = 'https://melodious-panda-7ef225.netlify.app';
+const BACKUP_IMAGE_DOMAIN = 'https://i.imgur.com'; // Keeping Imgur as backup
+
+// Convert filename to lowercase and sanitize
+const sanitizeFilename = (filename: string): string => {
+  return filename.toLowerCase().replace(/\s+/g, '-');
+};
+
+// Convert a full URL to use the primary domain with lowercase filenames
+export const getPrimaryDomainUrl = (url: string): string => {
+  try {
+    // Skip if it's already using the primary domain
+    if (url.startsWith(PRIMARY_IMAGE_DOMAIN)) return url;
+    
+    // Parse the URL to extract the path
+    const urlObj = new URL(url);
+    let pathname = urlObj.pathname;
+    
+    // Convert path segments to lowercase for new domain
+    const pathSegments = pathname.split('/');
+    const filename = pathSegments[pathSegments.length - 1];
+    
+    // Replace just the filename with lowercase version
+    if (filename) {
+      pathSegments[pathSegments.length - 1] = sanitizeFilename(filename);
+      pathname = pathSegments.join('/');
+    }
+    
+    return `${PRIMARY_IMAGE_DOMAIN}${pathname}`;
+  } catch (e) {
+    // If URL parsing fails, make a best effort attempt
+    console.warn('Error parsing URL:', url, e);
+    
+    // Extract what looks like a filename
+    const filenameMatch = url.match(/([^/]+)(\.\w+)(\?.*)?$/);
+    if (filenameMatch) {
+      const filename = filenameMatch[1] + filenameMatch[2];
+      const queryParams = filenameMatch[3] || '';
+      return `${PRIMARY_IMAGE_DOMAIN}/assets/${sanitizeFilename(filename)}${queryParams}`;
+    }
+    
+    // Return original if we can't transform it
+    return url;
+  }
+};
+
 // Map of original URLs to fallback URLs
 const fallbackImageMap: Record<string, string> = {
   // Logo fallbacks
-  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.webp": "https://i.imgur.com/cDgm3025.webp",
-  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png": "https://i.imgur.com/mijH1834.png",
+  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.webp": `${BACKUP_IMAGE_DOMAIN}/cDgm3025.webp`,
+  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png": `${BACKUP_IMAGE_DOMAIN}/mijH1834.png`,
   
   // Hero image fallbacks
-  "https://files.royaltransfer.eu/assets/newherotest.webp": "https://i.imgur.com/ZKj2573.webp",
-  "https://files.royaltransfer.eu/assets/newherotest.png": "https://i.imgur.com/Axi3104.png",
-  "https://files.royaltransfer.eu/assets/mobileherotest.webp": "https://i.imgur.com/ohfj7576.webp",
-  "https://files.royaltransfer.eu/assets/mobileherotest.png": "https://i.imgur.com/lTA7682.png",
+  "https://files.royaltransfer.eu/assets/newherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ZKj2573.webp`,
+  "https://files.royaltransfer.eu/assets/newherotest.png": `${BACKUP_IMAGE_DOMAIN}/Axi3104.png`,
+  "https://files.royaltransfer.eu/assets/mobileherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ohfj7576.webp`,
+  "https://files.royaltransfer.eu/assets/mobileherotest.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.png`,
   
   // Vehicle images
-  "https://files.royaltransfer.eu/assets/Standard-Sedan.jpg": "https://i.imgur.com/BUpN7Wn.jpeg",
-  "https://files.royaltransfer.eu/assets/Premium-Sedan.jpg": "https://i.imgur.com/BUpN7Wn.jpeg",
-  "https://files.royaltransfer.eu/assets/VIP-Sedan.jpg": "https://i.imgur.com/DKdfE4r.jpeg",
-  "https://files.royaltransfer.eu/assets/Standard-Minivan.jpg": "https://i.imgur.com/0jlOuEe.jpeg",
-  "https://files.royaltransfer.eu/assets/XL-Minivan.jpg": "https://i.imgur.com/0jlOuEe.jpeg",
-  "https://files.royaltransfer.eu/assets/VIP-Minivan.jpg": "https://i.imgur.com/0jlOuEe.jpeg",
-  "https://files.royaltransfer.eu/assets/Sprinter-8.jpg": "https://i.imgur.com/IZqo3474.jpg",
-  "https://files.royaltransfer.eu/assets/Sprinter-16.jpg": "https://i.imgur.com/IZqo3474.jpg",
-  "https://files.royaltransfer.eu/assets/Sprinter-21.jpg": "https://i.imgur.com/IZqo3474.jpg",
-  "https://files.royaltransfer.eu/assets/Bus-51.jpg": "https://i.imgur.com/IZqo3474.jpg",
+  "https://files.royaltransfer.eu/assets/Standard-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
+  "https://files.royaltransfer.eu/assets/Premium-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
+  "https://files.royaltransfer.eu/assets/VIP-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/DKdfE4r.jpeg`,
+  "https://files.royaltransfer.eu/assets/Standard-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfer.eu/assets/XL-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfer.eu/assets/VIP-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfer.eu/assets/Sprinter-8.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfer.eu/assets/Sprinter-16.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfer.eu/assets/Sprinter-21.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfer.eu/assets/Bus-51.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
   
   // City images
-  "https://files.royaltransfer.eu/assets/rome327.webp": "https://i.imgur.com/CFL9494.webp",
-  "https://files.royaltransfer.eu/assets/rome1280png.png": "https://i.imgur.com/lTA7682.jpg",
-  "https://files.royaltransfer.eu/assets/paris136.webp": "https://i.imgur.com/sLs3440.webp",
-  "https://files.royaltransfer.eu/assets/paris1280png.png": "https://i.imgur.com/IdwC2475.jpg",
-  "https://files.royaltransfer.eu/assets/barc255.webp": "https://i.imgur.com/iqAp5725.webp",
-  "https://files.royaltransfer.eu/assets/barca1280png.png": "https://i.imgur.com/IZqo3474.jpg",
-  "https://files.royaltransfer.eu/assets/milano250.webp": "https://i.imgur.com/ZqBO3169.webp",
-  "https://files.royaltransfer.eu/assets/milano1280png.png": "https://i.imgur.com/rLX6532.jpeg",
+  "https://files.royaltransfer.eu/assets/rome327.webp": `${BACKUP_IMAGE_DOMAIN}/CFL9494.webp`,
+  "https://files.royaltransfer.eu/assets/rome1280png.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.jpg`,
+  "https://files.royaltransfer.eu/assets/paris136.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
+  "https://files.royaltransfer.eu/assets/paris1280png.png": `${BACKUP_IMAGE_DOMAIN}/IdwC2475.jpg`,
+  "https://files.royaltransfer.eu/assets/barc255.webp": `${BACKUP_IMAGE_DOMAIN}/iqAp5725.webp`,
+  "https://files.royaltransfer.eu/assets/barca1280png.png": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfer.eu/assets/milano250.webp": `${BACKUP_IMAGE_DOMAIN}/ZqBO3169.webp`,
+  "https://files.royaltransfer.eu/assets/milano1280png.png": `${BACKUP_IMAGE_DOMAIN}/rLX6532.jpeg`,
   
   // Payment logos
-  "https://files.royaltransfer.eu/assets/Visa.png": "https://i.ibb.co/cbqV7Pf/visa.png",
-  "https://files.royaltransfer.eu/assets/Mastercard-logo.svg": "https://i.ibb.co/X4LwdPQ/mastercard.png",
-  "https://files.royaltransfer.eu/assets/Google_Pay_Logo.png": "https://i.ibb.co/PCTrbwf/googlepay.png",
-  "https://files.royaltransfer.eu/assets/applepay.png": "https://i.ibb.co/Nx8h4vk/applepay.png",
-  "https://files.royaltransfer.eu/assets/American_Express_logo.png": "https://i.ibb.co/NL7bD8d/amex.png",
-  "https://files.royaltransfer.eu/assets/Stripe_Logo.png": "https://i.ibb.co/1JL4TFb/stripe.png",
+  "https://files.royaltransfer.eu/assets/Visa.png": `${BACKUP_IMAGE_DOMAIN}/cbqV7Pf.png`,
+  "https://files.royaltransfer.eu/assets/Mastercard-logo.svg": `${BACKUP_IMAGE_DOMAIN}/X4LwdPQ.png`,
+  "https://files.royaltransfer.eu/assets/Google_Pay_Logo.png": `${BACKUP_IMAGE_DOMAIN}/PCTrbwf.png`,
+  "https://files.royaltransfer.eu/assets/applepay.png": `${BACKUP_IMAGE_DOMAIN}/Nx8h4vk.png`,
+  "https://files.royaltransfer.eu/assets/American_Express_logo.png": `${BACKUP_IMAGE_DOMAIN}/NL7bD8d.png`,
+  "https://files.royaltransfer.eu/assets/Stripe_Logo.png": `${BACKUP_IMAGE_DOMAIN}/1JL4TFb.png`,
   
   // Additional images
-  "https://files.royaltransfer.eu/assets/about-hero.webp": "https://i.imgur.com/sLs3440.webp",
-  "https://files.royaltransfer.eu/assets/services-hero.webp": "https://i.imgur.com/BUpN7Wn.jpeg"
+  "https://files.royaltransfer.eu/assets/about-hero.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
+  "https://files.royaltransfer.eu/assets/services-hero.webp": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`
 };
-
-// Alternative CDN domains to try
-const cdnDomains = [
-  "files.royaltransfer.eu",
-  "files2.royaltransfer.eu", // Hypothetical secondary domain
-  "cdn.royaltransfer.eu", // Hypothetical CDN domain
-  "static.royaltransfer.eu" // Hypothetical static assets domain
-];
 
 /**
  * Get fallback URL for an image if available
@@ -63,8 +102,29 @@ const cdnDomains = [
  * @returns The fallback URL or the original if no fallback exists
  */
 export const getFallbackImageUrl = (originalUrl: string): string => {
-  return fallbackImageMap[originalUrl] || originalUrl;
+  // Try to return a configured fallback
+  const fallback = fallbackImageMap[originalUrl];
+  if (fallback) return fallback;
+  
+  // If it's from the old domain, try to transform to the new one
+  if (originalUrl.includes('files.royaltransfer.eu')) {
+    return getPrimaryDomainUrl(originalUrl);
+  }
+  
+  // Return the original if no fallback found
+  return originalUrl;
 };
+
+/**
+ * Alternative CDN domains to try
+ * Adding the new Netlify domain as the primary one
+ */
+const cdnDomains = [
+  "melodious-panda-7ef225.netlify.app",
+  "files.royaltransfer.eu",
+  "i.imgur.com",
+  "i.ibb.co"
+];
 
 /**
  * Create a URL that uses a different CDN domain
@@ -72,20 +132,30 @@ export const getFallbackImageUrl = (originalUrl: string): string => {
  * @returns Modified URL using a different domain, or original if not applicable
  */
 export const getAlternateCdnUrl = (url: string): string | null => {
-  // Check if URL is from one of our known domains
-  const mainDomain = cdnDomains[0];
-  if (!url.includes(mainDomain)) {
-    return null;
+  // Skip if it's already using the primary domain
+  if (url.startsWith(PRIMARY_IMAGE_DOMAIN)) return null;
+  
+  // Try to transform old domain URLs to the primary domain
+  if (url.includes('files.royaltransfer.eu')) {
+    return getPrimaryDomainUrl(url);
   }
   
-  // Select a random alternate domain
-  const alternates = cdnDomains.slice(1);
-  if (alternates.length === 0) {
-    return null;
+  // For other domains, use the backup
+  for (const domain of cdnDomains) {
+    if (url.includes(domain)) {
+      // Found a matching domain, replace with primary
+      try {
+        const urlObj = new URL(url);
+        const path = urlObj.pathname;
+        return `${PRIMARY_IMAGE_DOMAIN}${path}`;
+      } catch (e) {
+        // URL parsing failed, return original
+        return null;
+      }
+    }
   }
   
-  const randomDomain = alternates[Math.floor(Math.random() * alternates.length)];
-  return url.replace(mainDomain, randomDomain);
+  return null;
 };
 
 /**
@@ -94,7 +164,7 @@ export const getAlternateCdnUrl = (url: string): string | null => {
  * @returns Boolean indicating if it's a CDN image
  */
 export const isPrimaryCdnImage = (url: string): boolean => {
-  return url.includes(cdnDomains[0]);
+  return url.includes(PRIMARY_IMAGE_DOMAIN);
 };
 
 /**
@@ -116,26 +186,32 @@ export const getWebpUrl = (url: string): string => {
  * @returns Array of URLs to try in sequence
  */
 export const generateImageUrlStrategy = (originalUrl: string): string[] => {
-  const urls = [originalUrl];
+  const urls = [];
+  
+  // First try the primary domain version
+  if (originalUrl.includes('files.royaltransfer.eu')) {
+    urls.push(getPrimaryDomainUrl(originalUrl));
+  } else {
+    urls.push(originalUrl);
+  }
   
   // Add WebP version if it's a convertible format
   if (originalUrl.match(/\.(jpe?g|png)$/i)) {
-    urls.push(getWebpUrl(originalUrl));
+    urls.push(getWebpUrl(urls[0]));
+  }
+  
+  // Add original URL as fallback if we transformed it
+  if (urls[0] !== originalUrl) {
+    urls.push(originalUrl);
   }
   
   // Add cache buster version
-  urls.push(`${originalUrl}?cb=${Date.now()}`);
+  urls.push(`${urls[0]}?cb=${Date.now()}`);
   
   // Add fallback URL if available
   const fallbackUrl = getFallbackImageUrl(originalUrl);
-  if (fallbackUrl !== originalUrl) {
+  if (fallbackUrl !== urls[0] && fallbackUrl !== originalUrl) {
     urls.push(fallbackUrl);
-  }
-  
-  // Add alternate CDN domain if applicable
-  const alternateCdnUrl = getAlternateCdnUrl(originalUrl);
-  if (alternateCdnUrl) {
-    urls.push(alternateCdnUrl);
   }
   
   return [...new Set(urls)]; // Remove any duplicates
@@ -146,5 +222,6 @@ export default {
   getAlternateCdnUrl,
   isPrimaryCdnImage,
   getWebpUrl,
-  generateImageUrlStrategy
+  generateImageUrlStrategy,
+  getPrimaryDomainUrl
 };
