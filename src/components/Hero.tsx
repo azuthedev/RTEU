@@ -8,8 +8,8 @@ const Hero = () => {
   // Preload critical images
   useEffect(() => {
     const imagesToPreload = [
-      getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/mobileherotest.webp'),
-      getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/newherotest.webp')
+      'https://files.royaltransfereu.com/assets/mobileherotest.webp',
+      'https://files.royaltransfereu.com/assets/newherotest.webp'
     ];
 
     // Also prepare fallback images
@@ -39,13 +39,13 @@ const Hero = () => {
           {/* Mobile Image */}
           <source
             media="(max-width: 767px)"
-            srcSet={getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/mobileherotest.webp')}
+            srcSet="https://files.royaltransfereu.com/assets/mobileherotest.webp"
             type="image/webp"
             fetchpriority="high"
           />
           <source
             media="(max-width: 767px)"
-            srcSet={getFallbackImageUrl(getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/mobileherotest.png'))}
+            srcSet="https://files.royaltransfereu.com/assets/mobileherotest.png"
             type="image/png"
             fetchpriority="high"
           />
@@ -53,20 +53,20 @@ const Hero = () => {
           {/* Desktop Image */}
           <source
             media="(min-width: 768px)"
-            srcSet={getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/newherotest.webp')}
+            srcSet="https://files.royaltransfereu.com/assets/newherotest.webp"
             type="image/webp"
             fetchpriority="high"
           />
           <source
             media="(min-width: 768px)"
-            srcSet={getFallbackImageUrl(getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/newherotest.png'))}
+            srcSet="https://files.royaltransfereu.com/assets/newherotest.png"
             type="image/png"
             fetchpriority="high"
           />
           
           {/* Fallback Image */}
           <img 
-            src={getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/newherotest.png')}
+            src="https://files.royaltransfereu.com/assets/newherotest.png"
             alt="Luxury sedan transfer service by Royal Transfer EU - professional driver waiting by an elegant black car on a scenic European road"
             className="w-full h-full object-cover"
             loading="eager"
