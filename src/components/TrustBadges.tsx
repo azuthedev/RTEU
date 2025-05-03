@@ -28,7 +28,7 @@ const TrustBadges = () => {
             >
               <div className="h-12 md:h-16 mb-2 relative">
                 <ImageWithFallback 
-                  src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/tripadvisor-logo.png")}
+                  src="https://files.royaltransfereu.com/assets/tripadvisor-logo.png"
                   alt="Tripadvisor Rating and Reviews Logo - Royal Transfer EU is highly rated on Tripadvisor"
                   className="h-full w-auto object-contain"
                   width={100}
@@ -60,7 +60,7 @@ const TrustBadges = () => {
               <div className="grid grid-cols-3 md:flex md:justify-center items-center gap-4 md:space-x-6">
                 <div className="flex justify-center">
                   <ImageWithFallback 
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/visa.png")}
+                    src="https://files.royaltransfereu.com/assets/visa.png"
                     alt="Visa payment logo - Royal Transfer EU accepts Visa cards" 
                     className="h-6 md:h-8 w-auto"
                     width={100}
@@ -69,7 +69,7 @@ const TrustBadges = () => {
                 </div>
                 <div className="flex justify-center">
                   <ImageWithFallback 
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/mastercard-logo.svg")}
+                    src="https://files.royaltransfereu.com/assets/mastercard-logo.svg"
                     alt="MasterCard payment logo - Royal Transfer EU accepts MasterCard" 
                     className="h-6 md:h-8 w-auto"
                     width={100}
@@ -78,7 +78,7 @@ const TrustBadges = () => {
                 </div>
                 <div className="flex justify-center">
                   <ImageWithFallback 
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/google_pay_logo.png")}
+                    src="https://files.royaltransfereu.com/assets/google_pay_logo.png"
                     alt="Google Pay logo - Royal Transfer EU accepts Google Pay" 
                     className="h-6 md:h-8 w-auto"
                     width={100}
@@ -87,7 +87,7 @@ const TrustBadges = () => {
                 </div>
                 <div className="flex justify-center">
                   <ImageWithFallback 
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/applepay.png")}
+                    src="https://files.royaltransfereu.com/assets/applepay.png"
                     alt="Apple Pay logo - Royal Transfer EU accepts Apple Pay" 
                     className="h-6 md:h-8 w-auto"
                     width={100}
@@ -95,8 +95,8 @@ const TrustBadges = () => {
                   />
                 </div>
                 <div className="flex justify-center">
-                  <ImageWithFallback 
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/american_express_logo.png")}
+                  <img 
+                    src="https://files.royaltransfereu.com/assets/american_express_logo.png"
                     alt="American Express payment logo - Royal Transfer EU accepts American Express cards" 
                     className="h-8 md:h-12 w-auto"
                     width={100}
@@ -106,7 +106,7 @@ const TrustBadges = () => {
                 </div>
                 <div className="flex justify-center">
                   <ImageWithFallback
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/stripe_logo.png")}
+                    src="https://files.royaltransfereu.com/assets/stripe_logo.png"
                     alt="Stripe secure payment processing logo - Royal Transfer EU uses Stripe for secure payments"
                     className="h-6 md:h-10 w-auto"
                     width={100}
