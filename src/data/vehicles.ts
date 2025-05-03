@@ -2,7 +2,7 @@ export const vehicles = [
   {
     id: 'economy-sedan',
     name: 'Standard Sedan',
-    image: 'https://files.royaltransfer.eu/assets/Standard-Sedan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/standard-sedan.jpg',
     rating: 4.9,
     reviews: 161,
     seats: 4,
@@ -15,15 +15,15 @@ export const vehicles = [
       'Toyota Camry'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Professional Driver', description: 'Suited & experienced chauffeur' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Flight Tracking', description: 'No stress for delays' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Door-to-Door', description: 'Hassle-free pickup & drop-off' }
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/manager.png', title: 'Professional Driver', description: 'Suited & experienced chauffeur' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/route.png', title: 'Flight Tracking', description: 'No stress for delays' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/door.png', title: 'Door-to-Door', description: 'Hassle-free pickup & drop-off' }
     ]
   },
   {
     id: 'premium-sedan',
     name: 'Premium Sedan',
-    image: 'https://files.royaltransfer.eu/assets/Premium-Sedan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/premium-sedan.jpg',
     rating: 4.8,
     reviews: 143,
     seats: 3,
@@ -36,15 +36,15 @@ export const vehicles = [
       'Audi A6'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Premium Chauffeur', description: 'Executive service' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Bottled Water', description: 'Free refreshments' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Priority Pickup', description: 'First-class experience' }
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/chauffeur.png', title: 'Premium Chauffeur', description: 'Executive service' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/water-bottle.png', title: 'Bottled Water', description: 'Free refreshments' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/priority.png', title: 'Priority Pickup', description: 'First-class experience' }
     ]
   },
   {
     id: 'vip-sedan',
     name: 'VIP Sedan',
-    image: 'https://files.royaltransfer.eu/assets/VIP-Sedan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/VIP-Sedan.jpg',
     rating: 4.95,
     reviews: 101,
     seats: 2,
@@ -57,15 +57,15 @@ export const vehicles = [
       'Audi A8'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'VIP Experience', description: 'Elite chauffeur & service' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Privacy Glass', description: 'Discreet and secure' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Meet & Greet', description: 'Personal welcome at arrivals' }
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/professional.png', title: 'VIP Experience', description: 'Elite chauffeur & service' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/privacy-policy.png', title: 'Privacy Glass', description: 'Discreet and secure' },
+      { icon: 'https://files.royaltransfereu.com/assets/b-icons/agreement.png', title: 'Meet & Greet', description: 'Personal welcome at arrivals' }
     ]
   },
   {
     id: 'standard-minivan',
     name: 'Standard Minivan',
-    image: 'https://files.royaltransfer.eu/assets/Standard-Minivan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/Standard-Minivan.jpg',
     rating: 4.8,
     reviews: 120,
     seats: 7,
@@ -78,15 +78,15 @@ export const vehicles = [
       'Toyota Proace'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Family Friendly', description: 'Ideal for families' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Flexible Seating', description: 'Roomy & configurable' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Large Storage', description: 'Space for bags' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Family Friendly', description: 'Ideal for families' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Flexible Seating', description: 'Roomy & configurable' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Large Storage', description: 'Space for bags' }
     ]
   },
   {
     id: 'xl-minivan',
     name: 'XL Minivan',
-    image: 'https://files.royaltransfer.eu/assets/XL-Minivan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/XL-Minivan.jpg',
     rating: 4.9,
     reviews: 109,
     seats: 8,
@@ -99,15 +99,15 @@ export const vehicles = [
       'Renault Trafic'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'XL Group Space', description: 'Fits up to 8' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Easy Access', description: 'Wide doors' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'XL Luggage', description: 'Ample boot space' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'XL Group Space', description: 'Fits up to 8' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Easy Access', description: 'Wide doors' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'XL Luggage', description: 'Ample boot space' }
     ]
   },
   {
     id: 'vip-minivan',
     name: 'VIP Minivan',
-    image: 'https://files.royaltransfer.eu/assets/VIP-Minivan.jpg',
+    image: 'https://files.royaltransfereu.com/assets/VIP-Minivan.jpg',
     rating: 4.97,
     reviews: 76,
     seats: 7,
@@ -120,15 +120,15 @@ export const vehicles = [
       'Toyota Alphard'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Chauffeur VIP', description: 'Elite driver' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Exclusive Interior', description: 'Luxury inside' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Refreshments', description: 'Drinks & snacks' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Chauffeur VIP', description: 'Elite driver' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Exclusive Interior', description: 'Luxury inside' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Refreshments', description: 'Drinks & snacks' }
     ]
   },
   {
     id: 'sprinter-8',
     name: 'Sprinter 8 pax',
-    image: 'https://files.royaltransfer.eu/assets/Sprinter-8.jpg',
+    image: 'https://files.royaltransfereu.com/assets/Sprinter-8.jpg',
     rating: 4.88,
     reviews: 64,
     seats: 8,
@@ -140,15 +140,15 @@ export const vehicles = [
       'VW Crafter 8-seater'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Mega Storage', description: 'Big & small luggage' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Individual Seats', description: 'Comfortable for all' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'A/C', description: 'Fully climate-controlled' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Mega Storage', description: 'Big & small luggage' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Individual Seats', description: 'Comfortable for all' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'A/C', description: 'Fully climate-controlled' }
     ]
   },
   {
     id: 'sprinter-16',
     name: 'Sprinter up to 16 pax',
-    image: 'https://files.royaltransfer.eu/assets/Sprinter-16.jpg',
+    image: 'https://files.royaltransfereu.com/assets/Sprinter-16.jpg',
     rating: 4.91,
     reviews: 38,
     seats: 16,
@@ -160,15 +160,15 @@ export const vehicles = [
       'Iveco Daily Minibus'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Large Capacity', description: 'Travel together' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Easy Entry', description: 'Steps for safe boarding' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Onboard PA', description: 'Guide/audio system' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Large Capacity', description: 'Travel together' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Easy Entry', description: 'Steps for safe boarding' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Onboard PA', description: 'Guide/audio system' }
     ]
   },
   {
     id: 'sprinter-21',
     name: 'Sprinter up to 21 pax',
-    image: 'https://files.royaltransfer.eu/assets/Sprinter-21.jpg',
+    image: 'https://files.royaltransfereu.com/assets/Sprinter-21.jpg',
     rating: 4.92,
     reviews: 22,
     seats: 21,
@@ -180,15 +180,15 @@ export const vehicles = [
       'Iveco Daily 21-seater'
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'XXL Group', description: 'Perfect for tours/events' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'Armor Luggage', description: 'Plenty of storage' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Reclining Seats', description: 'Long ride comfort' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'XXL Group', description: 'Perfect for tours/events' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Armor Luggage', description: 'Plenty of storage' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Reclining Seats', description: 'Long ride comfort' }
     ]
   },
   {
     id: 'bus-51',
     name: 'Bus up to 51 pax',
-    image: 'https://files.royaltransfer.eu/assets/Bus-51.jpg',
+    image: 'https://files.royaltransfereu.com/assets/Bus-51.jpg',
     rating: 4.95,
     reviews: 12,
     seats: 51,
@@ -201,9 +201,9 @@ export const vehicles = [
       "MAN Lion's Coach"
     ],
     features: [
-      { icon: 'https://i.imgur.com/icon1.png', title: 'Tour Group', description: 'Large parties or company trips' },
-      { icon: 'https://i.imgur.com/icon2.png', title: 'WC Onboard', description: 'Toilet facilities' },
-      { icon: 'https://i.imgur.com/icon3.png', title: 'Air Suspension', description: 'Smooth, safe ride' }
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Tour Group', description: 'Large parties or company trips' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'WC Onboard', description: 'Toilet facilities' },
+      { icon: 'https://files.royaltransfereu.com/assets', title: 'Air Suspension', description: 'Smooth, safe ride' }
     ]
   }
 ];
