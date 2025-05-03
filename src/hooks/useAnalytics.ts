@@ -98,4 +98,3 @@ export const useAnalytics = () => {
   };
 };
 
-export default useAnalytics;

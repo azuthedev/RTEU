@@ -22,7 +22,7 @@ const imageCache = new Map<string, HTMLImageElement>();
  * @param urls Array of image URLs to preload
  * @param options Configuration options
  */
-export const preloadImages = (
+const preloadImages = (
   urls: string[],
   options: {
     useFallbacks?: boolean;
@@ -244,7 +244,7 @@ export const preloadImages = (
  * @param url Image URL to check
  * @returns Boolean indicating if the image is ready
  */
-export const isImagePreloaded = (url: string): boolean => {
+const isImagePreloaded = (url: string): boolean => {
   const status = imageStatuses.get(url);
   
   if (!status) return false;
@@ -257,7 +257,7 @@ export const isImagePreloaded = (url: string): boolean => {
  * @param url The URL of the image
  * @returns The cached image element or null if not cached
  */
-export const getCachedImage = (url: string): HTMLImageElement | null => {
+const getCachedImage = (url: string): HTMLImageElement | null => {
   return imageCache.get(url) || null;
 };
 
@@ -265,7 +265,7 @@ export const getCachedImage = (url: string): HTMLImageElement | null => {
  * Clear the image cache to free up memory
  * @param urls Optional list of specific URLs to clear, or clear all if not specified
  */
-export const clearImageCache = (urls?: string[]): void => {
+const clearImageCache = (urls?: string[]): void => {
   if (urls) {
     urls.forEach(url => {
       imageCache.delete(url);
@@ -338,10 +338,3 @@ export const preloadImagesForRoute = (route: string): void => {
 };
 
 // Export a default object for module usage
-export default {
-  preloadImages,
-  isImagePreloaded,
-  getCachedImage,
-  clearImageCache,
-  preloadImagesForRoute,
-};

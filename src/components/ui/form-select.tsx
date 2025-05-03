@@ -26,7 +26,7 @@ interface FormSelectProps {
   labelClassName?: string;
 }
 
-export const FormSelect: React.FC<FormSelectProps> = ({
+const FormSelect: React.FC<FormSelectProps> = ({
   id,
   name,
   label,

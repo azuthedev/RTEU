@@ -9,6 +9,6 @@ export function cn(...inputs: ClassValue[]) {
  * Helper function to check if a user is an admin
  * Matches the PostgreSQL is_admin() function's logic
  */
-export function isAdmin(userData?: { user_role?: string }) {
+function isAdmin(userData?: { user_role?: string }) {
   return userData?.user_role === 'admin';
 }

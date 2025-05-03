@@ -17,7 +17,7 @@ interface AuthContextType {
     Promise<{ error: Error | null, data: UserData | null }>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;

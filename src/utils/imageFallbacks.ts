@@ -131,7 +131,7 @@ const cdnDomains = [
  * @param url The original URL
  * @returns Modified URL using a different domain, or original if not applicable
  */
-export const getAlternateCdnUrl = (url: string): string | null => {
+const getAlternateCdnUrl = (url: string): string | null => {
   // Skip if it's already using the primary domain
   if (url.startsWith(PRIMARY_IMAGE_DOMAIN)) return null;
   
@@ -163,7 +163,7 @@ export const getAlternateCdnUrl = (url: string): string | null => {
  * @param url The URL to check
  * @returns Boolean indicating if it's a CDN image
  */
-export const isPrimaryCdnImage = (url: string): boolean => {
+const isPrimaryCdnImage = (url: string): boolean => {
   return url.includes(PRIMARY_IMAGE_DOMAIN);
 };
 
@@ -172,7 +172,7 @@ export const isPrimaryCdnImage = (url: string): boolean => {
  * @param url The original image URL
  * @returns WebP version of the URL
  */
-export const getWebpUrl = (url: string): string => {
+const getWebpUrl = (url: string): string => {
   // Only convert certain file formats
   if (url.match(/\.(jpe?g|png)$/i)) {
     return url.replace(/\.\w+$/, '.webp');
@@ -185,7 +185,7 @@ export const getWebpUrl = (url: string): string => {
  * @param originalUrl The original image URL
  * @returns Array of URLs to try in sequence
  */
-export const generateImageUrlStrategy = (originalUrl: string): string[] => {
+const generateImageUrlStrategy = (originalUrl: string): string[] => {
   const urls = [];
   
   // First try the primary domain version
@@ -217,11 +217,3 @@ export const generateImageUrlStrategy = (originalUrl: string): string[] => {
   return [...new Set(urls)]; // Remove any duplicates
 };
 
-export default {
-  getFallbackImageUrl,
-  getAlternateCdnUrl,
-  isPrimaryCdnImage,
-  getWebpUrl,
-  generateImageUrlStrategy,
-  getPrimaryDomainUrl
-};

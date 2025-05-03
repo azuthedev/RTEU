@@ -10,7 +10,7 @@ import { useFeatureFlags } from "../FeatureFlagProvider"
 const CONSENT_COOKIE_NAME = "royal_transfer_cookie_consent"
 const CONSENT_COOKIE_EXPIRY_DAYS = 365
 
-export type CookieConsentType = "all" | "necessary" | "none"
+type CookieConsentType = "all" | "necessary" | "none"
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false)

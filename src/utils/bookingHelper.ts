@@ -29,7 +29,7 @@ export const generateBookingReference = (): string => {
  * @param {string} to - To location (city name)
  * @returns {number} - Estimated distance in kilometers
  */
-export const estimateDistance = (from: string, to: string): number => {
+const estimateDistance = (from: string, to: string): number => {
   // This is a very rough placeholder implementation
   // In a real app, this would use Google Maps Distance Matrix API or similar
   
@@ -82,7 +82,7 @@ export const estimateDistance = (from: string, to: string): number => {
  * @param {number} distanceKm - Distance in kilometers
  * @returns {number} - Estimated duration in minutes
  */
-export const estimateDuration = (distanceKm: number): number => {
+const estimateDuration = (distanceKm: number): number => {
   // Assume average speed of 60km/h = 1km/min
   // Add 20 minutes as buffer for traffic, stops, etc.
   return Math.ceil(distanceKm) + 20;

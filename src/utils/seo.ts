@@ -65,7 +65,7 @@ export const updateMetaTags = (
  * @param path Current path
  * @returns Object with title and description
  */
-export const getDefaultSeoContent = (path: string): { title: string, description: string } => {
+const getDefaultSeoContent = (path: string): { title: string, description: string } => {
   const baseTitle = 'Royal Transfer EU';
   
   // Default values

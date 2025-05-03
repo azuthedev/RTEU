@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getCookie, setCookie } from '../utils/cookieUtils';
 import { useAnalytics } from '../hooks/useAnalytics';
 
-export type ConsentPreferences = {
+type ConsentPreferences = {
   necessary: boolean; // Always true, can't be toggled
   analytics: boolean;
   marketing: boolean;

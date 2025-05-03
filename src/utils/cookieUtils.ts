@@ -40,7 +40,7 @@ export const getCookie = (name: string): string | null => {
  * Delete a cookie by setting its expiration date to the past
  * @param name Cookie name to delete
  */
-export const deleteCookie = (name: string): void => {
+const deleteCookie = (name: string): void => {
   // Get top-level domain for cross-domain compatibility
   let domain = window.location.hostname;
   
@@ -59,6 +59,6 @@ export const deleteCookie = (name: string): void => {
  * @param name Cookie name
  * @returns True if the cookie exists, false otherwise
  */
-export const cookieExists = (name: string): boolean => {
+const cookieExists = (name: string): boolean => {
   return getCookie(name) !== null;
 };

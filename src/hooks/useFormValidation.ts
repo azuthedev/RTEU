@@ -24,7 +24,7 @@ interface FieldStates {
   };
 }
 
-export interface UseFormValidationResult {
+interface UseFormValidationResult {
   errors: FieldErrors;
   isValid: boolean;
   validateField: (name: string, value: any) => string | null;

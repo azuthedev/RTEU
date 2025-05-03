@@ -195,4 +195,3 @@ const FeatureFlagBridge = {
 FeatureFlagBridge.init();
 
 // Export for module usage
-export default FeatureFlagBridge;

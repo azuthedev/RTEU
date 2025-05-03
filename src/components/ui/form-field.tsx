@@ -34,7 +34,7 @@ interface FormFieldProps {
   error?: string;
 }
 
-export const FormField: React.FC<FormFieldProps> = ({
+const FormField: React.FC<FormFieldProps> = ({
   id,
   name,
   label,
