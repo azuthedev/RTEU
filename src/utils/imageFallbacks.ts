@@ -3,8 +3,8 @@
  */
 
 // Primary and backup image domains
-const PRIMARY_IMAGE_DOMAIN = 'https://melodious-panda-7ef225.netlify.app';
-const BACKUP_IMAGE_DOMAIN = 'https://i.imgur.com'; // Keeping Imgur as backup
+const PRIMARY_IMAGE_DOMAIN = 'https://royaltransfereu.com';
+const BACKUP_IMAGE_DOMAIN = 'https://melodious-panda-7ef225.netlify.app';
 
 // Convert filename to lowercase and sanitize
 const sanitizeFilename = (filename: string): string => {
