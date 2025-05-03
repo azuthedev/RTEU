@@ -90,7 +90,7 @@ const TrustBadges = () => {
                     src="https://files.royaltransfereu.com/assets/applepay.png"
                     alt="Apple Pay logo - Royal Transfer EU accepts Apple Pay" 
                     className="h-6 md:h-8 w-auto"
-                    width={100}
+                    width={80}
                     height={40}
                   />
                 </div>
