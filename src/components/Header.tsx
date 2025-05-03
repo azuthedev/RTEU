@@ -93,7 +93,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         // If no session, just redirect to portal login
-        window.open(`https://app.royaltransfer.eu/${portalType}`, '_blank');
+        window.open(`https://app.royaltransfereu.com/${portalType}`, '_blank');
         return;
       }
 
@@ -101,12 +101,12 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
       const encodedToken = encodeURIComponent(session.access_token);
       
       // Open portal with token
-      window.open(`https://app.royaltransfer.eu/${portalType}?token=${encodedToken}`, '_blank');
+      window.open(`https://app.royaltransfereu.com/${portalType}?token=${encodedToken}`, '_blank');
     } catch (error) {
       console.error(`Error preparing ${portalType} portal redirect:`, error);
       trackEvent('Error', `${portalType} Portal Redirect Error`, JSON.stringify(error));
       // Fallback to regular link if something goes wrong
-      window.open(`https://app.royaltransfer.eu/${portalType}`, '_blank');
+      window.open(`https://app.royaltransfereu.com/${portalType}`, '_blank');
     }
     
     setShowUserMenu(false);
@@ -150,7 +150,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             aria-label="Royal Transfer EU Homepage"
           >
             <img 
-              src={getPrimaryDomainUrl('https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png')}
+              src={getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png')}
               alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
               className="h-full w-auto object-contain max-h-16"
               width={170}
@@ -365,7 +365,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               <div className="flex flex-col h-full">
                 <div className="flex justify-center items-center p-4 border-b">
                   <img
-                    src={getPrimaryDomainUrl("https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png")}
+                    src={getPrimaryDomainUrl("https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png")}
                     alt="Royal Transfer EU Logo - Professional taxi and transfer services"
                     className="h-12 w-auto object-contain"
                     width={150}
