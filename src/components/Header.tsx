@@ -141,7 +141,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
         <div className="flex justify-between items-center h-20">
           <div className="md:hidden w-12 h-12" />
 
-          <button 
+          <button
             onClick={() => {
               trackEvent('Navigation', 'Logo Click', 'Header');
               navigate('/');
@@ -149,15 +149,22 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             className="flex items-center focus:outline-none h-16 py-2"
             aria-label="Royal Transfer EU Homepage"
           >
-            <img 
-              src={getPrimaryDomainUrl('https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png')}
-              alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
-              className="h-full w-auto object-contain max-h-16"
-              width={170}
-              height={64}
-              loading="eager"
-            />
+            <picture className="h-full max-h-16">
+              <source
+                srcSet="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp"
+                type="image/webp"
+              />
+              <img
+                src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png"
+                alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
+                className="h-full w-auto object-contain max-h-16"
+                width={170}
+                height={64}
+                loading="eager"
+              />
+            </picture>
           </button>
+
           
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
             <a 
