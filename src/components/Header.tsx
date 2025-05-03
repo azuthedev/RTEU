@@ -371,14 +371,20 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
 
               <div className="flex flex-col h-full">
                 <div className="flex justify-center items-center p-4 border-b">
-                  <img
-                    src={getPrimaryDomainUrl("https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png")}
-                    alt="Royal Transfer EU Logo - Professional taxi and transfer services"
-                    className="h-12 w-auto object-contain"
-                    width={150}
-                    height={48}
-                    loading="eager"
-                  />
+                  <picture className="h-12">
+                    <source
+                      srcSet="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" 
+                      type="image/webp"
+                    />
+                    <img
+                      src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png" 
+                      alt="Royal Transfer EU Logo - Professional taxi and transfer services"
+                      className="h-12 w-auto object-contain"
+                      width={150}
+                      height={48}
+                      loading="eager"
+                    />
+                  </picture>
                 </div>
 
                 <nav className="flex-1 overflow-y-auto p-4">
