@@ -82,7 +82,7 @@ const Hero = () => {
           <div className="text-white text-center md:text-right">
             <div className="md:absolute md:right-[50%] md:translate-x-[-2rem] md:top-[200px]">
               <motion.h1 
-                className="text-4xl md:text-6xl font-bold mb-4"
+                className="text-[32px] md:text-6xl font-bold mb-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
