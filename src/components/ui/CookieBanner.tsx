@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Banner } from "./banner"
 import { Button } from "./button"
-import { Info } from "lucide-react"
 import { setCookie, getCookie } from "../../utils/cookieUtils"
 import { useAnalytics } from "../../hooks/useAnalytics"
 import { Link } from "react-router-dom"
@@ -13,10 +12,10 @@ const CONSENT_COOKIE_EXPIRY_DAYS = 365
 type CookieConsentType = "all" | "necessary" | "none"
 
 export default function CookieBanner() {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const { trackEvent } = useAnalytics()
-  const { flags, setFeatureFlag } = useFeatureFlags()
+  const [isVisible, setIsVisible] = useState(false);
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const { trackEvent } = useAnalytics();
+  const { flags, setFeatureFlag } = useFeatureFlags();
   
   // Helper function to check if cookie consent exists
   const hasConsentCookie = useCallback(() => {
@@ -25,20 +24,20 @@ export default function CookieBanner() {
 
   // Check screen size for responsive layout
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
+    const checkScreenWidth = () => {
+      setScreenWidth(window.innerWidth);
+    };
     
     // Initial check
-    checkMobile()
+    checkScreenWidth();
     
     // Listen for resize events
-    window.addEventListener('resize', checkMobile)
+    window.addEventListener('resize', checkScreenWidth);
     
     return () => {
-      window.removeEventListener('resize', checkMobile)
-    }
-  }, [])
+      window.removeEventListener('resize', checkScreenWidth);
+    };
+  }, []);
 
   // Check if user has already set cookie preferences
   useEffect(() => {
@@ -52,7 +51,7 @@ export default function CookieBanner() {
       return () => clearTimeout(timer);
     }
   }, [flags.showCookieBanner, hasConsentCookie]);
-
+  
   // Listen for parent window messages (for cross-domain communication)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -74,78 +73,68 @@ export default function CookieBanner() {
   }, [setFeatureFlag]);
 
   // Save consent preferences to cookie
-  const saveConsent = (consentType: CookieConsentType) => {
+  const saveConsent = (consentType: CookieConsentType): void => {
     const preferences = {
       necessary: true,
       analytics: consentType === "all",
       marketing: consentType === "all",
       preferences: consentType === "all"
-    }
+    };
 
     setCookie(
       CONSENT_COOKIE_NAME,
       JSON.stringify(preferences),
       CONSENT_COOKIE_EXPIRY_DAYS
-    )
+    );
     
     trackEvent(
-      "Cookie Consent",
-      consentType === "all" ? "Accept All" : "Necessary Only",
-      "",
+      'Cookie Consent',
+      consentType === "all" ? 'Accept All' : 'Necessary Only',
+      '',
       0,
       true
-    )
+    );
     
     // Apply consent settings
-    if (consentType === "all") {
-      enableAnalytics()
-    } else {
-      disableAnalytics()
+    if (typeof window !== 'undefined') {
+      // Set GA opt-out based on analytics preference
+      window['ga-disable-' + import.meta.env.VITE_GA_MEASUREMENT_ID] = !preferences.analytics;
+      
+      // Additional logic for other cookie types could be added here
     }
     
-    setIsVisible(false)
-  }
+    setIsVisible(false);
+  };
 
-  // Accept all cookies
+  // Accept all cookie types
   const acceptAll = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     saveConsent("all");
-  }
+  };
 
   // Accept only necessary cookies
   const acceptNecessary = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     saveConsent("necessary");
-  }
-
-  // Enable analytics based on consent
-  const enableAnalytics = () => {
-    // Enable Google Analytics
-    if (typeof window !== "undefined" && window["ga-disable-" + import.meta.env.VITE_GA_MEASUREMENT_ID]) {
-      window["ga-disable-" + import.meta.env.VITE_GA_MEASUREMENT_ID] = false
-    }
-  }
-
-  // Disable analytics based on consent
-  const disableAnalytics = () => {
-    // Disable Google Analytics
-    if (typeof window !== "undefined") {
-      window["ga-disable-" + import.meta.env.VITE_GA_MEASUREMENT_ID] = true
-    }
-  }
+  };
 
   // Handle learn more link click
   const handleLearnMoreClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    trackEvent("Cookie Consent", "Learn More Click", "");
+    trackEvent('Cookie Consent', 'Learn More Click', '');
     window.open("/cookie-policy", "_blank");
   };
 
   // Don't render if flag is disabled or banner shouldn't be visible
-  if (!flags.showCookieBanner || !isVisible) return null
+  if (!flags.showCookieBanner || !isVisible) return null;
+  
+  // Determine which layout to use based on screen width
+  const isMobile = screenWidth < 485;    // < 640px = Mobile
+  const isTablet = screenWidth >= 485 && screenWidth < 724; // 640-1024px = Tablet
+  const isDesktop = screenWidth >= 724;  // >= 1024px = Desktop
 
   return (
     <div 
@@ -157,14 +146,35 @@ export default function CookieBanner() {
         size="sm"
         className="max-w-max shadow-lg shadow-black/10 bg-white border-gray-200 pointer-events-auto"
       >
-        {isMobile ? (
-          // Mobile layout - stacked with Learn more above buttons
+        {isMobile && (
+          // Mobile layout - stacked with Learn more below buttons
           <div className="w-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-center">
+            <div className="flex flex-col gap-0.5">
+              {/* Text first */}
+              <p className="text-xs text-center mb-1">
                 We use cookies for a better experience
               </p>
-              {/* Learn more link positioned above buttons */}
+              
+              {/* Buttons next */}
+              <div className="flex justify-center items-center gap-2 w-full mb-1">
+                <Button 
+                  size="sm"
+                  onClick={acceptAll}
+                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3"
+                >
+                  Accept All
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm" 
+                  onClick={acceptNecessary}
+                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3"
+                >
+                  Reject
+                </Button>
+              </div>
+              
+              {/* Learn More link at bottom */}
               <Link 
                 to="/cookie-policy"
                 className="text-[10px] text-center text-gray-500 hover:text-gray-700 hover:underline mx-auto"
@@ -175,11 +185,32 @@ export default function CookieBanner() {
               >
                 Learn more
               </Link>
-              <div className="flex justify-center items-center gap-2 w-full">
+            </div>
+          </div>
+        )}
+        
+        {isTablet && (
+          // Tablet layout - text and Learn more on one line, buttons below
+          <div className="w-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col gap-1">
+              {/* Combined text with Learn More in parentheses */}
+              <p className="text-sm text-center mb-1">
+                We use cookies for a better experience
+                <Link
+                  to="/cookie-policy"
+                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1"
+                  onClick={handleLearnMoreClick}
+                >
+                  (Learn more)
+                </Link>
+              </p>
+              
+              {/* Buttons below */}
+              <div className="flex justify-center items-center gap-2">
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3 flex-1"
+                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3"
                 >
                   Accept All
                 </Button>
@@ -187,20 +218,32 @@ export default function CookieBanner() {
                   variant="outline"
                   size="sm" 
                   onClick={acceptNecessary}
-                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3 flex-1"
+                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3"
                 >
                   Reject
                 </Button>
               </div>
             </div>
           </div>
-        ) : (
-          // Desktop layout - inline
+        )}
+        
+        {isDesktop && (
+          // Desktop layout - fully inline: text on left, buttons on right
           <div className="w-full px-2" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-4">
-              <p className="text-sm whitespace-nowrap">
+            <div className="flex items-center justify-between">
+              {/* Text with Learn More in parentheses */}
+              <p className="text-sm mr-4 flex-grow">
                 We use cookies for a better experience
+                <Link
+                  to="/cookie-policy"
+                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1"
+                  onClick={handleLearnMoreClick}
+                >
+                  (Learn more)
+                </Link>
               </p>
+              
+              {/* Buttons on right */}
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <Button 
                   size="sm"
@@ -217,13 +260,6 @@ export default function CookieBanner() {
                 >
                   Reject
                 </Button>
-                <Link 
-                  to="/cookie-policy"
-                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
-                  onClick={handleLearnMoreClick}
-                >
-                  Learn more
-                </Link>
               </div>
             </div>
           </div>
