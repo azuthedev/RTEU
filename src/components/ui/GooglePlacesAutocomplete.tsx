@@ -28,12 +28,14 @@ export function GooglePlacesAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const placesListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
   
   // Flag to prevent onChange being called redundantly during place selection
   const isSelectingRef = useRef(false);
   const pendingInitRef = useRef(false);
+  const autocompleteInitializedRef = useRef(false);
 
-  // Load Google Maps API when needed (on focus or mount if we already need it)
+  // Load Google Maps API on mount, but only if not already loaded
   useEffect(() => {
     // If API is already loaded, we're good
     if (isGoogleMapsLoaded()) {
@@ -69,28 +71,84 @@ export function GooglePlacesAutocomplete({
     
     // Load Maps API on mount to ensure it's ready when needed
     loadMapsApi();
+
+    return () => {
+      // Clean up on component unmount
+      pendingInitRef.current = false;
+    };
+  }, []);
+
+  // Apply custom styles and position the dropdown
+  useEffect(() => {
+    // Cleanup previous observer if it exists
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    
+    // Apply CSS to fix the dropdown position relative to the input
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Check if a pac-container was added
+          const pacContainers = document.querySelectorAll('.pac-container');
+          
+          pacContainers.forEach((container) => {
+            // Check if this container is newly added
+            if (!(container as HTMLElement).dataset.styled) {
+              // Find the corresponding input element
+              const inputRect = inputRef.current?.getBoundingClientRect();
+              if (inputRect) {
+                // Position the dropdown correctly
+                (container as HTMLElement).style.width = `${inputRect.width}px`;
+                (container as HTMLElement).style.marginLeft = '0';
+                (container as HTMLElement).style.marginTop = '5px';
+                (container as HTMLElement).dataset.styled = 'true';
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    // Start observing the document body for changes
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Store the observer reference
+    observerRef.current = observer;
+    
+    // Cleanup when component unmounts
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
   }, []);
 
   // Initialize autocomplete when component mounts or Maps API loads
   useEffect(() => {
-    if (!apiLoaded || !inputRef.current) return;
+    // Only proceed if API is loaded, input ref exists, and we haven't already initialized
+    if (!apiLoaded || !inputRef.current || autocompleteInitializedRef.current) return;
     
     // Set up autocomplete
     try {
       setIsLoading(true);
       
-      // Clean up any existing listeners
+      // Clean up any existing listeners before creating a new instance
       if (placesListenerRef.current && autocompleteRef.current) {
         google.maps.event.removeListener(placesListenerRef.current);
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+        placesListenerRef.current = null;
       }
       
-      // Create a new Autocomplete instance
+      // Create a new Autocomplete instance - ONCE
       autocompleteRef.current = new window.google.maps.places.Autocomplete(
         inputRef.current,
         {
           fields: ['formatted_address', 'geometry', 'name', 'address_components', 'types'],
-          // Fixed: Using 'geocode' type which is a broader category that allows mixing of address types
+          // Use one type only to avoid mixing errors
           types: ['geocode']
         }
       );
@@ -122,6 +180,9 @@ export function GooglePlacesAutocomplete({
         }
       });
       
+      // Mark as initialized to prevent multiple instances
+      autocompleteInitializedRef.current = true;
+      
       setError(null);
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
@@ -129,18 +190,28 @@ export function GooglePlacesAutocomplete({
     } finally {
       setIsLoading(false);
     }
+  }, [apiLoaded, onChange, onPlaceSelect]);
 
-    // Cleanup when component unmounts
+  // Cleanup when component unmounts
+  useEffect(() => {
     return () => {
-      if (placesListenerRef.current) {
+      // Clean up listeners and instances
+      if (placesListenerRef.current && autocompleteRef.current) {
         google.maps.event.removeListener(placesListenerRef.current);
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        placesListenerRef.current = null;
+        autocompleteRef.current = null;
       }
       
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
       }
+      
+      // Reset initialization flags
+      autocompleteInitializedRef.current = false;
     };
-  }, [apiLoaded, onChange, onPlaceSelect]);
+  }, []);
 
   // Function to determine the best display name for a place
   const getDisplayName = (place: google.maps.places.PlaceResult): string => {
@@ -190,13 +261,21 @@ export function GooglePlacesAutocomplete({
     return formattedSegments.join(', ');
   };
 
-  // Handle input changes from user typing, throttled to prevent API spam
-  const handleInputChange = throttle((e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only propagate changes if not in the middle of a place selection
-    if (!isSelectingRef.current) {
-      onChange(e.target.value);
-    }
-  }, 300);
+  // Use memoized throttled handler to prevent re-creation on each render
+  const throttledInputChange = React.useMemo(() => 
+    throttle((e: React.ChangeEvent<HTMLInputElement>) => {
+      // Only propagate changes if not in the middle of a place selection
+      if (!isSelectingRef.current) {
+        onChange(e.target.value);
+      }
+    }, 150), 
+    [onChange]
+  );
+
+  // Actually handle the input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    throttledInputChange(e);
+  };
   
   const handleFocus = async () => {
     if (disabled) return;
@@ -251,6 +330,7 @@ export function GooglePlacesAutocomplete({
           ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
         `}
         autoComplete="off"
+        spellCheck="false"
       />
       {isLoading && (
         <div className="absolute right-3 top-3">
