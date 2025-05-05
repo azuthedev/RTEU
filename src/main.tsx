@@ -27,10 +27,30 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-// Initialize Google Maps API immediately - critical for search functionality
+// Initialize Google Maps API - delay loading but start it soon after page load
 if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-  // Load immediately as this is core functionality
-  initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places']);
+  // Wait until the page has shown some content before loading the heavy Maps API
+  if (document.readyState === 'complete') {
+    setTimeout(() => {
+      initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+        .then(success => {
+          console.log('Google Maps API initialized:', success);
+        })
+        .catch(error => {
+          console.error('Error initializing Google Maps API:', error);
+        });
+    }, 1000); // 1s delay to let initial page render complete
+  } else {
+    // If document not yet loaded, add event listener
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+          .then(success => {
+            console.log('Google Maps API initialized after DOMContentLoaded:', success);
+          });
+      }, 1000);
+    });
+  }
 }
 
 // Initialize Google Analytics with delay

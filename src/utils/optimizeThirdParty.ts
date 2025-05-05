@@ -7,24 +7,34 @@ import { throttle } from 'lodash-es';
 let googleMapsLoading = false;
 let googleMapsLoaded = false;
 let googleMapsPromise: Promise<boolean> | null = null;
+let googleMapsInitialized = false;
+let loadInitiated = false;
 
 /**
  * Initializes Google Maps API with proper promise-based tracking
  * This function ensures Google Maps loads only once with the correct libraries
  */
 export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places']): Promise<boolean> => {
-  // Return resolved promise if already loaded
+  // If already initialized, return resolved promise
   if (googleMapsLoaded && window.google?.maps) {
     return Promise.resolve(true);
   }
   
-  // Return existing promise if already loading
+  // If already loading, return existing promise
   if (googleMapsLoading && googleMapsPromise) {
     return googleMapsPromise;
   }
+
+  // Prevent multiple init attempts
+  if (loadInitiated) {
+    return googleMapsPromise || Promise.resolve(false);
+  }
+  
+  // Mark as loading and initiated
+  googleMapsLoading = true;
+  loadInitiated = true;
   
   // Create a new loading promise
-  googleMapsLoading = true;
   googleMapsPromise = new Promise((resolve) => {
     console.log('Loading Google Maps API...');
     
@@ -34,6 +44,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
       console.log('Google Maps API loaded successfully');
       googleMapsLoaded = true;
       googleMapsLoading = false;
+      googleMapsInitialized = true;
       resolve(true);
       delete window[callbackName];
     };
@@ -52,6 +63,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
       googleMapsLoading = false;
       googleMapsLoaded = false;
       googleMapsPromise = null;
+      loadInitiated = false; // Allow retry on error
       resolve(false);
     };
     
@@ -63,12 +75,18 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
         console.warn('Google Maps API loading timed out');
         googleMapsLoading = false;
         googleMapsPromise = null;
+        loadInitiated = false; // Allow retry after timeout
         resolve(false);
       }
     }, 15000);
   });
   
   return googleMapsPromise;
+};
+
+// Check if Google Maps is ready to use
+export const isGoogleMapsLoaded = (): boolean => {
+  return googleMapsLoaded && !!window.google?.maps;
 };
 
 /**
