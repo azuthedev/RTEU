@@ -18,7 +18,7 @@
         "image": "https://files.royaltransfereu.com/assets/newherotest.webp",
         "description": "Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable transport with professional drivers.",
         "telephone": "+393517482244",
-        "email": "contact@royaltransfereu.com",
+        "email": "contact@royaltransfer.eu",
         "address": {
           "@type": "PostalAddress",
           "addressCountry": "IT",
@@ -96,15 +96,6 @@
       }
     </script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
-    </script>
-
     <!-- Resource Hints -->
     <link rel="preconnect" href="https://general-runtime.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://files.royaltransfereu.com" crossorigin>
@@ -112,6 +103,8 @@
     <link rel="preconnect" href="https://cdn.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    <link rel="preconnect" href="https://i.imgur.com" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin>
     
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://general-runtime.voiceflow.com">
@@ -120,17 +113,16 @@
     <link rel="dns-prefetch" href="https://cdn.voiceflow.com">
     <link rel="dns-prefetch" href="https://maps.googleapis.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://i.imgur.com">
+    <link rel="dns-prefetch" href="https://i.ibb.co">
 
     <!-- Preload Critical Images -->
-    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" type="image/webp">
-    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/newherotest.webp" type="image/webp" media="(min-width: 768px)">
-    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/mobileherotest.webp" type="image/webp" media="(max-width: 767px)">
+    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" type="image/webp" fetchpriority="high">
+    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/newherotest.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
+    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/mobileherotest.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
 
     <!-- Preload Critical JS -->
     <link rel="modulepreload" href="/src/main.tsx">
-
-    <!-- Google Maps Script -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places"></script>
 
     <!-- Cache Control -->
     <meta http-equiv="Cache-Control" content="max-age=31536000, immutable">
@@ -171,26 +163,7 @@
     
     <!-- Voiceflow Chat Widget Container -->
     <div id="voiceflow-chat-container">
-      <script type="text/javascript">
-        (function(d, t) {
-            var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-            v.onload = function() {
-              window.voiceflow.chat.load({
-                verify: { projectID: '67d817b721b78ba30f3baa7d' },
-                url: 'https://general-runtime.voiceflow.com',
-                versionID: 'production',
-                voice: {
-                  url: "https://runtime-api.voiceflow.com"
-                }
-              });
-            }
-            v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
-            v.type = "text/javascript";
-            v.setAttribute('async', '');
-            v.setAttribute('defer', '');
-            s.parentNode.insertBefore(v, s);
-        })(document, 'script');
-      </script>
+      <!-- Voiceflow chat will be dynamically loaded by our optimized loader -->
     </div>
   </body>
 </html>
