@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import SearchForm from './SearchForm';
 import { motion } from 'framer-motion';
 import { getFallbackImageUrl, getPrimaryDomainUrl } from '../utils/imageFallbacks';
-import ImageWithFallback from './ImageWithFallback';
+import OptimizedImage from './OptimizedImage';
 
 const Hero = () => {
   // Preload critical images
@@ -41,13 +41,13 @@ const Hero = () => {
             media="(max-width: 767px)"
             srcSet="https://files.royaltransfereu.com/assets/mobileherotest.webp"
             type="image/webp"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <source
             media="(max-width: 767px)"
             srcSet="https://files.royaltransfereu.com/assets/mobileherotest.png"
             type="image/png"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           
           {/* Desktop Image */}
@@ -55,22 +55,22 @@ const Hero = () => {
             media="(min-width: 768px)"
             srcSet="https://files.royaltransfereu.com/assets/newherotest.webp"
             type="image/webp"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <source
             media="(min-width: 768px)"
             srcSet="https://files.royaltransfereu.com/assets/newherotest.png"
             type="image/png"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           
           {/* Fallback Image */}
-          <img 
+          <OptimizedImage 
             src="https://files.royaltransfereu.com/assets/newherotest.png"
             alt="Luxury sedan transfer service by Royal Transfer EU - professional driver waiting by an elegant black car on a scenic European road"
             className="w-full h-full object-cover"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
         </picture>
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>

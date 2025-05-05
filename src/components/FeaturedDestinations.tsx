@@ -1,7 +1,7 @@
 import React from 'react';
 import { Star, Flag } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import ImageWithFallback from './ImageWithFallback';
+import OptimizedImage from './OptimizedImage';
 
 interface Destination {
   city: string;
@@ -129,12 +129,10 @@ const FeaturedDestinations = () => {
                   className="absolute inset-0 bg-black opacity-0 group-hover:opacity-50 transition-opacity duration-300 z-10"
                   aria-hidden="true"
                 />
-                <ImageWithFallback
+                <OptimizedImage
                   src={destination.images.webp || destination.images.fallback}
                   alt={`Scenic view of ${destination.city}, ${destination.country} - a popular destination for Royal Transfer EU services`}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  width={640}
-                  height={360}
                   loading={index < 2 ? "eager" : "lazy"}
                   fetchPriority={index < 2 ? "high" : "auto"}
                 />

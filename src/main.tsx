@@ -2,9 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { reportWebVitals } from './utils/webVitals.ts';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from 'react-error-boundary';
+import { initGoogleMaps, initGoogleAnalytics, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
 
 // Create a fallback component for the error boundary
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -27,6 +27,23 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
+// Initialize Google Maps API immediately - critical for search functionality
+if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+  // Load immediately as this is core functionality
+  initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places']);
+}
+
+// Initialize Google Analytics with delay
+if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
+  initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
+}
+
+// Initialize Voiceflow chat with delayed loading
+initVoiceflowChat('67d817b721b78ba30f3baa7d', {
+  delay: 5000,
+  waitForInteraction: true
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary
@@ -40,7 +57,7 @@ createRoot(document.getElementById('root')!).render(
         console.error("Global error caught:", error);
         console.error("Component stack:", info.componentStack);
         
-        // You can add error reporting service integration here
+        // Track in GA
         if (window.gtag) {
           window.gtag('event', 'exception', {
             description: error.toString(),
@@ -55,6 +72,3 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>
 );
-
-// Report web vitals if GA is configured
-reportWebVitals();

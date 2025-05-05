@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { getPrimaryDomainUrl } from '../utils/imageFallbacks';
+import OptimizedImage from './OptimizedImage';
 
 interface HeaderProps {
   isAboutPage?: boolean;
@@ -149,20 +149,15 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             className="flex items-center focus:outline-none h-16 py-2"
             aria-label="Royal Transfer EU Homepage"
           >
-            <picture className="h-full max-h-16">
-              <source
-                srcSet="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp"
-                type="image/webp"
-              />
-              <img
-                src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png"
-                alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
-                className="h-full w-auto object-contain max-h-16"
-                width={170}
-                height={64}
-                loading="eager"
-              />
-            </picture>
+            <OptimizedImage
+              src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp"
+              alt="Royal Transfer EU Logo - Professional airport transfers and taxi services across Europe"
+              className="h-full w-auto object-contain max-h-16"
+              width={170}
+              height={64}
+              loading="eager"
+              fetchPriority="high"
+            />
           </button>
 
           
@@ -371,20 +366,14 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
 
               <div className="flex flex-col h-full">
                 <div className="flex justify-center items-center p-4 border-b">
-                  <picture className="h-12">
-                    <source
-                      srcSet="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" 
-                      type="image/webp"
-                    />
-                    <img
-                      src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png" 
-                      alt="Royal Transfer EU Logo - Professional taxi and transfer services"
-                      className="h-12 w-auto object-contain"
-                      width={150}
-                      height={48}
-                      loading="eager"
-                    />
-                  </picture>
+                  <OptimizedImage
+                    src="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp"
+                    alt="Royal Transfer EU Logo - Professional taxi and transfer services"
+                    className="h-12 w-auto object-contain"
+                    width={150}
+                    height={48}
+                    loading="eager"
+                  />
                 </div>
 
                 <nav className="flex-1 overflow-y-auto p-4">

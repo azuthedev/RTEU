@@ -47,7 +47,6 @@ const SearchForm = () => {
   const params = useParams();
   const { trackEvent } = useAnalytics();
   const { bookingState, setBookingState } = useBooking();
-  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
 
   // Store original values for comparison and restoration
   const originalValuesRef = useRef({
@@ -73,17 +72,9 @@ const SearchForm = () => {
     dateRange: undefined as DateRange | undefined
   });
 
-  // Check if Google Maps API is loaded
+  // Ensure Google Maps API is initialized as soon as possible
   useEffect(() => {
-    const checkGoogleMapsLoaded = () => {
-      if (window.google && window.google.maps) {
-        setGoogleMapsLoaded(true);
-      } else {
-        setTimeout(checkGoogleMapsLoaded, 100);
-      }
-    };
-    
-    checkGoogleMapsLoaded();
+    console.log('SearchForm: Ready for autocomplete');
   }, []);
 
   // First, check if we have display data from context (coming back from booking flow)
@@ -330,64 +321,30 @@ const SearchForm = () => {
 
         <div className="space-y-6">
           {/* Pickup Location */}
-          {googleMapsLoaded ? (
-            <GooglePlacesAutocomplete
-              value={formData.pickup}
-              onChange={(value) => setFormData(prev => ({ 
-                ...prev, 
-                pickup: value,
-                pickupDisplay: value
-              }))}
-              onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
-              placeholder="Pickup location"
-              className="w-full"
-            />
-          ) : (
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Pickup location"
-                value={formData.pickup}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  pickup: e.target.value,
-                  pickupDisplay: e.target.value
-                }))}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-          )}
+          <GooglePlacesAutocomplete
+            value={formData.pickup}
+            onChange={(value) => setFormData(prev => ({ 
+              ...prev, 
+              pickup: value,
+              pickupDisplay: value
+            }))}
+            onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
+            placeholder="Pickup location"
+            className="w-full"
+          />
 
           {/* Dropoff Location */}
-          {googleMapsLoaded ? (
-            <GooglePlacesAutocomplete
-              value={formData.dropoff}
-              onChange={(value) => setFormData(prev => ({ 
-                ...prev, 
-                dropoff: value,
-                dropoffDisplay: value
-              }))}
-              onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
-              placeholder="Dropoff location"
-              className="w-full"
-            />
-          ) : (
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Dropoff location"
-                value={formData.dropoff}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  dropoff: e.target.value,
-                  dropoffDisplay: e.target.value
-                }))}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-          )}
+          <GooglePlacesAutocomplete
+            value={formData.dropoff}
+            onChange={(value) => setFormData(prev => ({ 
+              ...prev, 
+              dropoff: value,
+              dropoffDisplay: value
+            }))}
+            onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
+            placeholder="Dropoff location"
+            className="w-full"
+          />
 
           {/* Date Selection */}
           {isReturn ? (

@@ -7,6 +7,7 @@ import { DateRangePicker } from '../ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 import { useBooking } from '../../contexts/BookingContext';
+import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -63,7 +64,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { bookingState, setBookingState } = useBooking();
-  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   
   // Flag to track component initialization
   const isInitializedRef = useRef(false);
@@ -117,17 +117,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     passengers: parseInt(passengers, 10)
   });
 
-  // Check if Google Maps API is loaded
+  // Ensure Google Maps is loaded
   useEffect(() => {
-    const checkGoogleMapsLoaded = () => {
-      if (window.google && window.google.maps) {
-        setGoogleMapsLoaded(true);
-      } else {
-        setTimeout(checkGoogleMapsLoaded, 100);
-      }
-    };
-    
-    checkGoogleMapsLoaded();
+    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+      initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+        .then(success => {
+          console.log('BookingTopBar: Google Maps API loaded:', success);
+        });
+    }
   }, []);
 
   // Initialize component once
@@ -380,48 +377,22 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           {/* Mobile View */}
           <div className="flex flex-col space-y-4 md:hidden">
             {/* Mobile Pickup Location */}
-            {googleMapsLoaded ? (
-              <GooglePlacesAutocomplete
-                value={pickupValue}
-                onChange={(value) => handlePlaceSelect('pickup', value)}
-                onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
-                placeholder="From"
-                className="w-full"
-              />
-            ) : (
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="From"
-                  value={pickupValue}
-                  onChange={(e) => handlePlaceSelect('pickup', e.target.value)}
-                  className="w-full pl-10 pr-4 h-[42px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-            )}
+            <GooglePlacesAutocomplete
+              value={pickupValue}
+              onChange={(value) => handlePlaceSelect('pickup', value)}
+              onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
+              placeholder="From"
+              className="w-full"
+            />
 
             {/* Mobile Dropoff Location */}
-            {googleMapsLoaded ? (
-              <GooglePlacesAutocomplete
-                value={dropoffValue}
-                onChange={(value) => handlePlaceSelect('dropoff', value)}
-                onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
-                placeholder="To"
-                className="w-full"
-              />
-            ) : (
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="To"
-                  value={dropoffValue}
-                  onChange={(e) => handlePlaceSelect('dropoff', e.target.value)}
-                  className="w-full pl-10 pr-4 h-[42px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-            )}
+            <GooglePlacesAutocomplete
+              value={dropoffValue}
+              onChange={(value) => handlePlaceSelect('dropoff', value)}
+              onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
+              placeholder="To"
+              className="w-full"
+            />
 
             {isOneWay ? (
               <DatePicker
@@ -500,48 +471,22 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           <div className="hidden md:flex items-center gap-4">
             <div className="flex-1 grid grid-cols-[1fr_1fr_1.5fr_1fr] gap-4">
               {/* Desktop Pickup Location */}
-              {googleMapsLoaded ? (
-                <GooglePlacesAutocomplete
-                  value={pickupValue}
-                  onChange={(value) => handlePlaceSelect('pickup', value)}
-                  onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
-                  placeholder="From"
-                  className="w-full"
-                />
-              ) : (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="From"
-                    value={pickupValue}
-                    onChange={(e) => handlePlaceSelect('pickup', e.target.value)}
-                    className="w-full pl-10 pr-4 h-[42px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-              )}
+              <GooglePlacesAutocomplete
+                value={pickupValue}
+                onChange={(value) => handlePlaceSelect('pickup', value)}
+                onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
+                placeholder="From"
+                className="w-full"
+              />
 
               {/* Desktop Dropoff Location */}
-              {googleMapsLoaded ? (
-                <GooglePlacesAutocomplete
-                  value={dropoffValue}
-                  onChange={(value) => handlePlaceSelect('dropoff', value)}
-                  onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
-                  placeholder="To"
-                  className="w-full"
-                />
-              ) : (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="To"
-                    value={dropoffValue}
-                    onChange={(e) => handlePlaceSelect('dropoff', e.target.value)}
-                    className="w-full pl-10 pr-4 h-[42px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-              )}
+              <GooglePlacesAutocomplete
+                value={dropoffValue}
+                onChange={(value) => handlePlaceSelect('dropoff', value)}
+                onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
+                placeholder="To"
+                className="w-full"
+              />
 
               {isOneWay ? (
                 <DatePicker

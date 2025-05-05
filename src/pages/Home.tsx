@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 import Benefits from '../components/Benefits';
@@ -10,10 +11,11 @@ import BookingProcess from '../components/BookingProcess';
 import FeaturedDestinations from '../components/FeaturedDestinations';
 import Testimonials from '../components/Testimonials';
 import CallToAction from '../components/CallToAction';
-import Sitemap from '../components/Sitemap';
 import TrustBadges from '../components/TrustBadges';
 import { updateMetaTags, addStructuredData } from '../utils/seo';
-import { Helmet } from 'react-helmet-async';
+import LazyComponent from '../components/LazyComponent';
+import DeferredComponent from '../components/DeferredComponent';
+import { initGoogleMaps } from '../utils/optimizeThirdParty'; 
 
 function Home() {
   const location = useLocation();
@@ -52,6 +54,17 @@ function Home() {
     });
   }, [location.pathname]);
   
+  // Initialize Google Maps early for search form
+  useEffect(() => {
+    // Pre-load Google Maps API as it's critical for the search functionality
+    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+      initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+        .then(success => {
+          console.log('Home: Google Maps API initialization:', success ? 'successful' : 'failed');
+        });
+    }
+  }, []);
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
@@ -78,16 +91,42 @@ function Home() {
       </Helmet>
       <Header />
       <Hero />
-      <Benefits />
-      <FeaturedDestinations />
-      <TrustBadges />
-      <Services />
-      <AboutPreview />
-      <FAQPreview />
-      <BookingProcess />
-      <Testimonials />
-      <CallToAction />
-      <Sitemap />
+      
+      <LazyComponent height={400}>
+        <Benefits />
+      </LazyComponent>
+      
+      <LazyComponent height={500}>
+        <FeaturedDestinations />
+      </LazyComponent>
+      
+      <LazyComponent height={450}>
+        <TrustBadges />
+      </LazyComponent>
+      
+      <LazyComponent height={400}>
+        <Services />
+      </LazyComponent>
+      
+      <LazyComponent>
+        <AboutPreview />
+      </LazyComponent>
+      
+      <LazyComponent>
+        <FAQPreview />
+      </LazyComponent>
+      
+      <LazyComponent>
+        <BookingProcess />
+      </LazyComponent>
+      
+      <LazyComponent>
+        <Testimonials />
+      </LazyComponent>
+      
+      <DeferredComponent delay={300}>
+        <CallToAction />
+      </DeferredComponent>
     </div>
   );
 }
