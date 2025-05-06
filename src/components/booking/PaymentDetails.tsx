@@ -93,12 +93,17 @@ const PaymentDetails = () => {
         }
       );
 
-      const responseData = await response.json();
-
       if (!response.ok) {
-        console.error("Checkout session error response:", responseData);
-        throw new Error(responseData.error || 'Failed to create checkout session');
+        // Read the error response
+        const errorData = await response.json();
+        console.error("Checkout session error response:", errorData);
+        
+        // Log the error and provide a specific error message
+        let errorMessage = errorData.error || 'Failed to create checkout session';
+        throw new Error(errorMessage);
       }
+
+      const responseData = await response.json();
 
       if (!responseData.sessionUrl) {
         console.error("Missing sessionUrl in response:", responseData);
@@ -198,12 +203,16 @@ const PaymentDetails = () => {
           }
         );
         
-        const responseData = await response.json();
-        
         if (!response.ok) {
-          console.error("Cash booking error response:", responseData);
-          throw new Error(responseData.error || 'Failed to create booking');
+          // Read the error response
+          const errorData = await response.json();
+          console.error("Cash booking error response:", errorData);
+          
+          // Provide a specific error message
+          throw new Error(errorData.error || 'Failed to create booking');
         }
+        
+        const responseData = await response.json();
         
         // Update booking state
         setBookingState(prev => ({
