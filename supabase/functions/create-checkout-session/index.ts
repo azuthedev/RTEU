@@ -1,4 +1,4 @@
-import Stripe from "npm:stripe@12.0.0";
+import Stripe from "npm:stripe@13.3.0";
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 
 const corsHeaders = {
@@ -24,10 +24,10 @@ Deno.serve(async (req) => {
       throw new Error("Stripe secret key is missing from environment variables.");
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
+    console.log("Initializing Stripe with latest API version");
+
+    // Initialize Stripe without specifying API version to use the latest
+    const stripe = new Stripe(stripeSecretKey);
 
     // Initialize Supabase client with service role key to bypass RLS
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -42,6 +42,26 @@ Deno.serve(async (req) => {
 
     // Parse the request body
     const { booking_reference, trip, vehicle, customer, extras, amount, discountCode, payment_method } = await req.json();
+
+    console.log("Request data received:", { 
+      booking_reference, 
+      trip: { 
+        from: trip?.from, 
+        to: trip?.to, 
+        type: trip?.type, 
+        date: trip?.date,
+        passengers: trip?.passengers 
+      }, 
+      vehicle: { 
+        id: vehicle?.id, 
+        name: vehicle?.name 
+      }, 
+      customer: { 
+        email: customer?.email 
+      }, 
+      amount, 
+      payment_method 
+    });
 
     // Validate required fields
     if (!trip || !vehicle || !customer || !customer.email || !booking_reference) {
@@ -83,7 +103,7 @@ Deno.serve(async (req) => {
       customer_phone: customer.phone || '',
       is_return: trip.type === 'round-trip',
       return_datetime: trip.returnDate || null,
-      extra_items: extras.join(','),
+      extra_items: extras ? extras.join(',') : '',
       payment_method: payment_method || 'card',
       notes: '',
       customer_title: customer.title || null
@@ -177,60 +197,114 @@ Deno.serve(async (req) => {
       tripDescription += ` (${new Date(trip.date).toLocaleDateString()})`;
     }
 
-    // Create a Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: `${vehicle.name} - ${tripTypeDesc}`,
-              description: tripDescription,
-              images: vehicle.image ? [vehicle.image] : undefined
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents and ensure it's an integer
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/booking-success?reference=${booking_reference}`,
-      cancel_url: `${req.headers.get("origin")}/booking-cancelled`,
-      customer_email: customer.email,
-      metadata: {
-        booking_reference: booking_reference,
-        trip_from: trip.from,
-        trip_to: trip.to,
-        trip_type: trip.type,
-        trip_date: new Date(trip.date).toISOString(),
-        trip_return_date: trip.returnDate ? new Date(trip.returnDate).toISOString() : "",
-        trip_passengers: String(trip.passengers),
-        vehicle_id: vehicle.id,
-        vehicle_name: vehicle.name,
-        customer_name: `${customer.firstName || ""} ${customer.lastName || ""}`.trim(),
-        customer_phone: customer.phone || "",
-        extras: extras.join(","),
-        discount_code: discountCode || "",
-      },
-    });
+    // Ensure amount is a valid number and convert to cents for Stripe
+    const amountInCents = Math.round(parseFloat(amount) * 100);
+    if (isNaN(amountInCents) || amountInCents <= 0) {
+      throw new Error(`Invalid amount: ${amount}. Amount must be a positive number.`);
+    }
 
-    // Return the session URL
-    return new Response(
-      JSON.stringify({ sessionUrl: session.url }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+    console.log(`Creating Stripe checkout session for amount: ${amount} EUR (${amountInCents} cents)`);
+
+    // Prepare metadata
+    const metadata = {
+      booking_reference: booking_reference,
+      trip_from: trip.from,
+      trip_to: trip.to,
+      trip_type: trip.type,
+      trip_date: new Date(trip.date).toISOString(),
+      vehicle_name: vehicle.name,
+      customer_email: customer.email,
+    };
+
+    // Add optional metadata if available
+    if (trip.returnDate) metadata.trip_return_date = new Date(trip.returnDate).toISOString();
+    if (trip.passengers) metadata.trip_passengers = String(trip.passengers);
+    if (vehicle.id) metadata.vehicle_id = vehicle.id;
+    if (customer.firstName || customer.lastName) 
+      metadata.customer_name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
+    if (customer.phone) metadata.customer_phone = customer.phone;
+    if (extras && extras.length) metadata.extras = extras.join(",");
+    if (discountCode) metadata.discount_code = discountCode;
+
+    // Create a Stripe checkout session with better error handling
+    try {
+      console.log("Calling stripe.checkout.sessions.create...");
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              product_data: {
+                name: `${vehicle.name} - ${tripTypeDesc}`,
+                description: tripDescription,
+                images: vehicle.image ? [vehicle.image] : undefined
+              },
+              unit_amount: amountInCents,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${req.headers.get("origin")}/booking-success?reference=${booking_reference}`,
+        cancel_url: `${req.headers.get("origin")}/booking-cancelled`,
+        customer_email: customer.email,
+        metadata: metadata,
+      });
+
+      console.log("Stripe checkout session created successfully", { sessionId: session.id });
+
+      // Return the session URL
+      return new Response(
+        JSON.stringify({ sessionUrl: session.url }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (stripeError: any) {
+      console.error("Stripe API error:", {
+        type: stripeError.type,
+        code: stripeError.code,
+        message: stripeError.message,
+        param: stripeError.param,
+        statusCode: stripeError.statusCode,
+        requestId: stripeError.requestId
+      });
+      
+      let errorMessage = "An error occurred with our payment processor";
+      
+      // Provide more specific error messages for common Stripe errors
+      if (stripeError.type === 'StripeAuthenticationError') {
+        errorMessage = "Authentication with payment processor failed. Please contact support.";
+      } else if (stripeError.type === 'StripeConnectionError') {
+        errorMessage = "Connection to payment processor failed. Please try again later.";
+      } else if (stripeError.type === 'StripeRateLimitError') {
+        errorMessage = "Too many payment requests. Please try again in a few minutes.";
+      } else if (stripeError.message) {
+        errorMessage = stripeError.message;
       }
-    );
-  } catch (error) {
+      
+      throw new Error(`Stripe error: ${errorMessage}`);
+    }
+  } catch (error: any) {
     console.error("Error processing request:", error);
     
+    // Provide a more detailed error message to help diagnose the issue
+    let errorMessage = error.message;
+    if (error.message && error.message.includes("Stripe")) {
+      errorMessage = `Stripe API error: ${error.message}`;
+    } else if (error.message && error.message.includes("Supabase")) {
+      errorMessage = `Database error: ${error.message}`;
+    } else if (error.message && error.message.includes("environment")) {
+      errorMessage = `Configuration error: ${error.message}`;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 400,
         headers: {
