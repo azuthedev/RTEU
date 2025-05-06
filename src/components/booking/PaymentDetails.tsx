@@ -98,9 +98,28 @@ const PaymentDetails = () => {
         const errorData = await response.json();
         console.error("Checkout session error response:", errorData);
         
-        // Log the error and provide a specific error message
-        let errorMessage = errorData.error || 'Failed to create checkout session';
-        throw new Error(errorMessage);
+        // Extract detailed error information
+        const { error: stripeError, requestId, code, type } = errorData;
+        
+        // Log the detailed error
+        console.error("Stripe checkout error details:", {
+          message: stripeError,
+          requestId,
+          code,
+          type,
+          status: response.status,
+          statusText: response.statusText
+        });
+        
+        // Throw an error with detailed information
+        throw new Error(JSON.stringify({
+          message: stripeError || 'Failed to create checkout session',
+          requestId,
+          code,
+          type,
+          status: response.status,
+          statusText: response.statusText
+        }));
       }
 
       const responseData = await response.json();
@@ -120,16 +139,58 @@ const PaymentDetails = () => {
       trackEvent('Payment', 'Payment Error', error.message, 0, true);
       
       // Provide more informative error messages to users
-      let errorMessage = error.message;
+      let errorMessage;
+      let debugDetails = '';
       
-      // Handle common error scenarios with user-friendly messages
-      if (error.message.includes("Stripe")) {
-        errorMessage = "There was a problem connecting to our payment provider. Please try again later or contact support.";
-      } else if (error.message.includes("network") || error.message.includes("fetch")) {
-        errorMessage = "Network error. Please check your internet connection and try again.";
+      try {
+        // Try to parse the error if it's in JSON format
+        const parsedError = JSON.parse(error.message);
+        
+        // Create user-friendly message based on error type
+        if (parsedError.type === 'api_connection_error') {
+          errorMessage = "Connection to the payment service failed. Please try again later.";
+        } else if (parsedError.type === 'api_error') {
+          errorMessage = "Our payment service is experiencing issues. Please try again later.";
+        } else if (parsedError.type === 'authentication_error') {
+          errorMessage = "Payment authentication failed. Please contact support.";
+        } else if (parsedError.type === 'card_error') {
+          errorMessage = "Your card was declined. Please try another payment method.";
+        } else if (parsedError.type === 'invalid_request_error') {
+          errorMessage = "Invalid payment request. Please try again.";
+        } else if (parsedError.type === 'rate_limit_error') {
+          errorMessage = "Too many requests. Please try again in a few minutes.";
+        } else {
+          errorMessage = parsedError.message || "An error occurred during payment processing.";
+        }
+        
+        // In development, create detailed debug info
+        if (import.meta.env.DEV) {
+          debugDetails = `\n\nDebug Info (DEV ONLY):
+          Type: ${parsedError.type || 'Unknown'}
+          Code: ${parsedError.code || 'N/A'}
+          Request ID: ${parsedError.requestId || 'N/A'}
+          Status: ${parsedError.status || 'N/A'}
+          Status Text: ${parsedError.statusText || 'N/A'}
+          Message: ${parsedError.message || 'No additional message'}`;
+        }
+      } catch (parseError) {
+        // If parsing fails, use the original error message
+        errorMessage = error.message;
+        
+        // Handle common error scenarios with user-friendly messages
+        if (error.message.includes("Stripe")) {
+          errorMessage = "There was a problem connecting to our payment provider. Please try again later or contact support.";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "Network error. Please check your internet connection and try again.";
+        }
+        
+        // Add raw error message in development
+        if (import.meta.env.DEV) {
+          debugDetails = `\n\nDebug Info (DEV ONLY):\nRaw Error: ${error.message}`;
+        }
       }
       
-      setError(`Payment Error: ${errorMessage}`);
+      setError(`Payment Error: ${errorMessage}${debugDetails}`);
       setIsProcessing(false);
     }
   };
@@ -208,8 +269,13 @@ const PaymentDetails = () => {
           const errorData = await response.json();
           console.error("Cash booking error response:", errorData);
           
+          // Extract detailed error information for debugging
+          const errorDetails = import.meta.env.DEV 
+            ? `\n\nDebug Info (DEV ONLY):\n${JSON.stringify(errorData, null, 2)}`
+            : '';
+          
           // Provide a specific error message
-          throw new Error(errorData.error || 'Failed to create booking');
+          throw new Error(`${errorData.error || 'Failed to create booking'}${errorDetails}`);
         }
         
         const responseData = await response.json();
