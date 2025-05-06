@@ -17,26 +17,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the Stripe secret key from environment variables
+    console.log("Starting checkout session creation process");
+    
+    // Get the Stripe secret key directly from environment variables
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     
     if (!stripeSecretKey) {
       console.error("Missing STRIPE_SECRET_KEY environment variable");
-      throw new Error("Stripe configuration error: Missing API key. Please contact support.");
+      throw new Error("Payment service configuration error: Missing API keys. Please contact support.");
     }
 
-    console.log("Initializing Stripe with specific API version: 2024-06-20");
+    console.log("Initializing Stripe with API version 2024-06-20");
 
-    // Initialize Stripe with specific API version
+    // Initialize Stripe with specific API version and increased timeout
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-06-20', // Explicitly set API version
+      apiVersion: '2024-06-20',
+      timeout: 30000, // Increase timeout to 30 seconds for slower connections
     });
 
     // Initialize Supabase client with service role key to bypass RLS
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    // Make sure we have the service role key to bypass RLS
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Missing Supabase environment variables");
       throw new Error("Database configuration error: Missing credentials. Please contact support.");
@@ -45,7 +47,17 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse the request body
-    const { booking_reference, trip, vehicle, customer, extras, amount, discountCode, payment_method } = await req.json();
+    const requestData = await req.json();
+    const { 
+      booking_reference, 
+      trip, 
+      vehicle, 
+      customer, 
+      extras, 
+      amount, 
+      discountCode, 
+      payment_method 
+    } = requestData;
 
     console.log("Request data received:", { 
       booking_reference, 
@@ -78,17 +90,9 @@ Deno.serve(async (req) => {
       throw new Error("Invalid email address format");
     }
 
-    console.log("Creating booking with data:", { 
-      booking_reference,
-      trip, 
-      vehicle: vehicle.name, 
-      customerEmail: customer.email,
-      amount,
-      is_round_trip: trip.type === 'round-trip',
-      payment_method: payment_method || 'card'
-    });
+    console.log("Creating booking with reference:", booking_reference);
 
-    // First, create/update the trip record in the database
+    // Create the trip record in the database
     const tripData = {
       user_id: customer.user_id || null,
       booking_reference: booking_reference,
@@ -153,6 +157,8 @@ Deno.serve(async (req) => {
     }
 
     // Only create a new record if it doesn't already exist
+    let tripId = existingBooking?.id;
+    
     if (!existingBooking) {
       try {
         const { data, error } = await supabase
@@ -165,7 +171,8 @@ Deno.serve(async (req) => {
           throw new Error(`Database error: ${error.message}`);
         }
         
-        console.log('Trip record created successfully');
+        console.log('Trip record created successfully with ID:', data[0]?.id);
+        tripId = data[0]?.id;
       } catch (error) {
         console.error('Failed to create trip record:', error);
         throw new Error(`Failed to create booking: ${error.message}`);
@@ -211,6 +218,7 @@ Deno.serve(async (req) => {
     // Prepare metadata
     const metadata = {
       booking_reference: booking_reference,
+      trip_id: tripId || '',
       trip_from: trip.from,
       trip_to: trip.to,
       trip_type: trip.type,
@@ -229,22 +237,11 @@ Deno.serve(async (req) => {
     if (extras && extras.length) metadata.extras = extras.join(",");
     if (discountCode) metadata.discount_code = discountCode;
 
-    // Create a Stripe checkout session with better error handling
+    // Create a Stripe checkout session
     try {
-      console.log("Calling stripe.checkout.sessions.create with API version 2024-06-20...");
+      console.log("Creating Stripe checkout session...");
       
-      // Test the Stripe connection first with a simple API call
-      try {
-        const balanceResult = await stripe.balance.retrieve();
-        console.log("Stripe connection test successful, available balance confirmed");
-      } catch (balanceError) {
-        console.error("Failed to retrieve Stripe balance:", balanceError);
-        throw new Error(`Stripe connection test failed: ${balanceError.message}`);
-      }
-      
-      // Add a small delay before creating checkout session to ensure API readiness
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // Create checkout session - direct approach without balance check
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -272,7 +269,11 @@ Deno.serve(async (req) => {
 
       // Return the session URL
       return new Response(
-        JSON.stringify({ sessionUrl: session.url }),
+        JSON.stringify({ 
+          sessionUrl: session.url,
+          sessionId: session.id,
+          bookingReference: booking_reference 
+        }),
         {
           status: 200,
           headers: {
@@ -288,44 +289,59 @@ Deno.serve(async (req) => {
         message: stripeError.message,
         param: stripeError.param,
         statusCode: stripeError.statusCode,
-        requestId: stripeError.requestId
+        requestId: stripeError.requestId,
+        raw: stripeError
       });
       
-      let errorMessage = "An error occurred with our payment processor";
+      // Try to extract the most helpful error message
+      let errorMessage = "An unexpected error occurred with our payment processor";
       
-      // Provide more specific error messages for common Stripe errors
-      if (stripeError.type === 'StripeAuthenticationError') {
-        errorMessage = "Authentication with payment processor failed. Please contact support.";
-      } else if (stripeError.type === 'StripeConnectionError') {
-        errorMessage = "Connection to payment processor failed. Please try again later.";
-      } else if (stripeError.type === 'StripeRateLimitError') {
-        errorMessage = "Too many payment requests. Please try again in a few minutes.";
+      // Format error based on type
+      if (stripeError.type) {
+        switch(stripeError.type) {
+          case 'StripeAuthenticationError':
+            errorMessage = "Authentication with payment service failed. Please contact support with error code: AUTH_ERR";
+            break;
+          case 'StripeAPIError':
+            errorMessage = "The payment service encountered an error. Please try again later.";
+            break;
+          case 'StripeConnectionError':
+            errorMessage = "Cannot connect to payment service. Please check your internet connection and try again.";
+            break;
+          case 'StripeRateLimitError':
+            errorMessage = "Too many payment attempts. Please try again in a few minutes.";
+            break;
+          case 'StripeInvalidRequestError':
+            errorMessage = `Invalid payment request: ${stripeError.message}`;
+            break;
+          case 'StripeCardError':
+            errorMessage = `Card error: ${stripeError.message}`;
+            break;
+          default:
+            errorMessage = stripeError.message || "Payment processing error. Please try again.";
+        }
       } else if (stripeError.message) {
         errorMessage = stripeError.message;
       }
       
-      // Add retry logic after connection errors
-      if (stripeError.type === 'StripeConnectionError') {
-        throw new Error(`Stripe connection error: ${errorMessage}. Please refresh the page and try again.`);
-      }
-      
-      throw new Error(`Stripe error: ${errorMessage}`);
+      throw new Error(`Payment service error: ${errorMessage}`);
     }
   } catch (error) {
     console.error("Error processing request:", error);
     
-    // Provide a more detailed error message to help diagnose the issue
-    let errorMessage = error.message;
-    if (error.message && error.message.includes("Stripe")) {
-      errorMessage = `Stripe API error: ${error.message}`;
-    } else if (error.message && error.message.includes("Supabase")) {
-      errorMessage = `Database error: ${error.message}`;
-    } else if (error.message && error.message.includes("environment")) {
-      errorMessage = `Configuration error: ${error.message}`;
-    }
+    // Construct a detailed error response
+    const errorResponse = {
+      error: error.message || "An unexpected error occurred",
+      details: {
+        timestamp: new Date().toISOString(),
+        errorType: error.type || "Unknown",
+        errorCode: error.code || "N/A",
+        requestId: error.requestId || "N/A"
+      }
+    };
     
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify(errorResponse),
       {
         status: 400,
         headers: {
