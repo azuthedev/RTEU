@@ -93,22 +93,38 @@ const PaymentDetails = () => {
         }
       );
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
+        console.error("Checkout session error response:", responseData);
+        throw new Error(responseData.error || 'Failed to create checkout session');
       }
 
-      const { sessionUrl } = await response.json();
+      if (!responseData.sessionUrl) {
+        console.error("Missing sessionUrl in response:", responseData);
+        throw new Error("Invalid response from payment service. Missing session URL.");
+      }
       
       // Track successful Stripe checkout creation
       trackEvent('Payment', 'Stripe Checkout Created', bookingReference, calculateTotal());
       
       // Redirect to Stripe Checkout
-      window.location.href = sessionUrl;
+      window.location.href = responseData.sessionUrl;
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
       trackEvent('Payment', 'Payment Error', error.message, 0, true);
-      setError(`Payment gateway error:\n\n${error.message}`);
+      
+      // Provide more informative error messages to users
+      let errorMessage = error.message;
+      
+      // Handle common error scenarios with user-friendly messages
+      if (error.message.includes("Stripe")) {
+        errorMessage = "There was a problem connecting to our payment provider. Please try again later or contact support.";
+      } else if (error.message.includes("network") || error.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      }
+      
+      setError(`Payment Error: ${errorMessage}`);
       setIsProcessing(false);
     }
   };
@@ -182,9 +198,11 @@ const PaymentDetails = () => {
           }
         );
         
+        const responseData = await response.json();
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create booking');
+          console.error("Cash booking error response:", responseData);
+          throw new Error(responseData.error || 'Failed to create booking');
         }
         
         // Update booking state
