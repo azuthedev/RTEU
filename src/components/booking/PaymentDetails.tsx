@@ -93,40 +93,37 @@ const PaymentDetails = () => {
         }
       );
 
+      // Get the full response data
+      const responseData = await response.json();
+
+      // Log entire response for debugging
+      console.log("Full checkout response:", responseData);
+
       if (!response.ok) {
-        // Read the error response
-        const errorData = await response.json();
-        console.error("Checkout session error response:", errorData);
+        // Extract detailed error information if available
+        const errorDetails = responseData.error ? responseData.error : 'Unknown error occurred';
+        const errorDetailsStr = typeof errorDetails === 'object' 
+          ? JSON.stringify(errorDetails) 
+          : errorDetails;
         
-        // Extract detailed error information
-        const { error: stripeError, requestId, code, type } = errorData;
-        
-        // Log the detailed error
-        console.error("Stripe checkout error details:", {
-          message: stripeError,
-          requestId,
-          code,
-          type,
+        console.error("Checkout session error response:", {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
+          error: errorDetailsStr,
+          details: responseData.details || {}
         });
         
-        // Throw an error with detailed information
+        // Throw an informative error
         throw new Error(JSON.stringify({
-          message: stripeError || 'Failed to create checkout session',
-          requestId,
-          code,
-          type,
+          message: errorDetails,
           status: response.status,
           statusText: response.statusText
         }));
       }
 
-      const responseData = await response.json();
-
       if (!responseData.sessionUrl) {
         console.error("Missing sessionUrl in response:", responseData);
-        throw new Error("Invalid response from payment service. Missing session URL.");
+        throw new Error("Invalid response from payment service. Missing checkout URL.");
       }
       
       // Track successful Stripe checkout creation
@@ -146,28 +143,23 @@ const PaymentDetails = () => {
         // Try to parse the error if it's in JSON format
         const parsedError = JSON.parse(error.message);
         
-        // Create user-friendly message based on error type
-        if (parsedError.type === 'api_connection_error') {
-          errorMessage = "Connection to the payment service failed. Please try again later.";
-        } else if (parsedError.type === 'api_error') {
+        // Create user-friendly message based on error type or status
+        if (parsedError.status === 401 || parsedError.status === 403) {
+          errorMessage = "Authentication failed. Please try logging in again.";
+        } else if (parsedError.status >= 500) {
           errorMessage = "Our payment service is experiencing issues. Please try again later.";
-        } else if (parsedError.type === 'authentication_error') {
-          errorMessage = "Payment authentication failed. Please contact support.";
-        } else if (parsedError.type === 'card_error') {
-          errorMessage = "Your card was declined. Please try another payment method.";
-        } else if (parsedError.type === 'invalid_request_error') {
-          errorMessage = "Invalid payment request. Please try again.";
-        } else if (parsedError.type === 'rate_limit_error') {
-          errorMessage = "Too many requests. Please try again in a few minutes.";
+        } else if (parsedError.message && typeof parsedError.message === 'string') {
+          // Use the error message directly if it exists and is a string
+          errorMessage = parsedError.message;
         } else {
-          errorMessage = parsedError.message || "An error occurred during payment processing.";
+          errorMessage = "An error occurred during payment processing.";
         }
         
         // In development, create detailed debug info
         if (import.meta.env.DEV) {
           debugDetails = `\n\nDebug Info (DEV ONLY):
-          Type: ${parsedError.type || 'Unknown'}
-          Code: ${parsedError.code || 'N/A'}
+          Type: ${parsedError.errorType || 'Unknown'}
+          Code: ${parsedError.errorCode || 'N/A'}
           Request ID: ${parsedError.requestId || 'N/A'}
           Status: ${parsedError.status || 'N/A'}
           Status Text: ${parsedError.statusText || 'N/A'}
@@ -179,7 +171,7 @@ const PaymentDetails = () => {
         
         // Handle common error scenarios with user-friendly messages
         if (error.message.includes("Stripe")) {
-          errorMessage = "There was a problem connecting to our payment provider. Please try again later or contact support.";
+          errorMessage = "There was a problem with our payment provider. Please try again later or contact support.";
         } else if (error.message.includes("network") || error.message.includes("fetch")) {
           errorMessage = "Network error. Please check your internet connection and try again.";
         }
