@@ -21,7 +21,8 @@ Deno.serve(async (req) => {
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     
     if (!stripeSecretKey) {
-      throw new Error("Stripe secret key is missing from environment variables.");
+      console.error("Missing STRIPE_SECRET_KEY environment variable");
+      throw new Error("Stripe configuration error: Missing API key. Please contact support.");
     }
 
     console.log("Initializing Stripe with latest API version");
@@ -35,7 +36,8 @@ Deno.serve(async (req) => {
 
     // Make sure we have the service role key to bypass RLS
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing Supabase environment variables");
+      console.error("Missing Supabase environment variables");
+      throw new Error("Database configuration error: Missing credentials. Please contact support.");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -184,7 +186,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For card payments, create a Stripe checkout session
+    // Ensure amount is a valid number and convert to cents for Stripe
+    const amountInCents = Math.round(parseFloat(amount) * 100);
+    if (isNaN(amountInCents) || amountInCents <= 0) {
+      throw new Error(`Invalid amount: ${amount}. Amount must be a positive number.`);
+    }
+
+    console.log(`Creating Stripe checkout session for amount: ${amount} EUR (${amountInCents} cents)`);
+
     // Prepare trip description
     let tripDescription = `${trip.from} to ${trip.to}`;
     let tripTypeDesc = trip.type === "round-trip" ? "Round trip" : "One way";
@@ -196,14 +205,6 @@ Deno.serve(async (req) => {
     } else {
       tripDescription += ` (${new Date(trip.date).toLocaleDateString()})`;
     }
-
-    // Ensure amount is a valid number and convert to cents for Stripe
-    const amountInCents = Math.round(parseFloat(amount) * 100);
-    if (isNaN(amountInCents) || amountInCents <= 0) {
-      throw new Error(`Invalid amount: ${amount}. Amount must be a positive number.`);
-    }
-
-    console.log(`Creating Stripe checkout session for amount: ${amount} EUR (${amountInCents} cents)`);
 
     // Prepare metadata
     const metadata = {
@@ -229,6 +230,11 @@ Deno.serve(async (req) => {
     // Create a Stripe checkout session with better error handling
     try {
       console.log("Calling stripe.checkout.sessions.create...");
+      
+      // Test the Stripe connection first with a simple API call
+      await stripe.balance.retrieve();
+      console.log("Stripe connection test successful");
+      
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -265,7 +271,7 @@ Deno.serve(async (req) => {
           },
         }
       );
-    } catch (stripeError: any) {
+    } catch (stripeError) {
       console.error("Stripe API error:", {
         type: stripeError.type,
         code: stripeError.code,
@@ -290,7 +296,7 @@ Deno.serve(async (req) => {
       
       throw new Error(`Stripe error: ${errorMessage}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error processing request:", error);
     
     // Provide a more detailed error message to help diagnose the issue
