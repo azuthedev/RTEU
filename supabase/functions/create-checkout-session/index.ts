@@ -25,10 +25,12 @@ Deno.serve(async (req) => {
       throw new Error("Stripe configuration error: Missing API key. Please contact support.");
     }
 
-    console.log("Initializing Stripe with latest API version");
+    console.log("Initializing Stripe with specific API version: 2024-06-20");
 
-    // Initialize Stripe without specifying API version to use the latest
-    const stripe = new Stripe(stripeSecretKey);
+    // Initialize Stripe with specific API version
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2024-06-20', // Explicitly set API version
+    });
 
     // Initialize Supabase client with service role key to bypass RLS
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -229,11 +231,19 @@ Deno.serve(async (req) => {
 
     // Create a Stripe checkout session with better error handling
     try {
-      console.log("Calling stripe.checkout.sessions.create...");
+      console.log("Calling stripe.checkout.sessions.create with API version 2024-06-20...");
       
       // Test the Stripe connection first with a simple API call
-      await stripe.balance.retrieve();
-      console.log("Stripe connection test successful");
+      try {
+        const balanceResult = await stripe.balance.retrieve();
+        console.log("Stripe connection test successful, available balance confirmed");
+      } catch (balanceError) {
+        console.error("Failed to retrieve Stripe balance:", balanceError);
+        throw new Error(`Stripe connection test failed: ${balanceError.message}`);
+      }
+      
+      // Add a small delay before creating checkout session to ensure API readiness
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -292,6 +302,11 @@ Deno.serve(async (req) => {
         errorMessage = "Too many payment requests. Please try again in a few minutes.";
       } else if (stripeError.message) {
         errorMessage = stripeError.message;
+      }
+      
+      // Add retry logic after connection errors
+      if (stripeError.type === 'StripeConnectionError') {
+        throw new Error(`Stripe connection error: ${errorMessage}. Please refresh the page and try again.`);
       }
       
       throw new Error(`Stripe error: ${errorMessage}`);
