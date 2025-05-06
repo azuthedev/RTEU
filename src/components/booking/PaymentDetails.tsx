@@ -115,7 +115,7 @@ const PaymentDetails = () => {
       
       // Redirect to Stripe Checkout
       window.location.href = responseData.sessionUrl;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating checkout session:', error);
       trackEvent('Payment', 'Payment Error', error.message, 0, true);
       
@@ -230,7 +230,7 @@ const PaymentDetails = () => {
         
         // Navigate to success page for cash payment using React Router
         navigate(`/booking-success?reference=${bookingReference}`, { replace: true });
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error processing cash booking:', error);
         trackEvent('Booking', 'Cash Booking Error', error.message, 0, true);
         setError(`Failed to create booking: ${error.message}`);
