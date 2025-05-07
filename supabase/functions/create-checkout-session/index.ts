@@ -27,11 +27,11 @@ Deno.serve(async (req) => {
       throw new Error("Payment service configuration error: Missing API keys. Please contact support.");
     }
 
-    console.log("Initializing Stripe with API version 2024-06-20");
+    console.log("Initializing Stripe with current API version");
 
-    // Initialize Stripe with specific API version and increased timeout
+    // Initialize Stripe with a current API version instead of a future date
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-06-20',
+      apiVersion: '2023-10-16', // Using a current API version that Stripe supports
       timeout: 30000, // Increase timeout to 30 seconds for slower connections
     });
 
@@ -241,6 +241,16 @@ Deno.serve(async (req) => {
     try {
       console.log("Creating Stripe checkout session...");
       
+      // Test the Stripe connection with a simple API call first
+      try {
+        // Try a simple balance retrieval to test connectivity
+        await stripe.balance.retrieve();
+        console.log("Stripe connection test successful");
+      } catch (connError) {
+        console.error("Stripe connection test failed:", connError);
+        throw new Error("Cannot connect to Stripe API. Please verify network and API key configuration.");
+      }
+      
       // Create checkout session - direct approach without balance check
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -290,7 +300,7 @@ Deno.serve(async (req) => {
         param: stripeError.param,
         statusCode: stripeError.statusCode,
         requestId: stripeError.requestId,
-        raw: stripeError
+        raw: JSON.stringify(stripeError)
       });
       
       // Try to extract the most helpful error message
