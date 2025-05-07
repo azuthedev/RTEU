@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
@@ -48,7 +48,7 @@ const VehicleSelection = () => {
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  const carouselRef = React.useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
   const itemsPerView = isMobile ? 1 : 3;
 
@@ -125,16 +125,7 @@ const VehicleSelection = () => {
     }
   };
 
-  const handleNext = () => {
-    // Update selected vehicle in context
-    setBookingState(prev => ({
-      ...prev,
-      step: 2,
-      selectedVehicle
-    }));
-  };
-
-  // Handle snap scrolling on touch end
+  // Handle touch end for snap scrolling on mobile
   const handleTouchEnd = () => {
     if (!carouselRef.current) return;
     
@@ -146,6 +137,15 @@ const VehicleSelection = () => {
     const cardIndex = Math.round(scrollLeft / (cardWidth + gap));
     setCurrentIndex(cardIndex);
     scrollToIndex(cardIndex);
+  };
+
+  const handleNext = () => {
+    // Update selected vehicle in context
+    setBookingState(prev => ({
+      ...prev,
+      step: 2,
+      selectedVehicle
+    }));
   };
 
   // Calculate active vehicles
