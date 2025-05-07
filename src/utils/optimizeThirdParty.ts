@@ -9,6 +9,8 @@ let googleMapsLoaded = false;
 let googleMapsPromise: Promise<boolean> | null = null;
 let googleMapsInitialized = false;
 let loadInitiated = false;
+let retryCount = 0;
+const MAX_RETRIES = 3;
 
 /**
  * Initializes Google Maps API with proper promise-based tracking
@@ -45,6 +47,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
       googleMapsLoaded = true;
       googleMapsLoading = false;
       googleMapsInitialized = true;
+      retryCount = 0; // Reset retry count on success
       resolve(true);
       delete window[callbackName];
     };
@@ -60,11 +63,40 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     // Handle loading errors
     script.onerror = () => {
       console.error('Failed to load Google Maps API');
-      googleMapsLoading = false;
-      googleMapsLoaded = false;
-      googleMapsPromise = null;
-      loadInitiated = false; // Allow retry on error
-      resolve(false);
+      
+      // Remove the script element that failed
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      
+      // Check if we should retry
+      if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        console.log(`Retrying Google Maps API load (attempt ${retryCount}/${MAX_RETRIES})...`);
+        googleMapsLoading = false;
+        loadInitiated = false;
+        
+        // Retry with exponential backoff
+        setTimeout(() => {
+          initGoogleMaps(apiKey, libraries)
+            .then(resolve)
+            .catch(() => {
+              googleMapsLoading = false;
+              googleMapsLoaded = false;
+              googleMapsPromise = null;
+              loadInitiated = false;
+              resolve(false);
+            });
+        }, Math.pow(2, retryCount) * 1000); // 2s, 4s, 8s backoff
+      } else {
+        // Give up after max retries
+        console.error(`Failed to load Google Maps API after ${MAX_RETRIES} attempts`);
+        googleMapsLoading = false;
+        googleMapsLoaded = false;
+        googleMapsPromise = null;
+        loadInitiated = false;
+        resolve(false);
+      }
     };
     
     document.head.appendChild(script);
@@ -73,10 +105,37 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     setTimeout(() => {
       if (!googleMapsLoaded) {
         console.warn('Google Maps API loading timed out');
-        googleMapsLoading = false;
-        googleMapsPromise = null;
-        loadInitiated = false; // Allow retry after timeout
-        resolve(false);
+        
+        // Remove the script element that timed out
+        const scriptElement = document.getElementById('google-maps-script');
+        if (scriptElement && scriptElement.parentNode) {
+          scriptElement.parentNode.removeChild(scriptElement);
+        }
+        
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(`Retrying Google Maps API load after timeout (attempt ${retryCount}/${MAX_RETRIES})...`);
+          googleMapsLoading = false;
+          loadInitiated = false;
+          
+          // Retry with exponential backoff
+          setTimeout(() => {
+            initGoogleMaps(apiKey, libraries)
+              .then(resolve)
+              .catch(() => {
+                googleMapsLoading = false;
+                googleMapsLoaded = false;
+                googleMapsPromise = null;
+                loadInitiated = false;
+                resolve(false);
+              });
+          }, Math.pow(2, retryCount) * 1000);
+        } else {
+          googleMapsLoading = false;
+          googleMapsPromise = null;
+          loadInitiated = false;
+          resolve(false);
+        }
       }
     }, 15000);
   });

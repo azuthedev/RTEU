@@ -39,17 +39,6 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       }`}
       whileHover={{ y: -5 }}
     >
-      {/* Selected Badge */}
-      <div 
-        className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium transition-opacity duration-300 ${
-          isSelected 
-            ? 'opacity-100 bg-green-100 text-green-800' 
-            : 'opacity-0'
-        }`}
-      >
-        Selected
-      </div>
-
       {/* Vehicle Image */}
       <div className="relative aspect-[16/9] mb-4 flex items-center justify-center">
         <img

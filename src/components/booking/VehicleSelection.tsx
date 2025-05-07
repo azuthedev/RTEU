@@ -134,6 +134,20 @@ const VehicleSelection = () => {
     }));
   };
 
+  // Handle snap scrolling on touch end
+  const handleTouchEnd = () => {
+    if (!carouselRef.current) return;
+    
+    const scrollLeft = carouselRef.current.scrollLeft;
+    const cardWidth = carouselRef.current.querySelector('.vehicle-card')?.clientWidth || 0;
+    const gap = 16; // Equal to gap-4 class
+    
+    // Calculate the closest card index to snap to
+    const cardIndex = Math.round(scrollLeft / (cardWidth + gap));
+    setCurrentIndex(cardIndex);
+    scrollToIndex(cardIndex);
+  };
+
   // Calculate active vehicles
   const activeVehicles = categorizedVehicles[activeCategory] || [];
   const canScrollLeft = currentIndex > 0;
@@ -200,17 +214,30 @@ const VehicleSelection = () => {
         </div>
         
         {/* Vehicles Carousel */}
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden px-2">
           <div 
             ref={carouselRef}
-            className="flex space-x-4 overflow-x-auto snap-x scrollbar-hide pb-4"
+            className="flex space-x-4 overflow-x-auto snap-x scroll-smooth scrollbar-hide pb-6 px-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onTouchEnd={handleTouchEnd}
+            onScroll={() => {
+              // Update current index based on scroll position for better UX
+              if (carouselRef.current) {
+                const scrollLeft = carouselRef.current.scrollLeft;
+                const cardWidth = carouselRef.current.querySelector('.vehicle-card')?.clientWidth || 0;
+                const gap = 16; // Equal to gap-4 class
+                const approxIndex = Math.round(scrollLeft / (cardWidth + gap));
+                if (approxIndex !== currentIndex) {
+                  setCurrentIndex(approxIndex);
+                }
+              }
+            }}
           >
             {activeVehicles.length > 0 ? (
               activeVehicles.map((vehicle) => (
                 <div 
                   key={vehicle.id} 
-                  className="vehicle-card flex-shrink-0 w-full md:w-[calc(33.333%-16px)] snap-center"
+                  className="vehicle-card flex-shrink-0 w-full md:w-[calc(33.333%-16px)] snap-center p-2"
                 >
                   <VehicleCard
                     {...vehicle}
