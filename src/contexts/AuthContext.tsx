@@ -121,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         
         if (!userData || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
           const userData = await fetchUserData(currentSession.user.id);
+          
           if (userData?.user_role) {
             // Track user role
             trackEvent('Authentication', 'User Role', userData.user_role);
@@ -338,19 +339,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       // Track sign out in GA
       trackEvent('Authentication', 'Sign Out Initiated');
       
-      // Clear all auth state before making the signOut request
+      // First, sign out from Supabase to clear tokens
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.warn('Error during Supabase sign out:', error);
+      }
+      
+      // Clear all local state
       setSession(null);
       setUser(null);
       setUserData(null);
       
       // Clear user ID in GA
       setUserId('');
-
-      // Now attempt to sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.warn('Error during Supabase sign out:', error);
-      }
+      
+      // Force navigation to home page and trigger a reload
+      // This ensures all components get fresh state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
