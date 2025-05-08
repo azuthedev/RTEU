@@ -140,29 +140,31 @@ const Services = () => {
             </div>
           </div>
 
-          {/* Taxi Services */}
+          {/* Private Transfers On-Demand (Updated from Taxi Services) */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-12">
             <div className="flex items-center justify-center mb-4">
               <Car className="w-8 h-8 text-blue-600 mr-3" />
-              <h2 className="text-2xl md:text-3xl font-bold">Taxi Services On-Demand</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">Private Transfers On-Demand</h2>
             </div>
             <p className="text-gray-600 mb-6 text-center">
-              Need a taxi right away or later today? Royal Transfer EU taxis are always available to get 
-              you safely where you need to go. Quick, safe, and comfortable rides—ready for you when you 
-              need them most.
+              Need to get from A to B with comfort and reliability? Our private transfer service is designed for travelers who value punctuality, peace of mind, and quality vehicles. Book your ride in advance and let us handle the rest.
             </p>
             <ul className="space-y-3 mb-8 max-w-lg mx-auto">
               <li className="flex items-center">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
-                <span>Pre-book or instant booking</span>
+                <span>Point-to-point private transfers</span>
               </li>
               <li className="flex items-center">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
-                <span>Drivers who know the best routes</span>
+                <span>Qualified, professional drivers</span>
               </li>
               <li className="flex items-center">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
-                <span>Choose fixed fare or metered trips</span>
+                <span>Pre-booking required — minimum 4 hours in advance</span>
+              </li>
+              <li className="flex items-center">
+                <CheckCircle2 className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
+                <span>Clean, premium vehicles only</span>
               </li>
             </ul>
             <div className="text-center">
@@ -170,7 +172,7 @@ const Services = () => {
                 onClick={handleCTAClick}
                 className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-all duration-300 flex items-center mx-auto"
               >
-                Reserve Your Taxi
+                Book Your Private Transfer
                 <ArrowRight className="w-5 h-5 ml-2" />
               </button>
             </div>
