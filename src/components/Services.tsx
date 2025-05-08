@@ -10,8 +10,8 @@ const Services = () => {
     },
     {
       icon: Car,
-      title: 'Taxi Services',
-      description: 'Professional, courteous drivers ready when and where you need them.'
+      title: 'Private Transfers',
+      description: 'Professional, pre-booked transfers with qualified drivers and premium vehicles.'
     },
     {
       icon: Bus,
