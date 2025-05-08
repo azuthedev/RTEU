@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
@@ -48,7 +48,7 @@ const VehicleSelection = () => {
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselRef = React.useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
   const itemsPerView = isMobile ? 1 : 3;
 
@@ -125,7 +125,16 @@ const VehicleSelection = () => {
     }
   };
 
-  // Handle touch end for snap scrolling on mobile
+  const handleNext = () => {
+    // Update selected vehicle in context
+    setBookingState(prev => ({
+      ...prev,
+      step: 2,
+      selectedVehicle
+    }));
+  };
+
+  // Handle snap scrolling on touch end
   const handleTouchEnd = () => {
     if (!carouselRef.current) return;
     
@@ -137,15 +146,6 @@ const VehicleSelection = () => {
     const cardIndex = Math.round(scrollLeft / (cardWidth + gap));
     setCurrentIndex(cardIndex);
     scrollToIndex(cardIndex);
-  };
-
-  const handleNext = () => {
-    // Update selected vehicle in context
-    setBookingState(prev => ({
-      ...prev,
-      step: 2,
-      selectedVehicle
-    }));
   };
 
   // Calculate active vehicles
@@ -214,11 +214,15 @@ const VehicleSelection = () => {
         </div>
         
         {/* Vehicles Carousel */}
-        <div className="relative overflow-hidden px-2">
+        <div className="relative overflow-hidden p-2">
           <div 
             ref={carouselRef}
-            className="flex space-x-4 overflow-x-auto snap-x scroll-smooth scrollbar-hide pb-6 px-2"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex space-x-4 overflow-x-auto snap-x scroll-smooth scrollbar-hide pb-6"
+            style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none',
+              scrollSnapType: 'x mandatory' 
+            }}
             onTouchEnd={handleTouchEnd}
             onScroll={() => {
               // Update current index based on scroll position for better UX
@@ -238,6 +242,7 @@ const VehicleSelection = () => {
                 <div 
                   key={vehicle.id} 
                   className="vehicle-card flex-shrink-0 w-full md:w-[calc(33.333%-16px)] snap-center p-2"
+                  style={{ scrollSnapAlign: 'center' }}
                 >
                   <VehicleCard
                     {...vehicle}

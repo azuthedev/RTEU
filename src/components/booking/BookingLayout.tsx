@@ -310,7 +310,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
                 <button
                   onClick={handleNext}
                   disabled={isModalActive && isFloating === false}
-                  className="bg-black text-white text-[13px] md:text-sm px-4 md:px-6 py-2.5 rounded-full hover:bg-gray-800 transition-all duration-300"
+                  className="bg-blue-600 text-white text-[13px] md:text-sm px-4 md:px-6 py-2.5 rounded-full hover:bg-blue-700 transition-all duration-300"
                 >
                   {nextButtonText}
                 </button>

@@ -41,7 +41,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep }) => {
         {/* Animated Progress Fill */}
         <motion.div
           ref={progressBarRef}
-          className="h-full bg-gradient-to-r from-gray-600 to-black relative"
+          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 relative"
           initial={{ width: `${initialWidth}%` }}
           animate={{ 
             width: `${getProgressPercentage(currentStep)}%` 
@@ -87,12 +87,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep }) => {
               {/* Step Circle */}
               <motion.div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${
-                  isActive ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'
+                  isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                 }`}
                 animate={{ 
                   scale: isCurrent ? [1, 1.1, 1] : 1,
                   boxShadow: isCurrent 
-                    ? ['0 0 0 0 rgba(0, 0, 0, 0)', '0 0 0 10px rgba(0, 0, 0, 0.1)', '0 0 0 0 rgba(0, 0, 0, 0)']
+                    ? ['0 0 0 0 rgba(37, 99, 235, 0)', '0 0 0 10px rgba(37, 99, 235, 0.1)', '0 0 0 0 rgba(37, 99, 235, 0)']
                     : 'none'
                 }}
                 transition={{

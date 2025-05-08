@@ -152,7 +152,7 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
                 className={`w-full sm:w-auto px-6 py-2 rounded-md transition-colors flex items-center justify-center ${
                   isSelected
                     ? 'bg-gray-100 text-gray-600'
-                    : 'bg-black text-white hover:bg-gray-800'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
                 <Check className="w-5 h-5 mr-2" />

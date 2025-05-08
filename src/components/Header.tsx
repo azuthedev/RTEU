@@ -168,7 +168,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Home')}
             >
               Home
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/about" 
@@ -176,7 +176,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'About Us')}
             >
               About Us
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/services" 
@@ -184,7 +184,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Services')}
             >
               Services
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/blogs/destinations" 
@@ -192,7 +192,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Destinations')}
             >
               Destinations
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/faq" 
@@ -200,7 +200,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'FAQs')}
             >
               FAQs
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/partners" 
@@ -208,7 +208,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Partners')}
             >
               Partners
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/contact" 
@@ -216,7 +216,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Contact')}
             >
               Contact
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-black group-hover:w-full group-active:bg-gray-900 transition-all duration-300 -translate-x-1/2"></span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
           </nav>
 
@@ -224,7 +224,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             {!hideSignIn && (
               loading ? (
                 <div className="w-10 h-10 flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 text-black animate-spin" aria-hidden="true" />
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" aria-hidden="true" />
                 </div>
               ) : user ? (
                 <div className="relative">
@@ -314,7 +314,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               ) : (
                 <a 
                   href="/login"
-                  className="hidden md:inline-flex border border-black text-black px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-gray-50 transition-all duration-300 box-border"
+                  className="hidden md:inline-flex border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 box-border"
                   onClick={() => trackEvent('Navigation', 'Sign In Click', 'Header')}
                 >
                   Sign In
@@ -323,7 +323,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             )}
             <button 
               onClick={handleCTAClick}
-              className="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-all duration-300"
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300"
             >
               Book Now
             </button>
@@ -397,7 +397,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           }}
                         >
                           <span>{link.label}</span>
-                          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                         </a>
                       </div>
                     ))}
@@ -416,7 +416,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                               }}
                             >
                               <span>Admin Portal</span>
-                              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                             </a>
                           </div>
                         )}
@@ -432,7 +432,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                               }}
                             >
                               <span>Partner Portal</span>
-                              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                             </a>
                           </div>
                         )}
@@ -446,7 +446,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                             }}
                           >
                             <span>Your Profile</span>
-                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                           </a>
                         </div>
                         <div className="flex">
@@ -459,7 +459,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                             }}
                           >
                             <span>Your Bookings</span>
-                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                           </a>
                         </div>
                       </>
@@ -471,12 +471,12 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   {!hideSignIn && (
                     loading ? (
                       <div className="flex justify-center">
-                        <Loader2 className="w-5 h-5 text-black animate-spin" aria-hidden="true" />
+                        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" aria-hidden="true" />
                       </div>
                     ) : user ? (
                       <button
                         onClick={handleLogout}
-                        className="block w-full border border-black text-black px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-gray-50 transition-all duration-300 text-center box-border"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border"
                       >
                         Sign Out
                       </button>
@@ -487,7 +487,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           setIsMenuOpen(false);
                           trackEvent('Navigation', 'Mobile Menu Click', 'Sign In');
                         }}
-                        className="block w-full border border-black text-black px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-gray-50 transition-all duration-300 text-center box-border"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border"
                       >
                         Sign In
                       </a>
@@ -495,7 +495,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   )}
                   <button 
                     onClick={handleCTAClick}
-                    className="w-full bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-all duration-300"
+                    className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300"
                   >
                     Book Now
                   </button>

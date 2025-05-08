@@ -360,7 +360,7 @@ const PaymentDetails = () => {
                   name="payment"
                   checked={paymentMethod === 'card'}
                   onChange={() => setPaymentMethod('card')}
-                  className="h-5 w-5 text-black"
+                  className="h-5 w-5 text-blue-600"
                 />
                 <CreditCard className="w-6 h-6 text-gray-500" aria-hidden="true" />
                 <div>
@@ -379,7 +379,7 @@ const PaymentDetails = () => {
                   name="payment"
                   checked={paymentMethod === 'cash'}
                   onChange={() => setPaymentMethod('cash')}
-                  className="h-5 w-5 text-black"
+                  className="h-5 w-5 text-blue-600"
                 />
                 <Banknote className="w-6 h-6 text-gray-500" aria-hidden="true" />
                 <div>
@@ -419,11 +419,11 @@ const PaymentDetails = () => {
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
                     placeholder="Enter code"
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                     aria-label="Discount code"
                   />
                   <button
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     onClick={() => {
                       trackEvent('Payment', 'Apply Discount', discountCode);
                     }}

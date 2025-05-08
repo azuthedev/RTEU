@@ -35,7 +35,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className={`bg-white rounded-xl shadow-lg p-6 relative h-full flex flex-col ${
-        isSelected ? 'ring-2 ring-black' : ''
+        isSelected ? 'ring-2 ring-blue-600' : ''
       }`}
       whileHover={{ y: -5 }}
     >
@@ -54,7 +54,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
           <h3 className="text-xl font-bold">{name}</h3>
           <button
             onClick={onLearnMore}
-            className="flex items-center text-gray-500 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-lg group"
+            className="flex items-center text-gray-500 hover:text-blue-600 transition-colors p-2 hover:bg-gray-100 rounded-lg group"
             aria-label={`Learn more about ${name}`}
           >
             <Info className="w-5 h-5" />
@@ -109,7 +109,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
           className={`px-6 py-2 rounded-lg transition-colors ${
             isSelected
               ? 'bg-green-100 text-green-800 border border-green-200'
-              : 'bg-black text-white hover:bg-gray-800'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
           aria-pressed={isSelected}
         >
