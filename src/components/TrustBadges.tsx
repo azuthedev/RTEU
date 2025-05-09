@@ -8,7 +8,7 @@ const TrustBadges = () => {
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-2xl mb-8 text-center">
+          <h2 className="text-2xl mb-8 text-center font-serif">
             Trusted by Travelers Worldwide
           </h2>
           <div className="grid grid-cols-3 gap-4 md:gap-8 mb-12">
@@ -41,6 +41,8 @@ const TrustBadges = () => {
                   className="h-full w-auto object-contain"
                   width={115}
                   height={65}
+                  loading="eager"
+                  fetchPriority="high"
                 />
               </div>
               <div className="flex items-center mb-2">
@@ -89,6 +91,8 @@ const TrustBadges = () => {
                     className="h-6 md:h-8 w-auto"
                     width={100}
                     height={30}
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
                 <div className="flex justify-center">
@@ -98,6 +102,8 @@ const TrustBadges = () => {
                     className="h-6 md:h-8 w-auto"
                     width={70}
                     height={67}
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
                 <div className="flex justify-center">
@@ -107,6 +113,8 @@ const TrustBadges = () => {
                     className="h-6 md:h-8 w-auto"
                     width={100}
                     height={46}
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
                 <div className="flex justify-center">
@@ -116,6 +124,8 @@ const TrustBadges = () => {
                     className="h-6 md:h-8 w-auto"
                     width={80}
                     height={78}
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
                 <div className="flex justify-center">
@@ -125,7 +135,8 @@ const TrustBadges = () => {
                     className="h-12 md:h-12 w-auto md:w-12"
                     width={100}
                     height={100}
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
                 <div className="flex justify-center">
@@ -135,7 +146,8 @@ const TrustBadges = () => {
                     className="h-6 md:h-10 w-auto"
                     width={100}
                     height={40}
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
               </div>
