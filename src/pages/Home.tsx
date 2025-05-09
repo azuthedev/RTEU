@@ -91,10 +91,7 @@ function Home() {
       </Helmet>
       <Header />
       <Hero />
-      
-      {/* TrustBadges loaded immediately after Hero without lazy loading */}
-      <TrustBadges />
-      
+       
       <LazyComponent height={400}>
         <Benefits />
       </LazyComponent>
@@ -102,6 +99,8 @@ function Home() {
       <LazyComponent height={500}>
         <FeaturedDestinations />
       </LazyComponent>
+
+      <TrustBadges />
       
       <LazyComponent height={400}>
         <Services />
