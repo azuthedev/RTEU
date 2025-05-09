@@ -50,7 +50,7 @@ const Sitemap = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4">
           {/* Quick Links - Mobile: Custom order and alignment, Desktop: Original layout */}
           <div className="flex flex-col md:col-span-4">
-            <h3 className="text-lg font-semibold ml-4 mb-4 md:text-center md:ml-[50px] text-center">Quick Links</h3>
+            <h3 className="text-lg ml-4 mb-4 md:text-center md:ml-[50px] text-center">Quick Links</h3>
             <div className="flex md:hidden">
               <div className="w-1/2 pl-4">
                 <div className="space-y-2 text-left">
@@ -84,7 +84,7 @@ const Sitemap = () => {
 
           {/* Contact Information - Center aligned on mobile */}
           <div className="flex flex-col col-span-2 md:col-span-4 order-last md:order-none">
-            <h3 className="text-lg font-semibold mb-4 text-center">Contact Information</h3>
+            <h3 className="text-lg mb-4 text-center">Contact Information</h3>
             <ul className="space-y-4 max-w-[250px] mx-auto md:max-w-none">
               <li className="flex items-start md:justify-center">
                 <MapPin className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" aria-hidden="true" />
@@ -128,7 +128,7 @@ const Sitemap = () => {
 
           {/* Get Help - Original layout preserved */}
           <div className="flex flex-col md:col-span-4 md:pl-32">
-            <h3 className="text-lg font-semibold mb-4">Get Help</h3>
+            <h3 className="text-lg mb-4">Get Help</h3>
             <ul className="space-y-2">
               <li><a href="/booking-support" className="text-gray-600 hover:text-blue-600">Booking Support</a></li>
               <li><a href="/payment-info" className="text-gray-600 hover:text-blue-600">Payment Information</a></li>
