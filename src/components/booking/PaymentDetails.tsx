@@ -339,7 +339,7 @@ const PaymentDetails = () => {
       preventScrollOnNext={true}
     >
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Payment Details</h1>
+        <h1 className="text-3xl mb-8">Payment Details</h1>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
@@ -350,7 +350,7 @@ const PaymentDetails = () => {
 
         {/* Payment Method Selection */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Choose Payment Method</h2>
+          <h2 className="text-xl mb-4">Choose Payment Method</h2>
           
           <div className="space-y-4">
             <label className="block p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
@@ -439,7 +439,7 @@ const PaymentDetails = () => {
         {/* Price Breakdown */}
         <section className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Price Details</h2>
+            <h2 className="text-xl">Price Details</h2>
             <button
               onClick={() => setShowPriceDetails(!showPriceDetails)}
               className="text-black hover:text-gray-700 flex items-center"
