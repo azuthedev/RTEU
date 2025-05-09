@@ -3,13 +3,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCookie, setCookie } from '../utils/cookieUtils';
 import { useAnalytics } from '../hooks/useAnalytics';
-
-type ConsentPreferences = {
-  necessary: boolean; // Always true, can't be toggled
-  analytics: boolean;
-  marketing: boolean;
-  preferences: boolean;
-};
+import { ConsentPreferences } from './ui/CookieBanner';
 
 interface CookieSettingsProps {
   isOpen: boolean;

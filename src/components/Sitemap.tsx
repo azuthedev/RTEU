@@ -1,11 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, Facebook, Instagram, MessageCircle, Settings } from 'lucide-react';
 import CookieSettings from './CookieSettings';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { getCookie } from '../utils/cookieUtils';
 
 const Sitemap = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const { trackEvent } = useAnalytics();
+
+  // Check for cookie consent on mount to update UI if needed
+  useEffect(() => {
+    const checkCookieConsent = () => {
+      const consentCookie = getCookie('royal_transfer_cookie_consent');
+      if (consentCookie) {
+        try {
+          // We could use this to update any UI elements that should change based on consent
+          // const consent = JSON.parse(consentCookie);
+          // console.log('Current cookie consent:', consent);
+        } catch (error) {
+          console.error('Error parsing consent cookie:', error);
+        }
+      }
+    };
+    
+    // Check on mount
+    checkCookieConsent();
+    
+    // Listen for cookie changes
+    const handleCookieChange = () => {
+      checkCookieConsent();
+    };
+    
+    window.addEventListener('cookieConsentChanged', handleCookieChange);
+    
+    return () => {
+      window.removeEventListener('cookieConsentChanged', handleCookieChange);
+    };
+  }, []);
 
   const openCookieSettings = () => {
     setCookieSettingsOpen(true);
@@ -73,21 +104,21 @@ const Sitemap = () => {
             <div className="md:hidden flex justify-center space-x-4 mt-6">
               <a 
                 href="#" 
-                className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+                className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
                 aria-label="Facebook - Connect with Royal Transfer EU"
               >
                 <Facebook className="w-5 h-5 text-white" aria-hidden="true" />
               </a>
               <a 
                 href="https://www.instagram.com/royaltransfer1991/" 
-                className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+                className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
                 aria-label="Instagram - Follow Royal Transfer EU"
               >
                 <Instagram className="w-5 h-5 text-white" aria-hidden="true" />
               </a>
               <a 
                 href="https://wa.me/3517482244" 
-                className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+                className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
                 aria-label="WhatsApp - Message Royal Transfer EU"
               >
                 <MessageCircle className="w-5 h-5 text-white" aria-hidden="true" />
@@ -124,21 +155,21 @@ const Sitemap = () => {
           <div className="hidden md:flex justify-center space-x-4 mb-6">
             <a 
               href="#" 
-              className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+              className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
               aria-label="Facebook - Connect with Royal Transfer EU"
             >
               <Facebook className="w-5 h-5 text-white" aria-hidden="true" />
             </a>
             <a 
               href="https://www.instagram.com/royaltransfer1991/" 
-              className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+              className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
               aria-label="Instagram - Follow Royal Transfer EU"
             >
               <Instagram className="w-5 h-5 text-white" aria-hidden="true" />
             </a>
             <a 
               href="https://wa.me/3517482244" 
-              className="p-3 bg-black rounded-full hover:bg-blue-600 transition-colors duration-300"
+              className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300"
               aria-label="WhatsApp - Message Royal Transfer EU"
             >
               <MessageCircle className="w-5 h-5 text-white" aria-hidden="true" />

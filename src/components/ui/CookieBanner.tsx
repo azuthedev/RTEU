@@ -9,7 +9,12 @@ import { useFeatureFlags } from "../FeatureFlagProvider"
 const CONSENT_COOKIE_NAME = "royal_transfer_cookie_consent"
 const CONSENT_COOKIE_EXPIRY_DAYS = 365
 
-type CookieConsentType = "all" | "necessary" | "none"
+export type ConsentPreferences = {
+  necessary: boolean; // Always true, can't be toggled
+  analytics: boolean;
+  marketing: boolean;
+  preferences: boolean;
+}
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -73,8 +78,8 @@ export default function CookieBanner() {
   }, [setFeatureFlag]);
 
   // Save consent preferences to cookie
-  const saveConsent = (consentType: CookieConsentType): void => {
-    const preferences = {
+  const saveConsent = (consentType: "all" | "necessary"): void => {
+    const preferences: ConsentPreferences = {
       necessary: true,
       analytics: consentType === "all",
       marketing: consentType === "all",
@@ -160,7 +165,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
                 >
                   Accept All
                 </Button>
@@ -210,7 +215,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
                 >
                   Accept All
                 </Button>
@@ -248,7 +253,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-black text-white hover:bg-gray-900 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
                 >
                   Accept All
                 </Button>

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { getCookie, setCookie } from '../utils/cookieUtils';
 
 // Define the feature flags type
 interface FeatureFlags {
@@ -20,35 +21,6 @@ const FeatureFlagContext = createContext<{
   flags: defaultFeatureFlags,
   setFeatureFlag: () => {},
 });
-
-// Helper function to get cookies by name
-const getCookie = (name: string): string | null => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(';').shift() || null;
-  }
-  return null;
-};
-
-// Helper function to set cookies with domain attribute
-const setCookie = (name: string, value: string, days: number = 365): void => {
-  const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-  
-  // Get top-level domain for cross-domain compatibility
-  let domain = window.location.hostname;
-  
-  // Extract top-level domain (e.g., example.com from subdomain.example.com)
-  const parts = domain.split('.');
-  if (parts.length > 2) {
-    // If we have a subdomain, use the top two parts
-    domain = parts.slice(-2).join('.');
-  }
-  
-  // Set the cookie with domain attribute to share across subdomains
-  document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/; domain=.${domain}; SameSite=Lax`;
-};
 
 interface FeatureFlagProviderProps {
   children: React.ReactNode;
@@ -78,6 +50,33 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({ childr
       return defaultFeatureFlags;
     }
   });
+
+  // Effect to handle cookie consent changes
+  useEffect(() => {
+    const handleCookieConsentChange = (event: CustomEvent) => {
+      if (event.detail && event.detail.name === 'royal_transfer_cookie_consent') {
+        try {
+          const consentValue = event.detail.value;
+          if (consentValue) {
+            const parsedConsent = JSON.parse(decodeURIComponent(consentValue));
+            // If consent is accepted or rejected, we've shown the banner so no need to show it again
+            if (parsedConsent) {
+              setFlags(prev => ({ ...prev, showCookieBanner: false }));
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing cookie consent change:', error);
+        }
+      }
+    };
+    
+    // Listen for custom cookie consent changed events
+    window.addEventListener('cookieConsentChanged', handleCookieConsentChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('cookieConsentChanged', handleCookieConsentChange as EventListener);
+    };
+  }, []);
 
   // Effect to fetch flags from a remote source if needed
   useEffect(() => {

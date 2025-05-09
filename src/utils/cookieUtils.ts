@@ -20,6 +20,17 @@ export const setCookie = (name: string, value: string, expiryDays: number = 365)
   
   // Set the cookie with domain attribute to share across subdomains
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/; domain=.${domain}; SameSite=Lax`;
+  
+  // Also store in localStorage as a backup
+  try {
+    localStorage.setItem(name, value);
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+
+  // Dispatch a custom event that other components can listen for
+  const event = new CustomEvent('cookieConsentChanged', { detail: { name, value } });
+  window.dispatchEvent(event);
 };
 
 /**
@@ -33,6 +44,21 @@ export const getCookie = (name: string): string | null => {
   if (parts.length === 2) {
     return decodeURIComponent(parts.pop()?.split(';').shift() || '');
   }
+
+  // Try localStorage as fallback
+  try {
+    const localValue = localStorage.getItem(name);
+    if (localValue) {
+      // If found in localStorage but not in cookies, restore it to cookies
+      const storedValue = localValue;
+      // Don't use setCookie to avoid infinite recursion
+      document.cookie = `${name}=${encodeURIComponent(storedValue)}; path=/; max-age=${86400 * 365}`; // 1 year
+      return storedValue;
+    }
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+  
   return null;
 };
 
@@ -40,7 +66,7 @@ export const getCookie = (name: string): string | null => {
  * Delete a cookie by setting its expiration date to the past
  * @param name Cookie name to delete
  */
-const deleteCookie = (name: string): void => {
+export const deleteCookie = (name: string): void => {
   // Get top-level domain for cross-domain compatibility
   let domain = window.location.hostname;
   
@@ -52,6 +78,17 @@ const deleteCookie = (name: string): void => {
   }
   
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain}; SameSite=Lax`;
+  
+  // Also remove from localStorage
+  try {
+    localStorage.removeItem(name);
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+
+  // Dispatch a custom event that other components can listen for
+  const event = new CustomEvent('cookieConsentChanged', { detail: { name, deleted: true } });
+  window.dispatchEvent(event);
 };
 
 /**
@@ -59,6 +96,6 @@ const deleteCookie = (name: string): void => {
  * @param name Cookie name
  * @returns True if the cookie exists, false otherwise
  */
-const cookieExists = (name: string): boolean => {
+export const cookieExists = (name: string): boolean => {
   return getCookie(name) !== null;
 };
