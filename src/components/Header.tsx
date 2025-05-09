@@ -164,7 +164,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
             <a 
               href="/" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Home')}
             >
               Home
@@ -172,7 +172,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/about" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'About Us')}
             >
               About Us
@@ -180,7 +180,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/services" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Services')}
             >
               Services
@@ -188,7 +188,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/blogs/destinations" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Destinations')}
             >
               Destinations
@@ -196,7 +196,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/faq" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'FAQs')}
             >
               FAQs
@@ -204,7 +204,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/partners" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Partners')}
             >
               Partners
@@ -212,7 +212,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             </a>
             <a 
               href="/contact" 
-              className="relative py-2 text-gray-700 group"
+              className="relative py-2 text-gray-700 group font-sans"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Contact')}
             >
               Contact
@@ -249,10 +249,10 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className="px-4 py-2 text-sm font-medium text-gray-900 border-b">
+                      <div className="px-4 py-2 text-sm font-medium text-gray-900 border-b font-sans">
                         {userData?.name || 'User'}
                         {userData?.user_role && (
-                          <div className="text-xs text-gray-500 capitalize">
+                          <div className="text-xs text-gray-500 capitalize font-sans">
                             {userData.user_role}
                           </div>
                         )}
@@ -261,7 +261,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         <a 
                           href="#" 
                           onClick={handleAdminPortalClick}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                           role="menuitem"
                         >
                           <Crown className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -272,7 +272,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         <a 
                           href="#" 
                           onClick={handlePartnerPortalClick}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                           role="menuitem"
                         >
                           <Suitcase className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -281,7 +281,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       )}
                       <Link 
                         to="/profile" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                         onClick={() => {
                           setShowUserMenu(false);
                           trackEvent('Navigation', 'Menu Click', 'Profile');
@@ -292,7 +292,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       </Link>
                       <Link 
                         to="/bookings" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                         onClick={() => {
                           setShowUserMenu(false);
                           trackEvent('Navigation', 'Menu Click', 'Bookings');
@@ -303,7 +303,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                         role="menuitem"
                       >
                         Sign out
@@ -314,7 +314,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               ) : (
                 <a 
                   href="/login"
-                  className="hidden md:inline-flex border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 box-border"
+                  className="hidden md:inline-flex border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 box-border font-sans font-bold"
                   onClick={() => trackEvent('Navigation', 'Sign In Click', 'Header')}
                 >
                   Sign In
@@ -323,7 +323,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             )}
             <button 
               onClick={handleCTAClick}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300"
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 font-sans font-bold"
             >
               Book Now
             </button>
@@ -390,7 +390,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       <div key={link.href} className="flex">
                         <a
                           href={link.href}
-                          className="relative py-2 text-gray-700 group"
+                          className="relative py-2 text-gray-700 group font-sans"
                           onClick={() => {
                             setIsMenuOpen(false);
                             trackEvent('Navigation', 'Mobile Menu Click', link.label);
@@ -408,7 +408,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           <div className="flex">
                             <a
                               href="#"
-                              className="relative py-2 text-gray-700 group"
+                              className="relative py-2 text-gray-700 group font-sans"
                               onClick={(e) => {
                                 handleAdminPortalClick(e);
                                 setIsMenuOpen(false);
@@ -424,7 +424,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           <div className="flex">
                             <a
                               href="#"
-                              className="relative py-2 text-gray-700 group"
+                              className="relative py-2 text-gray-700 group font-sans"
                               onClick={(e) => {
                                 handlePartnerPortalClick(e);
                                 setIsMenuOpen(false);
@@ -439,7 +439,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         <div className="flex">
                           <a
                             href="/profile"
-                            className="relative py-2 text-gray-700 group"
+                            className="relative py-2 text-gray-700 group font-sans"
                             onClick={() => {
                               setIsMenuOpen(false);
                               trackEvent('Navigation', 'Mobile Menu Click', 'Your Profile');
@@ -452,7 +452,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         <div className="flex">
                           <a
                             href="/bookings"
-                            className="relative py-2 text-gray-700 group"
+                            className="relative py-2 text-gray-700 group font-sans"
                             onClick={() => {
                               setIsMenuOpen(false);
                               trackEvent('Navigation', 'Mobile Menu Click', 'Your Bookings');
@@ -476,7 +476,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                     ) : user ? (
                       <button
                         onClick={handleLogout}
-                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
                       >
                         Sign Out
                       </button>
@@ -487,7 +487,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           setIsMenuOpen(false);
                           trackEvent('Navigation', 'Mobile Menu Click', 'Sign In');
                         }}
-                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
                       >
                         Sign In
                       </a>
@@ -495,7 +495,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   )}
                   <button 
                     onClick={handleCTAClick}
-                    className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300"
+                    className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 font-sans font-bold"
                   >
                     Book Now
                   </button>

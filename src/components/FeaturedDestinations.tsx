@@ -109,7 +109,7 @@ const FeaturedDestinations = () => {
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Popular Destinations</h2>
+          <h2 className="text-3xl mb-4">Popular Destinations</h2>
           <p className="text-lg text-gray-600">
             Go Beyond Regular Service when Travelling with Royal Transfer EU
           </p>
@@ -137,7 +137,7 @@ const FeaturedDestinations = () => {
                   fetchPriority={index < 2 ? "high" : "auto"}
                 />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                  <h3 className="text-white text-3xl font-bold">{destination.city}</h3>
+                  <h3 className="text-white text-3xl">{destination.city}</h3>
                 </div>
               </div>
 

@@ -1,3 +1,4 @@
+@import './styles/fonts.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,6 +25,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 43.3%; /* Matched to primary */
     --radius: 0.5rem;
+  }
+  
+  body {
+    font-family: 'Lato', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Serif Display', Georgia, serif;
   }
 }
 
@@ -127,7 +136,7 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   border-radius: 0.5rem !important;
   border: 1px solid rgba(209, 213, 219, 0.5) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  font-family: inherit;
+  font-family: 'Lato', sans-serif;
   margin-top: 8px !important;
   padding: 0.5rem !important;
   z-index: 1100 !important;

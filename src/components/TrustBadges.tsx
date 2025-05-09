@@ -8,7 +8,7 @@ const TrustBadges = () => {
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-8 text-center">
+          <h2 className="text-2xl mb-8 text-center">
             Trusted by Travelers Worldwide
           </h2>
           <div className="grid grid-cols-3 gap-4 md:gap-8 mb-12">

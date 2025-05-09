@@ -156,7 +156,7 @@ export default function CookieBanner() {
       >
         {isMobile && (
           // Mobile layout - stacked with Learn more below buttons
-          <div className="w-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full px-2 py-1 font-sans" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col gap-0.5">
               {/* Text first */}
               <p className="text-xs text-center mb-1">
@@ -168,7 +168,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3 font-sans font-bold"
                 >
                   Accept All
                 </Button>
@@ -176,7 +176,7 @@ export default function CookieBanner() {
                   variant="outline"
                   size="sm" 
                   onClick={acceptNecessary}
-                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3"
+                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3 font-sans"
                 >
                   Reject
                 </Button>
@@ -185,7 +185,7 @@ export default function CookieBanner() {
               {/* Learn More link at bottom */}
               <Link 
                 to="/cookie-policy"
-                className="text-[10px] text-center text-gray-500 hover:text-gray-700 hover:underline mx-auto"
+                className="text-[10px] text-center text-gray-500 hover:text-gray-700 hover:underline mx-auto font-sans"
                 onClick={(e) => {
                   e.stopPropagation();
                   trackEvent("Cookie Consent", "Learn More Click", "");
@@ -199,14 +199,14 @@ export default function CookieBanner() {
         
         {isTablet && (
           // Tablet layout - text and Learn more on one line, buttons below
-          <div className="w-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full px-2 py-1 font-sans" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col gap-1">
               {/* Combined text with Learn More in parentheses */}
               <p className="text-sm text-center mb-1">
                 We use cookies for a better experience
                 <Link
                   to="/cookie-policy"
-                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1"
+                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1 font-sans"
                   onClick={handleLearnMoreClick}
                 >
                   (Learn more)
@@ -218,7 +218,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3 font-sans font-bold"
                 >
                   Accept All
                 </Button>
@@ -226,7 +226,7 @@ export default function CookieBanner() {
                   variant="outline"
                   size="sm" 
                   onClick={acceptNecessary}
-                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3"
+                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3 font-sans"
                 >
                   Reject
                 </Button>
@@ -237,14 +237,14 @@ export default function CookieBanner() {
         
         {isDesktop && (
           // Desktop layout - fully inline: text on left, buttons on right
-          <div className="w-full px-2" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full px-2 font-sans" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               {/* Text with Learn More in parentheses */}
               <p className="text-sm mr-4 flex-grow">
                 We use cookies for a better experience
                 <Link
                   to="/cookie-policy"
-                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1"
+                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline ml-1 font-sans"
                   onClick={handleLearnMoreClick}
                 >
                   (Learn more)
@@ -256,7 +256,7 @@ export default function CookieBanner() {
                 <Button 
                   size="sm"
                   onClick={acceptAll}
-                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 h-7 px-3 font-sans font-bold"
                 >
                   Accept All
                 </Button>
@@ -264,7 +264,7 @@ export default function CookieBanner() {
                   variant="outline"
                   size="sm" 
                   onClick={acceptNecessary}
-                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3"
+                  className="bg-gray-100 border-gray-200 hover:bg-gray-200 text-xs py-1 h-7 px-3 font-sans"
                 >
                   Reject
                 </Button>
