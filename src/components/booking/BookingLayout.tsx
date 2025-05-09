@@ -3,12 +3,11 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../Header';
-import Sitemap from '../Sitemap';
-import Newsletter from '../Newsletter';
 import BookingTopBar from './BookingTopBar';
 import ProgressBar from './ProgressBar';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAnalytics } from '../../hooks/useAnalytics';
+import Newsletter from '../Newsletter';
 
 interface BookingLayoutProps {
   children: React.ReactNode;
@@ -320,7 +319,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
         </div>
       </main>
 
-      <Sitemap />
+      {/* Removed Sitemap component to prevent duplicate footers */}
     </div>
   );
 };

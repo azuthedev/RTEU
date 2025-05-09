@@ -9,10 +9,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // Define vehicle categories
 const vehicleCategories = [
-  { id: 'sedan', name: 'Sedan', color: 'bg-blue-50' },
-  { id: 'minivan', name: 'Minivan', color: 'bg-green-50' },
-  { id: 'sprinter', name: 'Sprinter', color: 'bg-gray-50' },
-  { id: 'bus', name: 'Bus', color: 'bg-amber-50' }
+  { 
+    id: 'sedan', 
+    name: 'Sedan', 
+    color: 'bg-blue-50',
+    logoUrl: 'https://files.royaltransfereu.com/assets/sedann.png'
+  },
+  { 
+    id: 'minivan', 
+    name: 'Minivan', 
+    color: 'bg-green-50',
+    logoUrl: 'https://files.royaltransfereu.com/assets/mnivan.png'
+  },
+  { 
+    id: 'sprinter', 
+    name: 'Sprinter', 
+    color: 'bg-gray-50',
+    logoUrl: 'https://files.royaltransfereu.com/assets/sprinterrr.png'
+  },
+  { 
+    id: 'bus', 
+    name: 'Bus', 
+    color: 'bg-amber-50',
+    logoUrl: 'https://files.royaltransfereu.com/assets/busting.png'
+  }
 ];
 
 // Map vehicles to their categories
@@ -162,7 +182,7 @@ const VehicleSelection = () => {
       modalOpen={isModalOpen}
     >
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Choose Your Vehicle</h1>
+        <h1 className="text-3xl mb-8">Choose Your Vehicle</h1>
         
         {/* Category Tabs */}
         <div className="mb-8 sticky top-0 z-10 bg-white py-4 -mt-4 shadow-sm">
@@ -171,14 +191,21 @@ const VehicleSelection = () => {
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`w-14 h-14 rounded-full transition-colors flex items-center justify-center ${
                   activeCategory === category.id 
                     ? `${category.color} text-gray-800 shadow-md`
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 }`}
                 aria-selected={activeCategory === category.id}
+                title={category.name}
               >
-                {category.name}
+                <div className="w-10 h-10 bg-white rounded-full p-1 flex items-center justify-center">
+                  <img 
+                    src={category.logoUrl} 
+                    alt={`${category.name} icon`} 
+                    className="w-8 h-8 object-contain" 
+                  />
+                </div>
               </button>
             ))}
           </div>
@@ -186,7 +213,7 @@ const VehicleSelection = () => {
         
         {/* Category Title */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl">
             {vehicleCategories.find(c => c.id === activeCategory)?.name} Options
           </h2>
           <div className="flex items-center">

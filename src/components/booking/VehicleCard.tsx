@@ -51,7 +51,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       {/* Vehicle Details */}
       <div className="space-y-4 flex-grow">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold">{name}</h3>
+          <h3 className="text-xl">{name}</h3>
           <button
             onClick={onLearnMore}
             className="flex items-center text-gray-500 hover:text-blue-600 transition-colors p-2 hover:bg-gray-100 rounded-lg group"

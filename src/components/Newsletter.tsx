@@ -37,7 +37,7 @@ const Newsletter = forwardRef<HTMLDivElement, NewsletterProps>(({ webhookUrl }, 
   return (
     <div ref={ref} className="max-w-md mx-auto px-4">
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-bold text-center mb-2">
+        <h3 className="text-xl text-center mb-2">
           Subscribe to our Newsletter
         </h3>
         <p className="text-[12px] text-gray-600 text-center mb-6">

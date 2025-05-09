@@ -68,7 +68,7 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl relative flex flex-col max-h-full">
             {/* Header - Always visible */}
             <div className="sticky top-0 z-10 bg-white border-b p-4 md:p-6 flex items-center justify-between rounded-t-lg">
-              <h2 className="text-xl md:text-2xl font-bold">{vehicle.name}</h2>
+              <h2 className="text-xl md:text-2xl">{vehicle.name}</h2>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -96,12 +96,12 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
                 {/* Right Column */}
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">About this category</h3>
+                    <h3 className="text-lg mb-2">About this category</h3>
                     <p className="text-gray-600">{vehicle.description}</p>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Sample vehicles</h3>
+                    <h3 className="text-lg mb-2">Sample vehicles</h3>
                     <ul className="list-disc list-inside text-gray-600">
                       {vehicle.sampleVehicles.map((v, index) => (
                         <li key={index}>{v}</li>
@@ -113,7 +113,7 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
 
               {/* Features */}
               <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">What's included?</h3>
+                <h3 className="text-lg mb-4">What's included?</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {vehicle.features.map((feature, index) => (
                     <motion.div
