@@ -143,7 +143,7 @@ const FeaturedDestinations = () => {
 
               {/* Details */}
               <div className="mt-4">
-                <h4 className="text-xl font-semibold mb-2">{destination.city}</h4>
+                <h4 className="text-xl mb-2">{destination.city}</h4>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center">
                     <span className="mr-2 text-lg" aria-hidden="true">{destination.flag}</span>
