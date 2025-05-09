@@ -111,7 +111,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 z-[250]"
             onClick={onClose}
           />
           <motion.div
@@ -119,14 +119,17 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[251] flex items-center justify-center p-4 sm:p-6"
           >
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden">
+            <div 
+              className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()} // Prevent clicks from reaching the backdrop
+            >
               <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-xl font-semibold">Cookie Settings</h2>
                 <button
                   onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 rounded-full p-1 transition-colors duration-200"
                   aria-label="Close cookie settings"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
@@ -134,20 +137,20 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
               </div>
               
               <div className="p-4 max-h-[70vh] overflow-y-auto">
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-6 text-sm sm:text-base">
                   Manage your cookie preferences. Necessary cookies are required for the website to function and cannot be disabled.
                 </p>
                 
                 <div className="space-y-4 mb-6">
                   {/* Necessary Cookies - Always enabled */}
-                  <div className="border border-gray-200 rounded-md p-4">
+                  <div className="border border-gray-200 rounded-md p-3 sm:p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">Necessary Cookies</div>
                       <div className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">
                         Required
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       These cookies are essential for the website to function properly and cannot be switched off.
                       They are usually only set in response to actions made by you which amount to a request for services,
                       such as setting your privacy preferences, logging in or filling in forms.
@@ -155,7 +158,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Analytics Cookies */}
-                  <div className="border border-gray-200 rounded-md p-4">
+                  <div className="border border-gray-200 rounded-md p-3 sm:p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">Analytics Cookies</div>
                       <label className="inline-flex items-center cursor-pointer">
@@ -175,7 +178,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                         </div>
                       </label>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       These cookies help us understand how visitors interact with our website, helping us improve
                       our services and provide you with a better experience. We use Google Analytics which
                       collects anonymous information about how you use our site.
@@ -183,7 +186,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Marketing Cookies */}
-                  <div className="border border-gray-200 rounded-md p-4">
+                  <div className="border border-gray-200 rounded-md p-3 sm:p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">Marketing Cookies</div>
                       <label className="inline-flex items-center cursor-pointer">
@@ -203,7 +206,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                         </div>
                       </label>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       These cookies are used to track visitors across websites to display relevant
                       advertisements that are meaningful to you and your interests. They remember that
                       you have visited our site and help us measure the effectiveness of our advertising campaigns.
@@ -211,7 +214,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Preference Cookies */}
-                  <div className="border border-gray-200 rounded-md p-4">
+                  <div className="border border-gray-200 rounded-md p-3 sm:p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">Preference Cookies</div>
                       <label className="inline-flex items-center cursor-pointer">
@@ -231,7 +234,7 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
                         </div>
                       </label>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       These cookies enable personalized website functionality based on your preferences.
                       They help remember your preferred settings and choices to enhance your browsing experience.
                     </p>
