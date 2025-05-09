@@ -3,7 +3,13 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCookie, setCookie } from '../utils/cookieUtils';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { ConsentPreferences } from './ui/CookieBanner';
+
+export type ConsentPreferences = {
+  necessary: boolean; // Always true, can't be toggled
+  analytics: boolean;
+  marketing: boolean;
+  preferences: boolean;
+};
 
 interface CookieSettingsProps {
   isOpen: boolean;
@@ -97,6 +103,14 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
+  // Handle backdrop click to close the modal
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if clicking the backdrop, not its children
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -114,10 +128,11 @@ const CookieSettings: React.FC<CookieSettingsProps> = ({ isOpen, onClose }) => {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[251] flex items-center justify-center p-4 sm:p-6"
+            onClick={handleBackdropClick}
           >
             <div 
               className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()} // Prevent clicks from reaching the backdrop
+              onClick={(e) => e.stopPropagation()} // Stop propagation only for the modal content
             >
               <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-xl font-semibold">Cookie Settings</h2>

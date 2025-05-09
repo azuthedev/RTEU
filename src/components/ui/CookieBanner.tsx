@@ -109,6 +109,9 @@ export default function CookieBanner() {
     }
     
     setIsVisible(false);
+    
+    // Also update the feature flag to hide the banner
+    setFeatureFlag('showCookieBanner', false);
   };
 
   // Accept all cookie types

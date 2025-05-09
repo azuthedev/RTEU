@@ -107,6 +107,7 @@ function AppRoutes() {
   return (
     <>
       <RouteObserver />
+      <Header />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -156,7 +157,7 @@ function AppRoutes() {
         </Suspense>
       )}
       
-      {/* Lazy load Sitemap */}
+      {/* Lazy load Sitemap - Common footer for all pages */}
       <Suspense fallback={null}>
         <Sitemap />
       </Suspense>

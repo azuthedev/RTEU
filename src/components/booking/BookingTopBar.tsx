@@ -364,7 +364,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               Round Trip
             </button>
             <div 
-              className={`absolute inset-y-0 w-32 bg-black transition-transform duration-300 ${
+              className={`absolute inset-y-0 w-32 bg-blue-600 transition-transform duration-300 ${
                 isOneWay ? 'left-0' : 'left-32'
               }`}
             />
@@ -458,7 +458,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               onClick={handleUpdateRoute}
               className={`w-full py-2 rounded-lg transition-all duration-300 ${
                 hasChanges 
-                  ? 'bg-black text-white hover:bg-gray-800' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
               disabled={!hasChanges}
@@ -553,7 +553,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               onClick={handleUpdateRoute}
               className={`px-6 py-2 rounded-lg transition-all duration-300 min-w-[120px] ${
                 hasChanges 
-                  ? 'bg-black text-white hover:bg-gray-800' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
               disabled={!hasChanges}
