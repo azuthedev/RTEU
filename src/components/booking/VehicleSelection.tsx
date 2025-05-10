@@ -13,25 +13,25 @@ const vehicleCategories = [
     id: 'sedan', 
     name: 'Sedan', 
     color: 'bg-blue-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/sedann.png'
+    logoUrl: 'https://files.royaltransfereu.com/assets/sedann_blk.png'
   },
   { 
     id: 'minivan', 
     name: 'Minivan', 
     color: 'bg-green-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/mnivan.png'
+    logoUrl: 'https://files.royaltransfereu.com/assets/mnivan_blk.png'
   },
   { 
     id: 'sprinter', 
     name: 'Sprinter', 
     color: 'bg-gray-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/sprinterrr.png'
+    logoUrl: 'https://files.royaltransfereu.com/assets/sprinterrr_blk.png'
   },
   { 
     id: 'bus', 
     name: 'Bus', 
     color: 'bg-amber-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/busting.png'
+    logoUrl: 'https://files.royaltransfereu.com/assets/busting_blk.png'
   }
 ];
 
