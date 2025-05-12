@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, DollarSign, ChevronRight, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, DollarSign, ChevronRight, Loader2, Phone, Mail, User, Car, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
@@ -45,6 +45,8 @@ const Bookings = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<BookingDetails | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -64,6 +66,7 @@ const Bookings = () => {
       try {
         const now = new Date().toISOString();
         setLoading(true);
+        setError(null);
 
         // First get the user's email
         const { data: userData } = await supabase
@@ -98,8 +101,9 @@ const Bookings = () => {
         }
 
         setTrips(filteredTrips);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching trips:', error);
+        setError(error.message || 'Failed to load bookings');
       } finally {
         setLoading(false);
       }
@@ -111,6 +115,7 @@ const Bookings = () => {
   }, [user, activeTab]);
 
   const fetchBookingDetails = async (tripId: string) => {
+    setLoadingDetails(true);
     try {
       const { data, error } = await supabase
         .from('trips')
@@ -140,6 +145,8 @@ const Bookings = () => {
     } catch (error) {
       console.error('Error fetching booking details:', error);
       return null;
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -147,6 +154,21 @@ const Bookings = () => {
     const details = await fetchBookingDetails(trip.id);
     setSelectedBooking(details);
     setShowDetails(true);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'accepted':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (authLoading || loading) {
@@ -167,6 +189,13 @@ const Bookings = () => {
       <main className="pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-8">Your Bookings</h1>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <p>{error}</p>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex bg-white rounded-lg shadow-sm p-1 mb-8 max-w-xs">
@@ -223,13 +252,7 @@ const Bookings = () => {
                         <span>{format(new Date(trip.datetime), 'h:mm a')}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className={`px-3 py-1 rounded-full text-sm ${
-                          trip.status === 'completed' 
-                            ? 'bg-green-100 text-green-800'
-                            : trip.status === 'cancelled'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(trip.status)}`}>
                           {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
                         </span>
                         {trip.booking_reference && (
@@ -293,108 +316,162 @@ const Bookings = () => {
               className="fixed inset-x-0 bottom-0 bg-white rounded-t-xl z-50 max-h-[90vh] overflow-y-auto"
             >
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-6">Booking Details</h2>
-                
-                <div className="space-y-6">
-                  {/* Trip Details */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Trip Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Booking Reference</p>
-                        <p className="font-mono">{selectedBooking.booking_reference}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Date & Time</p>
-                        <p>{format(new Date(selectedBooking.datetime), 'PPP p')}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Status</p>
-                        <p className="capitalize">{selectedBooking.status}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Passengers</p>
-                        <p>{selectedBooking.passengers}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <div>
-                        <p className="text-sm text-gray-500">From</p>
-                        <p>{selectedBooking.pickup_address}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">To</p>
-                        <p>{selectedBooking.dropoff_address}</p>
-                      </div>
-                    </div>
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   </div>
-
-                  {/* Driver Details */}
-                  {selectedBooking.driver && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Driver</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Name</p>
-                          <p>{selectedBooking.driver.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Phone</p>
-                          <p>{selectedBooking.driver.phone}</p>
-                        </div>
-                      </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-6">
+                      <h2 className="text-2xl font-bold">Booking Details</h2>
+                      <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(selectedBooking.status)}`}>
+                        {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                      </span>
                     </div>
-                  )}
-
-                  {/* Vehicle Details */}
-                  {selectedBooking.vehicle && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Vehicle</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Vehicle</p>
-                          <p>{selectedBooking.vehicle.make} {selectedBooking.vehicle.model}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Plate Number</p>
-                          <p>{selectedBooking.vehicle.plate_number}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payment Details */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Payment</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    
+                    <div className="space-y-6">
+                      {/* Trip Details */}
                       <div>
-                        <p className="text-sm text-gray-500">Amount</p>
-                        <p>€{selectedBooking.estimated_price.toFixed(2)}</p>
+                        <h3 className="text-lg font-semibold mb-4">Trip Information</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Booking Reference</p>
+                            <p className="font-mono">{selectedBooking.booking_reference}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Date & Time</p>
+                            <p>{format(new Date(selectedBooking.datetime), 'PPP p')}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Vehicle Type</p>
+                            <p>{selectedBooking.vehicle_type}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Passengers</p>
+                            <p>{selectedBooking.passengers}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          <div>
+                            <p className="text-sm text-gray-500">From</p>
+                            <p>{selectedBooking.pickup_address}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">To</p>
+                            <p>{selectedBooking.dropoff_address}</p>
+                          </div>
+                        </div>
                       </div>
-                      {selectedBooking.payment && (
-                        <>
+
+                      {/* Driver Details */}
+                      {selectedBooking.driver && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Driver</h3>
+                          <div className="space-y-4">
+                            <div className="flex items-center">
+                              <User className="w-5 h-5 text-gray-400 mr-2" />
+                              <div>
+                                <p className="text-sm text-gray-500">Name</p>
+                                <p>{selectedBooking.driver.name}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <Phone className="w-5 h-5 text-gray-400 mr-2" />
+                              <div>
+                                <p className="text-sm text-gray-500">Phone</p>
+                                <p>{selectedBooking.driver.phone}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Vehicle Details */}
+                      {selectedBooking.vehicle && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Vehicle</h3>
+                          <div className="space-y-4">
+                            <div className="flex items-center">
+                              <Car className="w-5 h-5 text-gray-400 mr-2" />
+                              <div>
+                                <p className="text-sm text-gray-500">Vehicle</p>
+                                <p>{selectedBooking.vehicle.make} {selectedBooking.vehicle.model}</p>
+                              </div>
+                            </div>
+                            {selectedBooking.vehicle.plate_number && (
+                              <div className="flex items-center">
+                                <div className="w-5 h-5 mr-2" /> {/* Spacer for alignment */}
+                                <div>
+                                  <p className="text-sm text-gray-500">Plate Number</p>
+                                  <p className="font-mono">{selectedBooking.vehicle.plate_number}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contact Information */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+                        <div className="space-y-4">
+                          <div className="flex items-center">
+                            <Mail className="w-5 h-5 text-gray-400 mr-2" />
+                            <div>
+                              <p className="text-sm text-gray-500">Email</p>
+                              <p>{selectedBooking.customer_email}</p>
+                            </div>
+                          </div>
+                          {selectedBooking.customer_phone && (
+                            <div className="flex items-center">
+                              <Phone className="w-5 h-5 text-gray-400 mr-2" />
+                              <div>
+                                <p className="text-sm text-gray-500">Phone</p>
+                                <p>{selectedBooking.customer_phone}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Payment Details */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Payment</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Amount</p>
+                            <p>€{selectedBooking.estimated_price.toFixed(2)}</p>
+                          </div>
                           <div>
                             <p className="text-sm text-gray-500">Payment Method</p>
-                            <p className="capitalize">
-                              {selectedBooking.payment.payment_method.replace('_', ' ')}
-                            </p>
+                            <p className="capitalize">{selectedBooking.payment_method}</p>
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Payment Status</p>
-                            <p className="capitalize">{selectedBooking.payment.status}</p>
-                          </div>
-                        </>
+                          {selectedBooking.payment && (
+                            <div>
+                              <p className="text-sm text-gray-500">Payment Status</p>
+                              <p className="capitalize">{selectedBooking.payment.status}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Additional Information */}
+                      {selectedBooking.notes && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Additional Notes</h3>
+                          <p className="text-gray-600">{selectedBooking.notes}</p>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
 
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="w-full mt-8 bg-gray-100 text-gray-600 py-3 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Close
-                </button>
+                    <button
+                      onClick={() => setShowDetails(false)}
+                      className="w-full mt-8 bg-gray-100 text-gray-600 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </>
