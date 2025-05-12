@@ -21,21 +21,8 @@ interface Trip {
   booking_reference: string;
 }
 
-interface BookingDetails extends Trip {
-  driver?: {
-    name: string;
-    phone: string;
-  };
-  vehicle?: {
-    make: string;
-    model: string;
-    plate_number: string;
-  };
-  payment?: {
-    status: string;
-    payment_method: string;
-  };
-}
+// Simplified BookingDetails to only include trip fields
+type BookingDetails = Trip;
 
 const Bookings = () => {
   const navigate = useNavigate();
@@ -117,26 +104,10 @@ const Bookings = () => {
   const fetchBookingDetails = async (tripId: string) => {
     setLoadingDetails(true);
     try {
+      // Simplified query to only fetch trip data
       const { data, error } = await supabase
         .from('trips')
-        .select(`
-          *,
-          driver:drivers(
-            user:users(
-              name,
-              phone
-            )
-          ),
-          vehicle:vehicles(
-            make,
-            model,
-            plate_number
-          ),
-          payment:payments(
-            status,
-            payment_method
-          )
-        `)
+        .select('*')
         .eq('id', tripId)
         .single();
 
@@ -188,7 +159,7 @@ const Bookings = () => {
       
       <main className="pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold mb-8">Your Bookings</h1>
+          <h1 className="text-3xl mb-8">Your Bookings</h1>
 
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center">
@@ -363,54 +334,6 @@ const Bookings = () => {
                         </div>
                       </div>
 
-                      {/* Driver Details */}
-                      {selectedBooking.driver && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-4">Driver</h3>
-                          <div className="space-y-4">
-                            <div className="flex items-center">
-                              <User className="w-5 h-5 text-gray-400 mr-2" />
-                              <div>
-                                <p className="text-sm text-gray-500">Name</p>
-                                <p>{selectedBooking.driver.name}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center">
-                              <Phone className="w-5 h-5 text-gray-400 mr-2" />
-                              <div>
-                                <p className="text-sm text-gray-500">Phone</p>
-                                <p>{selectedBooking.driver.phone}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Vehicle Details */}
-                      {selectedBooking.vehicle && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-4">Vehicle</h3>
-                          <div className="space-y-4">
-                            <div className="flex items-center">
-                              <Car className="w-5 h-5 text-gray-400 mr-2" />
-                              <div>
-                                <p className="text-sm text-gray-500">Vehicle</p>
-                                <p>{selectedBooking.vehicle.make} {selectedBooking.vehicle.model}</p>
-                              </div>
-                            </div>
-                            {selectedBooking.vehicle.plate_number && (
-                              <div className="flex items-center">
-                                <div className="w-5 h-5 mr-2" /> {/* Spacer for alignment */}
-                                <div>
-                                  <p className="text-sm text-gray-500">Plate Number</p>
-                                  <p className="font-mono">{selectedBooking.vehicle.plate_number}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
                       {/* Contact Information */}
                       <div>
                         <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
@@ -434,7 +357,7 @@ const Bookings = () => {
                         </div>
                       </div>
 
-                      {/* Payment Details */}
+                      {/* Payment Information */}
                       <div>
                         <h3 className="text-lg font-semibold mb-4">Payment</h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -442,14 +365,10 @@ const Bookings = () => {
                             <p className="text-sm text-gray-500">Amount</p>
                             <p>€{selectedBooking.estimated_price.toFixed(2)}</p>
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Payment Method</p>
-                            <p className="capitalize">{selectedBooking.payment_method}</p>
-                          </div>
-                          {selectedBooking.payment && (
+                          {selectedBooking.payment_method && (
                             <div>
-                              <p className="text-sm text-gray-500">Payment Status</p>
-                              <p className="capitalize">{selectedBooking.payment.status}</p>
+                              <p className="text-sm text-gray-500">Payment Method</p>
+                              <p className="capitalize">{selectedBooking.payment_method}</p>
                             </div>
                           )}
                         </div>
