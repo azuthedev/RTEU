@@ -294,7 +294,7 @@ const Bookings = () => {
                 ) : (
                   <>
                     <div className="flex justify-between items-start mb-6">
-                      <h2 className="text-2xl font-bold">Booking Details</h2>
+                      <h2 className="text-2xl">Booking Details</h2>
                       <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(selectedBooking.status)}`}>
                         {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
                       </span>
