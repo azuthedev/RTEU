@@ -47,6 +47,13 @@ export function DateRangePicker({
     e.stopPropagation()
   }
 
+  // Function to check if a date is in the past
+  const isPastDate = (date: Date) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to beginning of day for accurate comparison
+    return date < today
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -91,6 +98,7 @@ export function DateRangePicker({
             onSelect={handleRangeSelect}
             initialFocus
             defaultMonth={selectedRange?.from}
+            disabled={isPastDate}
             classNames={{
               day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
               day_today: "text-black font-semibold",
