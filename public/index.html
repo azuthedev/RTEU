@@ -7,18 +7,23 @@
     <title>Royal Transfer EU | Premium Airport Transfers & Taxi in Italy</title>
     <meta name="description" content="Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers." />
     
+    <!-- CORS Headers -->
+    <meta http-equiv="Access-Control-Allow-Origin" content="https://get-price-941325580206.europe-southwest1.run.app" />
+    <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS" />
+    <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type" />
+    
     <!-- Structured Data for Local Business -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "TransportationService",
         "name": "Royal Transfer EU",
-        "url": "https://royaltransfer.eu",
-        "logo": "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.webp",
-        "image": "https://files.royaltransfer.eu/assets/newherotest.png",
+        "url": "https://royaltransfereu.com",
+        "logo": "https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp",
+        "image": "https://files.royaltransfereu.com/assets/newherotest.png",
         "description": "Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable transport with professional drivers.",
         "telephone": "+393517482244",
-        "email": "contact@royaltransfer.eu",
+        "email": "contact@royaltransfereu.com",
         "address": {
           "@type": "PostalAddress",
           "addressCountry": "IT",
@@ -105,9 +110,6 @@
       gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
     </script>
 
-    <!-- Google Maps Places -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places"></script>
-
     <!-- Resource Hints -->
     <link rel="preconnect" href="https://general-runtime.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://files.royaltransfereu.com" crossorigin>
@@ -115,6 +117,9 @@
     <link rel="preconnect" href="https://cdn.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    <link rel="preconnect" href="https://i.imgur.com" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+    <link rel="preconnect" href="https://get-price-941325580206.europe-southwest1.run.app" crossorigin>
     
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://general-runtime.voiceflow.com">
@@ -123,6 +128,9 @@
     <link rel="dns-prefetch" href="https://cdn.voiceflow.com">
     <link rel="dns-prefetch" href="https://maps.googleapis.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://i.imgur.com">
+    <link rel="dns-prefetch" href="https://i.ibb.co">
+    <link rel="dns-prefetch" href="https://get-price-941325580206.europe-southwest1.run.app">
 
     <!-- Preload Critical Images -->
     <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" type="image/webp">
@@ -145,7 +153,7 @@
     <meta property="og:url" content="https://royaltransfereu.com/" />
     <meta property="og:title" content="Royal Transfer EU | Premium Airport Transfers & Taxi in Italy" />
     <meta property="og:description" content="Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers." />
-    <meta property="og:image" content="https://files.royaltransfereu.com/assets/newherotest.png" />
+    <meta property="og:image" content="https://files.royaltransfereu.com/assets/rt-logo-black-1900-1000.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Royal Transfer EU - Luxury transfer service with professional drivers and premium vehicles" />
@@ -155,7 +163,7 @@
     <meta property="twitter:url" content="https://royaltransfereu.com/" />
     <meta property="twitter:title" content="Royal Transfer EU | Premium Airport Transfers & Taxi in Italy" />
     <meta property="twitter:description" content="Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers." />
-    <meta property="twitter:image" content="https://files.royaltransfereu.com/assets/newherotest.png" />
+    <meta property="twitter:image" content="https://files.royaltransfereu.com/assets/rt-logo-black-1900-1000.png" />
     <meta property="twitter:image:alt" content="Royal Transfer EU - Luxury airport transfers and taxi services with experienced drivers" />
 
     <!-- WhatsApp -->
@@ -171,26 +179,37 @@
     
     <!-- Voiceflow Chat Widget Container -->
     <div id="voiceflow-chat-container">
-      <script type="text/javascript">
-        (function(d, t) {
-            var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-            v.onload = function() {
-              window.voiceflow.chat.load({
-                verify: { projectID: '67d817b721b78ba30f3baa7d' },
-                url: 'https://general-runtime.voiceflow.com',
-                versionID: 'production',
-                voice: {
-                  url: "https://runtime-api.voiceflow.com"
-                }
-              });
-            }
-            v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
-            v.type = "text/javascript";
-            v.setAttribute('async', '');
-            v.setAttribute('defer', '');
-            s.parentNode.insertBefore(v, s);
-        })(document, 'script');
-      </script>
+      <!-- Voiceflow chat will be dynamically loaded by our optimized loader -->
     </div>
+    
+    <!-- Google Maps loader script -->
+    <script type="module">
+      // Wait for DOM to be fully loaded
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => {
+          const apiKey = "%VITE_GOOGLE_MAPS_API_KEY%";
+          if (apiKey && apiKey !== "%VITE_GOOGLE_MAPS_API_KEY%") {
+            // Create a script with proper loading attribute
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+            script.async = true;
+            document.head.appendChild(script);
+          }
+        }, 1000);
+      } else {
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            const apiKey = "%VITE_GOOGLE_MAPS_API_KEY%";
+            if (apiKey && apiKey !== "%VITE_GOOGLE_MAPS_API_KEY%") {
+              // Create a script with proper loading attribute
+              const script = document.createElement('script');
+              script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+              script.async = true;
+              document.head.appendChild(script);
+            }
+          }, 1000);
+        });
+      }
+    </script>
   </body>
 </html>
