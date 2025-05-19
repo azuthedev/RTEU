@@ -9,6 +9,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { GooglePlacesAutocomplete } from './ui/GooglePlacesAutocomplete';
 import { useBooking } from '../contexts/BookingContext';
 import { useToast } from './ui/use-toast';
+import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -103,6 +104,16 @@ const SearchForm = () => {
   // State for loading prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  
+  // Flag to track if initial state loading is complete
+  const initialStateLoadedRef = useRef(false);
+  
+  // Flag to track if user has interacted with the form
+  const userInteractedRef = useRef(false);
+  
+  // Track validation state for addresses
+  const [pickupIsValid, setPickupIsValid] = useState(false);
+  const [dropoffIsValid, setDropoffIsValid] = useState(false);
 
   // Ensure Google Maps API is initialized as soon as possible
   useEffect(() => {
@@ -111,8 +122,8 @@ const SearchForm = () => {
 
   // First, check if we have display data from context (coming back from booking flow)
   useEffect(() => {
-    // Only apply this if the form is empty or we're coming back from booking
-    if (bookingState.fromDisplay || bookingState.toDisplay) {
+    // Only apply this if we haven't loaded initial state yet
+    if (!initialStateLoadedRef.current && (bookingState.fromDisplay || bookingState.toDisplay)) {
       console.log("Initializing form from context display values", {
         fromDisplay: bookingState.fromDisplay,
         toDisplay: bookingState.toDisplay,
@@ -152,11 +163,30 @@ const SearchForm = () => {
           }));
         }
       }
+      
+      // Store original values for comparison
+      originalValuesRef.current = {
+        isReturn: bookingState.isReturn || false,
+        pickup: bookingState.fromDisplay || bookingState.from || '',
+        dropoff: bookingState.toDisplay || bookingState.to || '',
+        pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
+        dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
+        departureDate: formData.departureDate,
+        dateRange: formData.dateRange,
+        passengers: bookingState.passengers || 1
+      };
+      
+      initialStateLoadedRef.current = true;
     }
   }, [bookingState]);
 
   // Then initialize from URL if coming from booking flow
   useEffect(() => {
+    // Skip if we've already loaded the initial state
+    if (initialStateLoadedRef.current) {
+      return;
+    }
+    
     // Check if we're on the pre-filled home route
     if (location.pathname.startsWith('/home/transfer/')) {
       const { from, to, type, date, returnDate, passengers: passengerCount } = params;
@@ -181,10 +211,12 @@ const SearchForm = () => {
           pickupDisplay: fromDisplay,
           dropoffDisplay: toDisplay,
           departureDate: isRoundTrip ? undefined : departureDate,
-          dateRange: isRoundTrip ? {
-            from: departureDate,
-            to: returnDateParsed
-          } as DateRange | undefined : undefined
+          dateRange: isRoundTrip 
+            ? {
+                from: departureDate,
+                to: returnDateParsed
+              } as DateRange | undefined 
+            : undefined
         };
 
         setFormData(newFormData);
@@ -200,11 +232,17 @@ const SearchForm = () => {
           dateRange: newFormData.dateRange,
           passengers: Math.max(1, parseInt(passengerCount || '1', 10))
         };
+        
+        initialStateLoadedRef.current = true;
       }
+    } else {
+      // If not coming from URL with params, mark as initialized
+      initialStateLoadedRef.current = true;
     }
   }, [location.pathname, params, bookingState.fromDisplay, bookingState.toDisplay]);
 
   const handlePassengerChange = (increment: boolean) => {
+    userInteractedRef.current = true;
     const newValue = Math.max(1, Math.min(100, increment ? passengers + 1 : passengers - 1));
     setPassengers(newValue);
     
@@ -213,6 +251,7 @@ const SearchForm = () => {
   };
 
   const handleTripTypeChange = (oneWay: boolean) => {
+    userInteractedRef.current = true;
     const newIsReturn = !oneWay;
     
     // Track trip type change
@@ -250,36 +289,6 @@ const SearchForm = () => {
         departureDate: prev.dateRange?.from || prev.departureDate,
         dateRange: undefined
       }));
-    }
-  };
-
-  const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
-    // Store both the display name and URL-friendly version
-    setFormData(prev => ({
-      ...prev,
-      [field]: displayName,
-      [`${field}Display`]: displayName
-    }));
-    
-    console.log(`Selected ${field}:`, displayName);
-    
-    // Get coordinates if placeData is provided
-    if (placeData && placeData.geometry && placeData.geometry.location) {
-      const location = {
-        lat: placeData.geometry.location.lat(),
-        lng: placeData.geometry.location.lng()
-      };
-      
-      if (field === 'pickup') {
-        setPickupCoords(location);
-        console.log('Pickup coordinates:', location);
-      } else {
-        setDropoffCoords(location);
-        console.log('Dropoff coordinates:', location);
-      }
-    } else {
-      // If no placeData or no coordinates, try to geocode the address
-      geocodeAddress(displayName, field);
     }
   };
 
@@ -360,13 +369,20 @@ const SearchForm = () => {
     setApiError(null);
     
     try {
-      // Display the request details for debugging purposes
-      console.log('Request URL:', 'https://get-price-941325580206.europe-southwest1.run.app/check-price');
+      // Use our CORS-aware fetch utility
+      const apiEndpoint = getApiUrl('/check-price');
+      console.log('API Endpoint:', apiEndpoint);
+      
+      // Display the full request details for debugging
+      console.log('Request URL:', apiEndpoint);
       console.log('Request Method:', 'POST');
-      console.log('Request Headers:', { 'Content-Type': 'application/json' });
+      console.log('Request Headers:', {
+        'Content-Type': 'application/json',
+        'Origin': window.location.origin
+      });
       console.log('Request Body:', JSON.stringify(payload));
       
-      const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
+      const response = await fetchWithCors(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -374,7 +390,7 @@ const SearchForm = () => {
         body: JSON.stringify(payload)
       });
       
-      // Log response status and headers for debugging
+      // Log response details
       console.log('Response Status:', response.status);
       console.log('Response Status Text:', response.statusText);
       console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
@@ -516,11 +532,67 @@ const SearchForm = () => {
       return;
     }
 
+    if (!pickupIsValid) {
+      toast({
+        title: "Invalid Pickup Address",
+        description: "Please enter a complete pickup address with street name and number",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!dropoffIsValid) {
+      toast({
+        title: "Invalid Dropoff Address",
+        description: "Please enter a complete dropoff address with street name and number",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Reset any previous errors
     setApiError(null);
     
     // Fetch prices and proceed to booking flow
     fetchPrices();
+  };
+
+  const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
+    // Store both the display name and URL-friendly version
+    setFormData(prev => ({
+      ...prev,
+      [field]: displayName,
+      [`${field}Display`]: displayName
+    }));
+    
+    console.log(`Selected ${field}:`, displayName);
+    
+    // Get coordinates if placeData is provided
+    if (placeData && placeData.geometry && placeData.geometry.location) {
+      const location = {
+        lat: placeData.geometry.location.lat(),
+        lng: placeData.geometry.location.lng()
+      };
+      
+      if (field === 'pickup') {
+        setPickupCoords(location);
+        console.log('Pickup coordinates:', location);
+      } else {
+        setDropoffCoords(location);
+        console.log('Dropoff coordinates:', location);
+      }
+    } else {
+      // If no placeData or no coordinates, try to geocode the address
+      geocodeAddress(displayName, field);
+    }
+  };
+
+  const handlePickupValidation = (isValid: boolean) => {
+    setPickupIsValid(isValid);
+  };
+
+  const handleDropoffValidation = (isValid: boolean) => {
+    setDropoffIsValid(isValid);
   };
 
   return (
@@ -576,27 +648,37 @@ const SearchForm = () => {
           {/* Pickup Location */}
           <GooglePlacesAutocomplete
             value={formData.pickup}
-            onChange={(value) => setFormData(prev => ({ 
-              ...prev, 
-              pickup: value,
-              pickupDisplay: value
-            }))}
+            onChange={(value) => {
+              userInteractedRef.current = true;
+              setFormData(prev => ({ 
+                ...prev, 
+                pickup: value,
+                pickupDisplay: value
+              }));
+            }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
             placeholder="Pickup location"
             className="w-full"
+            required={true}
+            onValidation={handlePickupValidation}
           />
 
           {/* Dropoff Location */}
           <GooglePlacesAutocomplete
             value={formData.dropoff}
-            onChange={(value) => setFormData(prev => ({ 
-              ...prev, 
-              dropoff: value,
-              dropoffDisplay: value
-            }))}
+            onChange={(value) => {
+              userInteractedRef.current = true;
+              setFormData(prev => ({ 
+                ...prev, 
+                dropoff: value,
+                dropoffDisplay: value
+              }));
+            }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
             placeholder="Dropoff location"
             className="w-full"
+            required={true}
+            onValidation={handleDropoffValidation}
           />
 
           {/* Date Selection */}
@@ -604,6 +686,7 @@ const SearchForm = () => {
             <DateRangePicker
               dateRange={formData.dateRange}
               onDateRangeChange={(dateRange) => {
+                userInteractedRef.current = true;
                 setFormData(prev => ({
                   ...prev,
                   dateRange,
@@ -620,6 +703,7 @@ const SearchForm = () => {
             <DatePicker
               date={formData.departureDate}
               onDateChange={(date) => {
+                userInteractedRef.current = true;
                 setFormData(prev => ({
                   ...prev,
                   departureDate: date,
@@ -665,9 +749,13 @@ const SearchForm = () => {
         </div>
 
         <button 
-          className="w-full py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2" 
+          className={`w-full py-3 rounded-md flex items-center justify-center space-x-2 ${
+            pickupIsValid && dropoffIsValid && (formData.departureDate || (formData.dateRange?.from && formData.dateRange?.to))
+              ? 'bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`} 
           onClick={handleSubmit}
-          disabled={isLoadingPrices}
+          disabled={isLoadingPrices || !pickupIsValid || !dropoffIsValid || !(formData.departureDate || (formData.dateRange?.from && formData.dateRange?.to))}
         >
           {isLoadingPrices ? (
             <>

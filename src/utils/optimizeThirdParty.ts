@@ -52,13 +52,18 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
       delete window[callbackName];
     };
     
+    // Remove any existing Google Maps script
+    const existingScript = document.getElementById('google-maps-script');
+    if (existingScript) {
+      existingScript.remove();
+    }
+    
     // Build the script URL with libraries
     const libraryParams = libraries.join(',');
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraryParams}&callback=${callbackName}`;
-    script.async = true;
-    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraryParams}&callback=${callbackName}&loading=async`;
+    script.async = true; // Ensure async attribute is set
     
     // Handle loading errors
     script.onerror = () => {
@@ -290,10 +295,37 @@ declare global {
     google?: {
       maps?: {
         places?: {
-          Autocomplete: new (input: HTMLInputElement, options: any) => any;
+          Autocomplete?: new (input: HTMLInputElement, options: any) => any;
+          PlaceAutocompleteElement?: new (options: any) => {
+            inputElement: HTMLInputElement;
+            getPlace: () => any;
+            addEventListener: (event: string, callback: () => void) => void;
+          };
+        };
+        Geocoder?: new () => {
+          geocode: (request: { address: string } | { location: { lat: number, lng: number } }, 
+                    callback: (
+                      results: google.maps.GeocoderResult[] | null, 
+                      status: google.maps.GeocoderStatus
+                    ) => void) => void;
+        };
+        GeocoderStatus?: {
+          OK: string;
+          ZERO_RESULTS: string;
+          OVER_QUERY_LIMIT: string;
+          REQUEST_DENIED: string;
+          INVALID_REQUEST: string;
+          UNKNOWN_ERROR: string;
+        };
+        GeocoderResult?: any;
+        event?: {
+          addListener: (instance: any, event: string, handler: Function) => any;
+          removeListener: (listener: any) => void;
+          clearInstanceListeners: (instance: any) => void;
         };
       };
     };
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
     [key: string]: any; // For dynamic callback functions
   }
 }

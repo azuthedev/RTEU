@@ -26,7 +26,7 @@ export const fetchWithCors = async (
   // Ensure headers exist
   const headers = {
     'Content-Type': 'application/json',
-    // Add additional headers for CORS if needed
+    'Access-Control-Allow-Origin': '*',
     'Origin': window.location.origin,
     ...options.headers
   };
@@ -44,7 +44,8 @@ export const fetchWithCors = async (
     // Make the request with the enhanced options
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
+      mode: 'cors' // Explicitly set CORS mode
     });
     
     // Log detailed response information

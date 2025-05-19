@@ -9,6 +9,7 @@ import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 import { useToast } from '../ui/use-toast';
+import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -112,6 +113,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Track validation state for addresses
+  const [pickupIsValid, setPickupIsValid] = useState(true); // Default to true for initial values
+  const [dropoffIsValid, setDropoffIsValid] = useState(true); // Default to true for initial values
 
   // Store original URL values for comparison
   const originalValuesRef = useRef({
@@ -337,13 +342,20 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setApiError(null);
     
     try {
-      // Display the request details for debugging purposes
-      console.log('Request URL:', 'https://get-price-941325580206.europe-southwest1.run.app/check-price');
+      // Use our CORS-aware fetch utility
+      const apiEndpoint = getApiUrl('/check-price');
+      console.log('API Endpoint:', apiEndpoint);
+      
+      // Display the request details for debugging
+      console.log('Request URL:', apiEndpoint);
       console.log('Request Method:', 'POST');
-      console.log('Request Headers:', { 'Content-Type': 'application/json' });
+      console.log('Request Headers:', { 
+        'Content-Type': 'application/json',
+        'Origin': window.location.origin
+      });
       console.log('Request Body:', JSON.stringify(payload));
       
-      const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
+      const response = await fetchWithCors(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -495,6 +507,24 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const handleUpdateRoute = async () => {
     if (!hasChanges) return;
 
+    if (!pickupIsValid) {
+      toast({
+        title: "Invalid Pickup Address",
+        description: "Please enter a complete pickup address with street name and number",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!dropoffIsValid) {
+      toast({
+        title: "Invalid Dropoff Address",
+        description: "Please enter a complete dropoff address with street name and number",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Get values from current state - use actual display values for the URL
     const encodedFrom = encodeURIComponent(pickupValue.toLowerCase().replace(/\s+/g, '-'));
     const encodedTo = encodeURIComponent(dropoffValue.toLowerCase().replace(/\s+/g, '-'));
@@ -577,6 +607,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     navigate(path);
   };
 
+  const handlePickupValidation = (isValid: boolean) => {
+    setPickupIsValid(isValid);
+  };
+
+  const handleDropoffValidation = (isValid: boolean) => {
+    setDropoffIsValid(isValid);
+  };
+
   return (
     <div className="relative">
       {/* Loading overlay */}
@@ -647,6 +685,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
               placeholder="From"
               className="w-full"
+              required={true}
+              onValidation={handlePickupValidation}
             />
 
             {/* Mobile Dropoff Location */}
@@ -656,6 +696,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
               placeholder="To"
               className="w-full"
+              required={true}
+              onValidation={handleDropoffValidation}
             />
 
             {isOneWay ? (
@@ -718,14 +760,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             </div>
 
             <motion.button
-              whileTap={{ scale: hasChanges ? 0.95 : 1 }}
+              whileTap={{ scale: hasChanges && pickupIsValid && dropoffIsValid ? 0.95 : 1 }}
               onClick={handleUpdateRoute}
               className={`w-full py-2 rounded-lg transition-all duration-300 ${
-                hasChanges 
+                hasChanges && pickupIsValid && dropoffIsValid
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges || isLoadingPrices}
+              disabled={!hasChanges || isLoadingPrices || !pickupIsValid || !dropoffIsValid}
             >
               {isLoadingPrices ? (
                 <div className="flex items-center justify-center">
@@ -748,6 +790,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
                 placeholder="From"
                 className="w-full"
+                required={true}
+                onValidation={handlePickupValidation}
               />
 
               {/* Desktop Dropoff Location */}
@@ -757,6 +801,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
                 placeholder="To"
                 className="w-full"
+                required={true}
+                onValidation={handleDropoffValidation}
               />
 
               {isOneWay ? (
@@ -820,14 +866,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             </div>
 
             <motion.button
-              whileTap={{ scale: hasChanges ? 0.95 : 1 }}
+              whileTap={{ scale: hasChanges && pickupIsValid && dropoffIsValid ? 0.95 : 1 }}
               onClick={handleUpdateRoute}
               className={`px-6 py-2 rounded-lg transition-all duration-300 min-w-[120px] ${
-                hasChanges 
+                hasChanges && pickupIsValid && dropoffIsValid
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges || isLoadingPrices}
+              disabled={!hasChanges || isLoadingPrices || !pickupIsValid || !dropoffIsValid}
             >
               {isLoadingPrices ? (
                 <div className="flex items-center">

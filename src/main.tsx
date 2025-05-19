@@ -5,6 +5,7 @@ import './index.css';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from 'react-error-boundary';
 import { initGoogleMaps, initGoogleAnalytics, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
+import { reportWebVitals } from './utils/webVitals.ts';
 
 // Create a fallback component for the error boundary
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -27,29 +28,26 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-// Initialize Google Maps API - delay loading but start it soon after page load
+// Initialize Google Maps API with async loading
 if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
   // Wait until the page has shown some content before loading the heavy Maps API
-  if (document.readyState === 'complete') {
+  const loadMapsAfterDelay = () => {
     setTimeout(() => {
       initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
         .then(success => {
-          console.log('Google Maps API initialized:', success);
+          console.log('Google Maps API initialized with async loading:', success);
         })
         .catch(error => {
           console.error('Error initializing Google Maps API:', error);
         });
     }, 1000); // 1s delay to let initial page render complete
+  };
+  
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    loadMapsAfterDelay();
   } else {
     // If document not yet loaded, add event listener
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
-          .then(success => {
-            console.log('Google Maps API initialized after DOMContentLoaded:', success);
-          });
-      }, 1000);
-    });
+    window.addEventListener('DOMContentLoaded', loadMapsAfterDelay);
   }
 }
 
@@ -92,3 +90,6 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>
 );
+
+// Report web vitals if GA is configured
+reportWebVitals();
