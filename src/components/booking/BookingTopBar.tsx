@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Users, Plus, Minus, Loader2 } from 'lucide-react';
+import { MapPin, Users, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { DatePicker } from '../ui/date-picker';
@@ -107,6 +107,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const [pickupValue, setPickupValue] = useState(bookingState.fromDisplay || from);
   const [dropoffValue, setDropoffValue] = useState(bookingState.toDisplay || to);
   
+  // State for geocoded coordinates
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   // Store original URL values for comparison
   const originalValuesRef = useRef({
     from,
@@ -124,11 +130,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           to: returnDateParsed
         } as DateRange | undefined
   });
-
-  // State for geocoded coordinates
-  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -333,8 +334,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     console.log('Sending price request with payload:', payload);
     setIsLoadingPrices(true);
+    setApiError(null);
     
     try {
+      // Display the request details for debugging purposes
+      console.log('Request URL:', 'https://get-price-941325580206.europe-southwest1.run.app/check-price');
+      console.log('Request Method:', 'POST');
+      console.log('Request Headers:', { 'Content-Type': 'application/json' });
+      console.log('Request Body:', JSON.stringify(payload));
+      
       const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
         method: 'POST',
         headers: {
@@ -343,8 +351,33 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         body: JSON.stringify(payload)
       });
       
+      // Log response status and headers for debugging
+      console.log('Response Status:', response.status);
+      console.log('Response Status Text:', response.statusText);
+      console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        // Try to get detailed error text from response
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = 'Could not read error details';
+        }
+        
+        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
+        console.error('API Error:', errorDetail);
+        
+        throw new Error(`API Error: ${errorDetail}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Response is not JSON:', contentType);
+        const text = await response.text();
+        console.log('Response Text:', text);
+        
+        throw new Error(`Expected JSON response but got: ${contentType}`);
       }
       
       const data: PricingResponse = await response.json();
@@ -357,9 +390,21 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       
     } catch (error) {
       console.error('Error fetching prices:', error);
+      
+      // Create detailed error message
+      let errorMessage = 'Failed to get pricing information. ';
+      
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again later.';
+      }
+      
+      setApiError(errorMessage);
+      
       toast({
-        title: "Error",
-        description: "Failed to get pricing information. Please try again later.",
+        title: "Pricing Error",
+        description: errorMessage,
         variant: "destructive"
       });
       
@@ -481,6 +526,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // Set loading state
     setIsLoadingPrices(true);
+    setApiError(null);
     
     // Fetch updated prices
     const pricingResponse = await fetchPrices();
@@ -539,6 +585,25 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           <div className="flex flex-col items-center">
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
             <p className="text-blue-800">Fetching prices...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* API Error Display */}
+      {apiError && (
+        <div className="absolute top-0 left-0 right-0 m-4 p-4 bg-red-50 border border-red-200 rounded-md z-40 shadow-md">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-2" />
+            <div>
+              <p className="font-medium text-red-800">API Error</p>
+              <p className="text-red-700 text-sm mt-1">{apiError}</p>
+              <button 
+                onClick={() => setApiError(null)}
+                className="text-xs text-blue-600 mt-2 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -662,7 +727,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               }`}
               disabled={!hasChanges || isLoadingPrices}
             >
-              {isLoadingPrices ? 'Updating...' : 'Update Route'}
+              {isLoadingPrices ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </div>
+              ) : (
+                'Update Route'
+              )}
             </motion.button>
           </div>
 

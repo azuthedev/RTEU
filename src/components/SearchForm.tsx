@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Users, ArrowRight, Plus, Minus, Loader2 } from 'lucide-react';
+import { MapPin, Users, ArrowRight, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
 import { throttle } from 'lodash-es';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { DatePicker } from './ui/date-picker';
@@ -102,6 +102,7 @@ const SearchForm = () => {
   
   // State for loading prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Ensure Google Maps API is initialized as soon as possible
   useEffect(() => {
@@ -356,8 +357,15 @@ const SearchForm = () => {
     
     console.log('Sending price request with payload:', payload);
     setIsLoadingPrices(true);
+    setApiError(null);
     
     try {
+      // Display the request details for debugging purposes
+      console.log('Request URL:', 'https://get-price-941325580206.europe-southwest1.run.app/check-price');
+      console.log('Request Method:', 'POST');
+      console.log('Request Headers:', { 'Content-Type': 'application/json' });
+      console.log('Request Body:', JSON.stringify(payload));
+      
       const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
         method: 'POST',
         headers: {
@@ -366,8 +374,33 @@ const SearchForm = () => {
         body: JSON.stringify(payload)
       });
       
+      // Log response status and headers for debugging
+      console.log('Response Status:', response.status);
+      console.log('Response Status Text:', response.statusText);
+      console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        // Try to get detailed error text from response
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = 'Could not read error details';
+        }
+        
+        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
+        console.error('API Error:', errorDetail);
+        
+        throw new Error(`API Error: ${errorDetail}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Response is not JSON:', contentType);
+        const text = await response.text();
+        console.log('Response Text:', text);
+        
+        throw new Error(`Expected JSON response but got: ${contentType}`);
       }
       
       const data: PricingResponse = await response.json();
@@ -381,9 +414,21 @@ const SearchForm = () => {
       
     } catch (error) {
       console.error('Error fetching prices:', error);
+      
+      // Create detailed error message
+      let errorMessage = 'Failed to get pricing information. ';
+      
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again later.';
+      }
+      
+      setApiError(errorMessage);
+      
       toast({
-        title: "Error",
-        description: "Failed to get pricing information. Please try again later.",
+        title: "Pricing Error",
+        description: errorMessage,
         variant: "destructive"
       });
       
@@ -471,6 +516,9 @@ const SearchForm = () => {
       return;
     }
 
+    // Reset any previous errors
+    setApiError(null);
+    
     // Fetch prices and proceed to booking flow
     fetchPrices();
   };
@@ -484,6 +532,22 @@ const SearchForm = () => {
             <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
             <p className="text-lg font-semibold">Fetching Prices</p>
             <p className="text-sm text-gray-600">Please wait while we calculate your trip cost...</p>
+          </div>
+        </div>
+      )}
+
+      {/* API Error Display */}
+      {apiError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-2" />
+            <div>
+              <p className="font-medium text-red-800">API Error</p>
+              <p className="text-red-700 text-sm mt-1">{apiError}</p>
+              <p className="text-xs text-gray-600 mt-2">
+                If this issue persists, please try again later or contact support.
+              </p>
+            </div>
           </div>
         </div>
       )}

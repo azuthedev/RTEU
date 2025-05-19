@@ -39,11 +39,38 @@ const PersonalDetails = () => {
   };
 
   const calculateTotal = () => {
-    const basePrice = bookingState.selectedVehicle?.price || 0;
+    // Get the API price for the selected vehicle if available
+    let basePrice = bookingState.selectedVehicle?.price || 0;
+    
+    // If we have pricing data from the API, use that
+    if (bookingState.pricingResponse) {
+      const apiCategoryMap: Record<string, string> = {
+        'economy-sedan': 'standard_sedan',
+        'premium-sedan': 'premium_sedan',
+        'vip-sedan': 'vip_sedan',
+        'standard-minivan': 'standard_minivan',
+        'xl-minivan': 'xl_minivan',
+        'vip-minivan': 'vip_minivan',
+        'sprinter-8': 'sprinter_8_pax',
+        'sprinter-16': 'sprinter_16_pax',
+        'sprinter-21': 'sprinter_21_pax',
+        'bus-51': 'coach_51_pax'
+      };
+      
+      const apiCategory = apiCategoryMap[bookingState.selectedVehicle?.id || ''];
+      if (apiCategory) {
+        const priceInfo = bookingState.pricingResponse.prices.find(p => p.category === apiCategory);
+        if (priceInfo) {
+          basePrice = priceInfo.price;
+        }
+      }
+    }
+    
     const extrasTotal = Array.from(formData.selectedExtras).reduce((total, extraId) => {
       const extra = extras.find(e => e.id === extraId);
       return total + (extra?.price || 0);
     }, 0);
+    
     return basePrice + extrasTotal;
   };
 
