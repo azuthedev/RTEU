@@ -206,6 +206,12 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
     }
   };
 
+  // Format price with euro symbol
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(totalPrice);
+
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <Header />
@@ -302,7 +308,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
                 <div className="text-right">
                   <div className="text-sm text-gray-600">Total Price</div>
                   <div className="text-xl font-bold">
-                    €{totalPrice.toFixed(2)}
+                    {formattedPrice}
                   </div>
                 </div>
 

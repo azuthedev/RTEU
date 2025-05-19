@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, CreditCard, Banknote, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { useAnalytics } from '../../hooks/useAnalytics';
 import BookingLayout from './BookingLayout';
 import { supabase } from '../../lib/supabase';
 import { generateBookingReference } from '../../utils/bookingHelper';
+import { extras } from '../../data/extras';
 
 const PaymentDetails = () => {
   const { bookingState, setBookingState } = useBooking();
@@ -19,12 +20,12 @@ const PaymentDetails = () => {
   const [showDiscount, setShowDiscount] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [showPriceDetails, setShowPriceDetails] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleStripeCheckout = async () => {
     try {
-      setIsProcessing(true);
+      setIsSubmitting(true);
       setError(null);
 
       // Ensure email is valid - first check user data from auth context
@@ -49,6 +50,9 @@ const PaymentDetails = () => {
         bookingReference
       }));
 
+      // Get the vehicle price from API response if available
+      const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle.id) || bookingState.selectedVehicle.price;
+
       // Prepare booking data for the checkout session
       const bookingData = {
         booking_reference: bookingReference,
@@ -60,7 +64,10 @@ const PaymentDetails = () => {
           returnDate: bookingState.returnDate || null,
           passengers: bookingState.passengers || 1
         },
-        vehicle: bookingState.selectedVehicle,
+        vehicle: {
+          ...bookingState.selectedVehicle,
+          price: vehiclePrice // Use API price if available
+        },
         customer: {
           title: bookingState.personalDetails?.title,
           firstName: bookingState.personalDetails?.firstName,
@@ -183,7 +190,7 @@ const PaymentDetails = () => {
       }
       
       setError(`Payment Error: ${errorMessage}${debugDetails}`);
-      setIsProcessing(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -198,11 +205,17 @@ const PaymentDetails = () => {
     } else {
       // Handle cash payment
       try {
-        setIsProcessing(true);
+        setIsSubmitting(true);
         setError(null);
         
         // Generate booking reference for cash payment
         const bookingReference = generateBookingReference();
+        
+        // Store the booking reference in the context
+        setBookingState(prev => ({
+          ...prev,
+          bookingReference
+        }));
         
         // Ensure email is valid
         let customerEmail = userData?.email;
@@ -217,6 +230,9 @@ const PaymentDetails = () => {
           throw new Error("Invalid email address. Please enter a valid email in your profile or booking details.");
         }
         
+        // Get the vehicle price from API response if available
+        const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle.id) || bookingState.selectedVehicle.price;
+        
         // Prepare booking data for the cash payment
         const bookingData = {
           booking_reference: bookingReference,
@@ -228,7 +244,10 @@ const PaymentDetails = () => {
             returnDate: bookingState.returnDate || null,
             passengers: bookingState.passengers || 1
           },
-          vehicle: bookingState.selectedVehicle,
+          vehicle: {
+            ...bookingState.selectedVehicle,
+            price: vehiclePrice // Use API price if available
+          },
           customer: {
             title: bookingState.personalDetails?.title,
             firstName: bookingState.personalDetails?.firstName,
@@ -292,13 +311,39 @@ const PaymentDetails = () => {
         console.error('Error processing cash booking:', error);
         trackEvent('Booking', 'Cash Booking Error', error.message, 0, true);
         setError(`Failed to create booking: ${error.message}`);
-        setIsProcessing(false);
+        setIsSubmitting(false);
       }
     }
   };
 
+  // Function to get API price for a vehicle
+  const getApiVehiclePrice = (vehicleId: string): number | null => {
+    if (!bookingState.pricingResponse) return null;
+    
+    const apiCategoryMap: Record<string, string> = {
+      'economy-sedan': 'standard_sedan',
+      'premium-sedan': 'premium_sedan',
+      'vip-sedan': 'vip_sedan',
+      'standard-minivan': 'standard_minivan',
+      'xl-minivan': 'xl_minivan',
+      'vip-minivan': 'vip_minivan',
+      'sprinter-8': 'sprinter_8_pax', // Updated to match API
+      'sprinter-16': 'sprinter_16_pax', // Updated to match API
+      'sprinter-21': 'sprinter_21_pax', // Updated to match API
+      'bus-51': 'coach_51_pax' // Updated to match API
+    };
+    
+    const apiCategory = apiCategoryMap[vehicleId];
+    if (!apiCategory) return null;
+    
+    const priceInfo = bookingState.pricingResponse.prices.find(p => p.category === apiCategory);
+    return priceInfo ? priceInfo.price : null;
+  };
+
   const calculateTotal = () => {
-    const basePrice = bookingState.selectedVehicle?.price || 0;
+    // Use API price if available
+    const basePrice = getApiVehiclePrice(bookingState.selectedVehicle?.id) || bookingState.selectedVehicle?.price || 0;
+    
     const extrasTotal = Array.from(bookingState.personalDetails?.selectedExtras || [])
       .reduce((total, extraId) => {
         const extra = extras.find(e => e.id === extraId);
@@ -307,34 +352,55 @@ const PaymentDetails = () => {
     return basePrice + extrasTotal;
   };
 
-  // Mock extras for the example
-  const extras = [
-    { id: 'child-seat', name: 'Child Seat (0-3 years)', price: 5.00 },
-    { id: 'infant-seat', name: 'Infant Seat (3-6 years)', price: 5.00 },
-    { id: 'extra-stop', name: 'Extra Stop', price: 10.00 },
-    { id: 'night-fee', name: 'Night Transfer Fee', price: 10.00 },
-  ];
+  // Generate price details including the API price if available
+  const getPriceDetails = () => {
+    const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle?.id) || bookingState.selectedVehicle?.price || 0;
+    
+    const details = [
+      { 
+        label: bookingState.selectedVehicle?.name || 'Vehicle Transfer', 
+        price: vehiclePrice
+      },
+      ...(bookingState.personalDetails?.selectedExtras 
+        ? Array.from(bookingState.personalDetails.selectedExtras).map(extraId => {
+            const extra = extras.find(e => e.id === extraId);
+            return {
+              label: extra?.name || '',
+              price: extra?.price || 0
+            };
+          })
+        : []
+      )
+    ];
 
-  const priceDetails = [
-    { label: bookingState.selectedVehicle?.name || 'Vehicle Transfer', price: bookingState.selectedVehicle?.price || 0 },
-    { label: 'Night Transfer Fee', price: 10.00 },
-    ...(Array.from(bookingState.personalDetails?.selectedExtras || []).map(extraId => {
-      const extra = extras.find(e => e.id === extraId);
-      return {
-        label: extra?.name || '',
-        price: extra?.price || 0
-      };
-    }))
-  ];
+    // Add night transfer fee if applicable - this would be based on your business logic
+    // const pickupTime = new Date(bookingState.departureDate || '');
+    // const isNightTransfer = pickupTime.getHours() < 6 || pickupTime.getHours() >= 22;
+    // if (isNightTransfer) {
+    //   details.push({ label: 'Night Transfer Fee', price: 10.00 });
+    // }
 
+    return details;
+  };
+
+  const priceDetails = getPriceDetails();
   const total = priceDetails.reduce((sum, item) => sum + item.price, 0);
+
+  // Format currency for display
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'EUR',
+      minimumFractionDigits: 2
+    }).format(amount);
+  };
 
   return (
     <BookingLayout
       currentStep={3}
       totalPrice={total}
       onNext={handleBook}
-      nextButtonText={isProcessing ? "Processing..." : "Complete Booking"}
+      nextButtonText={isSubmitting ? "Processing..." : "Complete Booking"}
       showNewsletter={true}
       preventScrollOnNext={true}
     >
@@ -467,13 +533,13 @@ const PaymentDetails = () => {
                 {priceDetails.map((item, index) => (
                   <div key={index} className="flex justify-between text-gray-600">
                     <span>{item.label}</span>
-                    <span>€{item.price.toFixed(2)}</span>
+                    <span>{formatCurrency(item.price)}</span>
                   </div>
                 ))}
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between font-semibold">
                     <span>Total</span>
-                    <span>€{total.toFixed(2)}</span>
+                    <span>{formatCurrency(total)}</span>
                   </div>
                 </div>
               </motion.div>

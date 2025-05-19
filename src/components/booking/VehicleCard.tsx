@@ -29,6 +29,12 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   onSelect,
   onLearnMore
 }) => {
+  // Format price with euro symbol
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(price);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -101,7 +107,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
         <div>
           <div className="text-sm text-gray-600">From</div>
-          <div className="text-2xl font-bold">€{price.toFixed(2)}</div>
+          <div className="text-2xl font-bold">{formattedPrice}</div>
         </div>
         <motion.button
           whileTap={{ scale: 0.95 }}

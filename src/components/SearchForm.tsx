@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Users, ArrowRight, Plus, Minus } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { MapPin, Users, ArrowRight, Plus, Minus, Loader2 } from 'lucide-react';
+import { throttle } from 'lodash-es';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { DatePicker } from './ui/date-picker';
 import { DateRangePicker } from './ui/date-range-picker';
@@ -7,6 +8,7 @@ import { DateRange } from 'react-day-picker';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { GooglePlacesAutocomplete } from './ui/GooglePlacesAutocomplete';
 import { useBooking } from '../contexts/BookingContext';
+import { useToast } from './ui/use-toast';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -41,12 +43,34 @@ const parseDateFromUrl = (dateStr: string): Date | undefined => {
   }
 };
 
+// Interface for API price response
+interface PricingResponse {
+  prices: {
+    category: string;
+    price: number;
+    currency: string;
+  }[];
+  selected_category: string | null;
+  details: {
+    pickup_time: string;
+    pickup_location: {
+      lat: number;
+      lng: number;
+    };
+    dropoff_location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
 const SearchForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
   const { trackEvent } = useAnalytics();
   const { bookingState, setBookingState } = useBooking();
+  const { toast } = useToast();
 
   // Store original values for comparison and restoration
   const originalValuesRef = useRef({
@@ -71,6 +95,13 @@ const SearchForm = () => {
     departureDate: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined
   });
+
+  // State for geocoded coordinates
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  
+  // State for loading prices
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
 
   // Ensure Google Maps API is initialized as soon as possible
   useEffect(() => {
@@ -152,7 +183,7 @@ const SearchForm = () => {
           dateRange: isRoundTrip ? {
             from: departureDate,
             to: returnDateParsed
-          } : undefined
+          } as DateRange | undefined : undefined
         };
 
         setFormData(newFormData);
@@ -230,25 +261,143 @@ const SearchForm = () => {
     }));
     
     console.log(`Selected ${field}:`, displayName);
+    
+    // Get coordinates if placeData is provided
+    if (placeData && placeData.geometry && placeData.geometry.location) {
+      const location = {
+        lat: placeData.geometry.location.lat(),
+        lng: placeData.geometry.location.lng()
+      };
+      
+      if (field === 'pickup') {
+        setPickupCoords(location);
+        console.log('Pickup coordinates:', location);
+      } else {
+        setDropoffCoords(location);
+        console.log('Dropoff coordinates:', location);
+      }
+    } else {
+      // If no placeData or no coordinates, try to geocode the address
+      geocodeAddress(displayName, field);
+    }
   };
 
-  const handleSubmit = () => {
-    const pickup = formData.pickup;
-    const dropoff = formData.dropoff;
+  // Function to geocode addresses using Google Maps Geocoding API
+  const geocodeAddress = (address: string, field: 'pickup' | 'dropoff') => {
+    if (!address || !window.google?.maps?.Geocoder) return;
     
-    if (!pickup || !dropoff || (!formData.departureDate && !formData.dateRange?.from)) {
-      alert('Please fill in all required fields');
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        const location = {
+          lat: results[0].geometry.location.lat(),
+          lng: results[0].geometry.location.lng()
+        };
+        
+        if (field === 'pickup') {
+          setPickupCoords(location);
+          console.log('Geocoded pickup coordinates:', location);
+        } else {
+          setDropoffCoords(location);
+          console.log('Geocoded dropoff coordinates:', location);
+        }
+      } else {
+        console.error('Geocoding failed:', status);
+        if (field === 'pickup') {
+          setPickupCoords(null);
+        } else {
+          setDropoffCoords(null);
+        }
+      }
+    });
+  };
+
+  // Function to fetch prices from the API
+  const fetchPrices = async () => {
+    if (!pickupCoords || !dropoffCoords) {
+      // Try to geocode addresses again if coordinates are missing
+      if (formData.pickup) geocodeAddress(formData.pickup, 'pickup');
+      if (formData.dropoff) geocodeAddress(formData.dropoff, 'dropoff');
+      
+      toast({
+        title: "Location Error",
+        description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
+        variant: "destructive"
+      });
       return;
     }
-
-    if (isReturn && !formData.dateRange?.to) {
-      alert('Please select a return date for round trips');
+    
+    const pickupTime = isReturn 
+      ? formData.dateRange?.from 
+      : formData.departureDate;
+      
+    if (!pickupTime) {
+      toast({
+        title: "Time Error",
+        description: "Please select a pickup date and time.",
+        variant: "destructive"
+      });
       return;
     }
+    
+    // Format date to ISO8601
+    const pickupTimeISO = pickupTime.toISOString();
+    
+    // Prepare request payload
+    const payload = {
+      pickup_lat: pickupCoords.lat,
+      pickup_lng: pickupCoords.lng,
+      dropoff_lat: dropoffCoords.lat,
+      dropoff_lng: dropoffCoords.lng,
+      pickup_time: pickupTimeISO,
+      trip_type: isReturn ? "2" : "1" // Add trip_type parameter
+    };
+    
+    console.log('Sending price request with payload:', payload);
+    setIsLoadingPrices(true);
+    
+    try {
+      const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const data: PricingResponse = await response.json();
+      console.log('Pricing data received:', data);
+      
+      // Track successful price fetch
+      trackEvent('Search Form', 'Price Fetched', `${formData.pickup} to ${formData.dropoff}`);
+      
+      // Proceed to booking with the pricing data
+      proceedToBooking(data);
+      
+    } catch (error) {
+      console.error('Error fetching prices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get pricing information. Please try again later.",
+        variant: "destructive"
+      });
+      
+      // Track error
+      trackEvent('Search Form', 'Price Fetch Error', error.message, 0, true);
+      setIsLoadingPrices(false);
+    }
+  };
 
+  // Function to proceed to booking with pricing data
+  const proceedToBooking = (pricingData: PricingResponse) => {
     // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
-    const encodedPickup = encodeURIComponent(pickup.toLowerCase().replace(/\s+/g, '-'));
-    const encodedDropoff = encodeURIComponent(dropoff.toLowerCase().replace(/\s+/g, '-'));
+    const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
+    const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
     
     // Important: Type is '1' for One Way, '2' for Round Trip 
     const type = isReturn ? '2' : '1';
@@ -264,7 +413,7 @@ const SearchForm = () => {
     const path = `/transfer/${encodedPickup}/${encodedDropoff}/${type}/${formattedDepartureDate}/${returnDateParam}/${passengers}/form`;
     
     // Track search form submission
-    trackEvent('Search Form', 'Form Submit', `${pickup} to ${dropoff}`, passengers);
+    trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
     
     // Update original values to match the new state
     originalValuesRef.current = {
@@ -281,24 +430,64 @@ const SearchForm = () => {
     // Store the display names and URL-friendly names in booking context
     setBookingState(prev => ({
       ...prev,
-      from: pickup, 
-      to: dropoff,
+      from: formData.pickup, 
+      to: formData.dropoff,
       fromDisplay: formData.pickupDisplay,
       toDisplay: formData.dropoffDisplay,
       isReturn,
       departureDate: formattedDepartureDate,
       returnDate: returnDateParam !== '0' ? returnDateParam : undefined,
-      passengers
+      passengers,
+      // Store pricing data in context
+      pricingResponse: pricingData
     }));
     
+    // Navigate to booking flow
     navigate(path);
     
     // Scroll to top after navigation
     window.scrollTo(0, 0);
   };
 
+  const handleSubmit = () => {
+    const pickup = formData.pickup;
+    const dropoff = formData.dropoff;
+    
+    if (!pickup || !dropoff || (!formData.departureDate && !formData.dateRange?.from)) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isReturn && !formData.dateRange?.to) {
+      toast({
+        title: "Missing Return Date",
+        description: "Please select a return date for round trips",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Fetch prices and proceed to booking flow
+    fetchPrices();
+  };
+
   return (
     <div className="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full">
+      {/* Full-screen loader */}
+      {isLoadingPrices && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+            <p className="text-lg font-semibold">Fetching Prices</p>
+            <p className="text-sm text-gray-600">Please wait while we calculate your trip cost...</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col space-y-6">
         <div className="flex bg-gray-100 p-1 rounded-lg">
           <button
@@ -414,9 +603,19 @@ const SearchForm = () => {
         <button 
           className="w-full py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2" 
           onClick={handleSubmit}
+          disabled={isLoadingPrices}
         >
-          <span>See Prices</span>
-          <ArrowRight className="h-5 w-5" />
+          {isLoadingPrices ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              <span>Fetching Prices...</span>
+            </>
+          ) : (
+            <>
+              <span>See Prices</span>
+              <ArrowRight className="h-5 w-5" />
+            </>
+          )}
         </button>
       </div>
     </div>

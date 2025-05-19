@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Users, Plus, Minus } from 'lucide-react';
+import { MapPin, Users, Plus, Minus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { DatePicker } from '../ui/date-picker';
@@ -8,6 +8,7 @@ import { DateRange } from 'react-day-picker';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
+import { useToast } from '../ui/use-toast';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -42,6 +43,27 @@ const parseDateFromUrl = (dateStr: string): Date | undefined => {
   }
 };
 
+// Interface for API price response
+interface PricingResponse {
+  prices: {
+    category: string;
+    price: number;
+    currency: string;
+  }[];
+  selected_category: string | null;
+  details: {
+    pickup_time: string;
+    pickup_location: {
+      lat: number;
+      lng: number;
+    };
+    dropoff_location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
 interface BookingTopBarProps {
   from: string;
   to: string;
@@ -64,6 +86,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { bookingState, setBookingState } = useBooking();
+  const { toast } = useToast();
   
   // Flag to track component initialization
   const isInitializedRef = useRef(false);
@@ -101,6 +124,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           to: returnDateParsed
         } as DateRange | undefined
   });
+
+  // State for geocoded coordinates
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -218,14 +246,153 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setHasChanges(hasFormChanges);
   }, [formData, isOneWay, pickupValue, dropoffValue]);
 
+  // Function to geocode addresses using Google Maps Geocoding API
+  const geocodeAddress = (address: string, field: 'pickup' | 'dropoff') => {
+    if (!address || !window.google?.maps?.Geocoder) return null;
+    
+    return new Promise<{lat: number, lng: number} | null>((resolve) => {
+      const geocoder = new google.maps.Geocoder();
+      
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+          const location = {
+            lat: results[0].geometry.location.lat(),
+            lng: results[0].geometry.location.lng()
+          };
+          
+          if (field === 'pickup') {
+            setPickupCoords(location);
+            console.log('Geocoded pickup coordinates:', location);
+          } else {
+            setDropoffCoords(location);
+            console.log('Geocoded dropoff coordinates:', location);
+          }
+          
+          resolve(location);
+        } else {
+          console.error('Geocoding failed:', status);
+          if (field === 'pickup') {
+            setPickupCoords(null);
+          } else {
+            setDropoffCoords(null);
+          }
+          resolve(null);
+        }
+      });
+    });
+  };
+
+  // Function to fetch prices from the API
+  const fetchPrices = async (): Promise<PricingResponse | null> => {
+    // Get coordinates if not already available
+    let pickup = pickupCoords;
+    let dropoff = dropoffCoords;
+    
+    if (!pickup) {
+      pickup = await geocodeAddress(pickupValue, 'pickup');
+    }
+    
+    if (!dropoff) {
+      dropoff = await geocodeAddress(dropoffValue, 'dropoff');
+    }
+    
+    if (!pickup || !dropoff) {
+      toast({
+        title: "Location Error",
+        description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    const pickupTime = isOneWay 
+      ? formData.departureDate 
+      : formData.dateRange?.from;
+      
+    if (!pickupTime) {
+      toast({
+        title: "Time Error",
+        description: "Please select a pickup date and time.",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    // Format date to ISO8601
+    const pickupTimeISO = pickupTime.toISOString();
+    
+    // Prepare request payload with trip_type parameter
+    const payload = {
+      pickup_lat: pickup.lat,
+      pickup_lng: pickup.lng,
+      dropoff_lat: dropoff.lat,
+      dropoff_lng: dropoff.lng,
+      pickup_time: pickupTimeISO,
+      trip_type: isOneWay ? "1" : "2" // Add trip_type parameter
+    };
+    
+    console.log('Sending price request with payload:', payload);
+    setIsLoadingPrices(true);
+    
+    try {
+      const response = await fetch('https://get-price-941325580206.europe-southwest1.run.app/check-price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const data: PricingResponse = await response.json();
+      console.log('Pricing data received:', data);
+      
+      // Track successful price fetch
+      // trackEvent('Booking', 'Price Fetched', `${pickupValue} to ${dropoffValue}`);
+      
+      return data;
+      
+    } catch (error) {
+      console.error('Error fetching prices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get pricing information. Please try again later.",
+        variant: "destructive"
+      });
+      
+      return null;
+    } finally {
+      setIsLoadingPrices(false);
+    }
+  };
+
   // Handle place selection from autocomplete
-  const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string) => {
+  const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
     userInteractedRef.current = true;
     
     if (field === 'pickup') {
       setPickupValue(displayName);
     } else {
       setDropoffValue(displayName);
+    }
+    
+    // Get coordinates if placeData is provided
+    if (placeData && placeData.geometry && placeData.geometry.location) {
+      const location = {
+        lat: placeData.geometry.location.lat(),
+        lng: placeData.geometry.location.lng()
+      };
+      
+      if (field === 'pickup') {
+        setPickupCoords(location);
+        console.log('Pickup coordinates:', location);
+      } else {
+        setDropoffCoords(location);
+        console.log('Dropoff coordinates:', location);
+      }
     }
   };
 
@@ -280,7 +447,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     }
   };
 
-  const handleUpdateRoute = () => {
+  const handleUpdateRoute = async () => {
     if (!hasChanges) return;
 
     // Get values from current state - use actual display values for the URL
@@ -292,7 +459,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
 
     if (!isOneWay && formData.dateRange) {
       if (!formData.dateRange.from || !formData.dateRange.to) {
-        alert('Please select both departure and return dates for round trips.');
+        toast({
+          title: "Date Error",
+          description: "Please select both departure and return dates for round trips.",
+          variant: "destructive"
+        });
         return;
       }
       formattedDepartureDate = formatDateForUrl(formData.dateRange.from);
@@ -300,7 +471,23 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     } else if (isOneWay && formData.departureDate) {
       formattedDepartureDate = formatDateForUrl(formData.departureDate);
     } else {
-      alert('Please select a date for your trip.');
+      toast({
+        title: "Date Error",
+        description: "Please select a date for your trip.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Set loading state
+    setIsLoadingPrices(true);
+    
+    // Fetch updated prices
+    const pricingResponse = await fetchPrices();
+    
+    // If price fetching failed, stop here
+    if (!pricingResponse) {
+      setIsLoadingPrices(false);
       return;
     }
     
@@ -332,18 +519,30 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       isReturn: !isOneWay,
       departureDate: formattedDepartureDate,
       returnDate: formattedReturnDate !== '0' ? formattedReturnDate : undefined,
-      passengers: formData.passengers
+      passengers: formData.passengers,
+      pricingResponse: pricingResponse // Store the pricing data
     }));
 
     // Reset change detection before navigation
     setHasChanges(false);
     userInteractedRef.current = false;
+    setIsLoadingPrices(false);
     
     navigate(path);
   };
 
   return (
     <div className="relative">
+      {/* Loading overlay */}
+      {isLoadingPrices && (
+        <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 rounded-xl">
+          <div className="flex flex-col items-center">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+            <p className="text-blue-800">Fetching prices...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="absolute -top-10 left-6">
         <div className="relative h-10 bg-white rounded-t-lg shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] overflow-hidden">
           <div className="flex h-full">
@@ -380,7 +579,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             <GooglePlacesAutocomplete
               value={pickupValue}
               onChange={(value) => handlePlaceSelect('pickup', value)}
-              onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
+              onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
               placeholder="From"
               className="w-full"
             />
@@ -389,7 +588,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             <GooglePlacesAutocomplete
               value={dropoffValue}
               onChange={(value) => handlePlaceSelect('dropoff', value)}
-              onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
+              onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
               placeholder="To"
               className="w-full"
             />
@@ -461,9 +660,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges}
+              disabled={!hasChanges || isLoadingPrices}
             >
-              Update Route
+              {isLoadingPrices ? 'Updating...' : 'Update Route'}
             </motion.button>
           </div>
 
@@ -474,7 +673,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               <GooglePlacesAutocomplete
                 value={pickupValue}
                 onChange={(value) => handlePlaceSelect('pickup', value)}
-                onPlaceSelect={(displayName) => handlePlaceSelect('pickup', displayName)}
+                onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
                 placeholder="From"
                 className="w-full"
               />
@@ -483,7 +682,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               <GooglePlacesAutocomplete
                 value={dropoffValue}
                 onChange={(value) => handlePlaceSelect('dropoff', value)}
-                onPlaceSelect={(displayName) => handlePlaceSelect('dropoff', displayName)}
+                onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
                 placeholder="To"
                 className="w-full"
               />
@@ -556,9 +755,16 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges}
+              disabled={!hasChanges || isLoadingPrices}
             >
-              Update Route
+              {isLoadingPrices ? (
+                <div className="flex items-center">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating
+                </div>
+              ) : (
+                'Update Route'
+              )}
             </motion.button>
           </div>
         </div>

@@ -1,6 +1,27 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { vehicles } from '../data/vehicles';
 
+// Interface for API price response
+interface PricingResponse {
+  prices: {
+    category: string;
+    price: number;
+    currency: string;
+  }[];
+  selected_category: string | null;
+  details: {
+    pickup_time: string;
+    pickup_location: {
+      lat: number;
+      lng: number;
+    };
+    dropoff_location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
 interface BookingState {
   step: 1 | 2 | 3;
   previousStep?: 1 | 2 | 3; // Added to track previous step for animations
@@ -34,6 +55,7 @@ interface BookingState {
     cvc?: string;
     discountCode?: string;
   };
+  pricingResponse?: PricingResponse; // Store pricing data from API
 }
 
 interface BookingContextType {
