@@ -17,6 +17,7 @@ interface FormFieldProps {
   placeholder?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onValueChange?: (value: string) => void; // Added this prop
   required?: boolean;
   autoComplete?: string;
   className?: string;
@@ -42,6 +43,7 @@ const FormField: React.FC<FormFieldProps> = ({
   placeholder,
   value,
   onChange,
+  onValueChange,
   required = false,
   autoComplete,
   className,
@@ -100,6 +102,12 @@ const FormField: React.FC<FormFieldProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e);
+    
+    // Call the onValueChange prop if provided
+    if (onValueChange) {
+      onValueChange(e.target.value);
+    }
+    
     if (validateOnChange) {
       const validationError = validate(e.target.value);
       setInternalError(validationError);
