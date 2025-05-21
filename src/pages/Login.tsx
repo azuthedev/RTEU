@@ -4,11 +4,15 @@ import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, CheckCircle } f
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import { validateBookingReference } from '../utils/bookingReferenceValidator';
+import BookingReferenceInput from '../components/BookingReferenceInput';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface LocationState {
   message?: string;
   from?: Location;
   bookingReference?: string;
+  email?: string;
 }
 
 const Login = () => {
@@ -19,8 +23,10 @@ const Login = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const [bookingReference, setBookingReference] = useState<string>('');
+  const [bookingData, setBookingData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { trackEvent } = useAnalytics();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,12 +49,33 @@ const Login = () => {
     if (state?.bookingReference) {
       setBookingReference(state.bookingReference);
     }
+    if (state?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: state.email || ''
+      }));
+    }
     
     // Clear state after reading it
-    if (state?.message || state?.bookingReference) {
+    if (state?.message || state?.bookingReference || state?.email) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
+
+  const handleValidBookingFound = (data: any) => {
+    setBookingData(data);
+    
+    // Pre-fill email field if it's not already filled
+    if (data.customer_email && !formData.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: data.customer_email
+      }));
+    }
+    
+    // Track event
+    trackEvent('Form', 'Booking Reference Found on Login', data.booking_reference);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +92,26 @@ const Login = () => {
       const { error, session } = await signIn(formData.email, formData.password);
       
       if (error) throw error;
+      
+      // If we have a session and a booking reference, link the booking to the user
+      if (session && bookingReference && bookingData) {
+        try {
+          const { error: linkError } = await supabase
+            .from('trips')
+            .update({ user_id: session.user.id })
+            .eq('booking_reference', bookingReference);
+          
+          if (linkError) {
+            console.error('Error linking booking to user:', linkError);
+          } else {
+            console.log(`Successfully linked booking ${bookingReference} to user ${session.user.id}`);
+            trackEvent('Authentication', 'Booking Linked at Login', bookingReference);
+          }
+        } catch (linkError) {
+          console.error('Error linking booking:', linkError);
+          // Don't fail login just because linking failed
+        }
+      }
       
       // If we have a session, redirect immediately
       if (session) {
@@ -138,8 +185,18 @@ const Login = () => {
               </div>
             )}
 
+            {/* Booking Reference */}
+            {!isDriver && (
+              <BookingReferenceInput
+                value={bookingReference}
+                onChange={setBookingReference}
+                onValidBookingFound={handleValidBookingFound}
+                className="mb-6"
+              />
+            )}
+
             {/* Booking Reference Message */}
-            {bookingReference && (
+            {bookingReference && bookingData && (
               <div className="bg-blue-50 text-blue-700 p-3 rounded-md mb-6 text-sm">
                 <p className="font-medium">Your booking reference: {bookingReference}</p>
                 <p className="mt-1">Sign in to manage your booking.</p>
