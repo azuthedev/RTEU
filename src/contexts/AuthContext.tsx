@@ -26,8 +26,11 @@ interface AuthContextType {
     verified: boolean,
     exists: boolean,
     requiresVerification: boolean,
+    hasPendingVerification?: boolean,
+    verificationAge?: number,
     error?: string
   }>;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +81,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
+  // Refresh session to update JWT claims
+  const refreshSession = async (): Promise<boolean> => {
+    try {
+      const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError || !newSession) {
+        console.error('Error refreshing session:', refreshError);
+        return false;
+      }
+      
+      setSession(newSession);
+      setUser(newSession.user);
+      
+      return true;
+    } catch (error) {
+      console.error('Unexpected error refreshing session:', error);
+      return false;
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
@@ -99,10 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             trackEvent('Authentication', 'Auto Sign In', userData.user_role);
             
             // Refresh session to get updated JWT claims
-            const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-            if (!refreshError && newSession) {
-              setSession(newSession);
-            }
+            await refreshSession();
           }
         }
       } catch (error) {
@@ -150,11 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             trackEvent('Authentication', 'User Role', userData.user_role);
             
             // Refresh session to get updated JWT claims
-            const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-            if (!refreshError && newSession) {
-              // Set the new session with updated claims
-              setSession(newSession);
-            }
+            await refreshSession();
           }
         }
       }
@@ -378,11 +394,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           trackEvent('Authentication', 'User Role', userData.user_role);
           
           // Refresh session to get updated JWT claims
-          const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-          if (!refreshError && newSession) {
-            // Set the new session with updated claims
-            setSession(newSession);
-          }
+          await refreshSession();
         }
       }
       
@@ -457,10 +469,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       // Refresh session to update JWT claims if user_role was updated
       if ('user_role' in updates) {
-        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-        if (!refreshError && newSession) {
-          setSession(newSession);
-        }
+        await refreshSession();
       }
       
       return { error: null, data };
@@ -564,7 +573,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     signOut,
     updateUserData,
     sendVerificationEmail,
-    checkEmailVerification: checkEmailVerificationStatus
+    checkEmailVerification: checkEmailVerificationStatus,
+    refreshSession
   };
 
   return (

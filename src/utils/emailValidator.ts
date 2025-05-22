@@ -1,23 +1,8 @@
 import { commonEmailTypos } from './emailTypoSuggestions';
 import { supabase } from '../lib/supabase';
 
-/**
- * Generates an OTP code in format 0000a0
- * 4 digits, 1 letter, 1 digit
- */
-function generateOTP(): string {
-  // Generate 4 random digits
-  const firstPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  
-  // Generate a random lowercase letter
-  const letter = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-  
-  // Generate the last digit
-  const lastDigit = Math.floor(Math.random() * 10).toString();
-  
-  // Combine to form 0000a0 format
-  return `${firstPart}${letter}${lastDigit}`;
-}
+// Configuration constants
+const OTP_EXPIRY_MINUTES = 15;
 
 /**
  * Validates an email address and returns any corrections or validation issues
@@ -103,92 +88,50 @@ export const validateEmail = async (email: string): Promise<{
 
 /**
  * Sends an OTP verification code to the provided email
- * Uses direct webhook to n8n instead of Supabase Edge Function
+ * Uses the Edge Function for centralized verification
  */
 export const sendOtpEmail = async (email: string, name?: string): Promise<{
   success: boolean;
   verificationId?: string;
   error?: string;
+  remainingAttempts?: number;
 }> => {
   try {
     console.log(`Sending verification email to ${email}`);
     
-    // Generate a new OTP code
-    const otpCode = generateOTP();
-    console.log(`Generated OTP code: ${otpCode}`);
+    // Call the Supabase Edge Function
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          action: 'send-otp'
+        })
+      }
+    );
     
-    // Calculate expiration time (15 minutes from now)
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
-    
-    // Store the OTP in the database
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
-    
-    if (userError && userError.code !== 'PGRST116') {
-      console.error('Error checking user:', userError);
+    if (!response.ok) {
+      // Check for rate limiting
+      if (response.status === 429) {
+        throw new Error('Too many verification attempts. Please try again later.');
+      }
+      
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send verification email');
     }
     
-    // Create verification record in database
-    const { data: verificationData, error: insertError } = await supabase
-      .from('email_verifications')
-      .insert([{
-        user_id: userData?.id || null,
-        token: otpCode,
-        email: email,
-        expires_at: expiresAt,
-        verified: false
-      }])
-      .select()
-      .single();
+    const data = await response.json();
     
-    if (insertError) {
-      console.error('Error creating verification record:', insertError);
-      throw new Error('Failed to create verification record');
-    }
-    
-    const verificationId = verificationData.id;
-    
-    // Send the actual email using the webhook
-    const webhookUrl = 'https://n8n.capohq.com/webhook/rteu-tx-email';
-    
-    // Log the webhook request
-    console.log('Sending webhook request to:', webhookUrl);
-    console.log('Webhook payload:', {
-      name: name || email.split('@')[0],
-      email: email,
-      otp_code: otpCode,
-      email_type: "OTP"
-    });
-    
-    // Make the POST request to the webhook
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: name || email.split('@')[0],
-        email: email,
-        otp_code: otpCode,
-        email_type: "OTP"
-      })
-    });
-    
-    if (!webhookResponse.ok) {
-      const responseText = await webhookResponse.text();
-      console.error('Webhook error:', webhookResponse.status, responseText);
-      throw new Error(`Failed to send email: ${webhookResponse.status} ${responseText}`);
-    }
-    
-    console.log('Email sent successfully via webhook');
-
     return {
-      success: true,
-      verificationId
+      success: data.success,
+      verificationId: data.verificationId,
+      remainingAttempts: data.remainingAttempts
     };
   } catch (err: any) {
     console.error('Error sending OTP:', err);
@@ -204,36 +147,10 @@ export const sendOtpEmail = async (email: string, name?: string): Promise<{
       console.log('DEVELOPMENT FALLBACK: Simulating email verification');
       
       try {
-        // Generate a fake verification ID
-        const otpCode = generateOTP();
-        
-        // Store in database for dev testing
-        const { data, error } = await supabase
-          .from('email_verifications')
-          .insert([{
-            user_id: null,
-            token: otpCode,
-            email: email,
-            expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            verified: false
-          }])
-          .select()
-          .single();
-          
-        if (error) {
-          console.warn('Could not create dev verification record:', error);
-          return {
-            success: true,
-            verificationId: `dev-${Date.now()}`
-          };
-        }
-        
-        console.log(`DEVELOPMENT MODE: Generated OTP code: ${otpCode} for testing`);
-        console.log(`DEVELOPMENT MODE: Use this code in the verification form`);
-        
+        // Generate a fake verification ID for dev testing
         return {
           success: true,
-          verificationId: data.id
+          verificationId: `dev-${Date.now()}`
         };
       } catch (devError) {
         console.error('Error in dev fallback:', devError);
@@ -252,7 +169,7 @@ export const sendOtpEmail = async (email: string, name?: string): Promise<{
 };
 
 /**
- * Verifies an OTP code
+ * Verifies an OTP code via the Edge Function
  */
 export const verifyOtp = async (otp: string, verificationId: string): Promise<{
   success: boolean;
@@ -265,52 +182,32 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       return { success: true };
     }
     
-    // Find the verification record
-    const { data: verification, error: verificationError } = await supabase
-      .from('email_verifications')
-      .select('*')
-      .eq('id', verificationId)
-      .eq('token', otp)
-      .single();
-    
-    if (verificationError) {
-      return {
-        success: false,
-        error: 'Invalid verification code. Please try again or request a new code.'
-      };
-    }
-    
-    // Check expiration
-    if (new Date(verification.expires_at) < new Date()) {
-      return {
-        success: false,
-        error: 'Verification code has expired. Please request a new code.'
-      };
-    }
-    
-    // Mark as verified
-    const { error: updateError } = await supabase
-      .from('email_verifications')
-      .update({ verified: true })
-      .eq('id', verificationId);
-    
-    if (updateError) {
-      console.error('Error updating verification status:', updateError);
-    }
-    
-    // If we have a user_id, update the user's email_verified status
-    if (verification.user_id) {
-      const { error: userUpdateError } = await supabase
-        .from('users')
-        .update({ email_verified: true })
-        .eq('id', verification.user_id);
-      
-      if (userUpdateError) {
-        console.error('Error updating user verification status:', userUpdateError);
+    // Call the Edge Function to verify the OTP
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          token: otp,
+          verificationId
+        })
       }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Invalid verification code');
     }
     
-    return { success: true };
+    const data = await response.json();
+    
+    return { 
+      success: data.success
+    };
   } catch (err: any) {
     console.error('Error verifying OTP:', err);
     
@@ -340,34 +237,40 @@ export const checkEmailVerification = async (email: string): Promise<{
   verified: boolean;
   exists: boolean;
   requiresVerification: boolean;
+  hasPendingVerification?: boolean;
+  verificationAge?: number;
   error?: string;
 }> => {
   try {
-    // Check if user exists and is verified
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('id, email_verified')
-      .eq('email', email)
-      .maybeSingle();
+    // Call the Edge Function to check verification status
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          email,
+          action: 'check-verification'
+        })
+      }
+    );
     
-    if (userError) {
-      console.error('Error checking user:', userError);
-      throw new Error(userError.message);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to check verification status');
     }
     
-    // If user doesn't exist or is already verified
-    if (!userData) {
-      return {
-        verified: false,
-        exists: false,
-        requiresVerification: false
-      };
-    }
+    const data = await response.json();
     
     return {
-      verified: !!userData.email_verified,
-      exists: true,
-      requiresVerification: !userData.email_verified
+      verified: data.verified,
+      exists: data.exists,
+      requiresVerification: data.requiresVerification,
+      hasPendingVerification: data.hasPendingVerification,
+      verificationAge: data.verificationAge
     };
   } catch (err: any) {
     console.error('Error checking email verification:', err);
