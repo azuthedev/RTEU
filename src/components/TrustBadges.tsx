@@ -39,8 +39,8 @@ const TrustBadges = () => {
                   src="https://files.royaltransfereu.com/assets/tripadvisor-logo.png"
                   alt="Tripadvisor Rating and Reviews Logo - Royal Transfer EU is highly rated on Tripadvisor"
                   className="h-full w-auto object-contain"
-                  width={115}
-                  height={65}
+                  width={125}
+                  height={70}
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -88,7 +88,7 @@ const TrustBadges = () => {
                   <OptimizedImage
                     src="https://files.royaltransfereu.com/assets/visa.png"
                     alt="Visa payment logo - Royal Transfer EU accepts Visa cards"
-                    className="h-6 md:h-8 w-auto"
+                    className="h-7 md:h-8 w-auto"
                     width={100}
                     height={30}
                     loading="eager"
@@ -99,9 +99,9 @@ const TrustBadges = () => {
                   <OptimizedImage
                     src="https://files.royaltransfereu.com/assets/mastercard-logo.svg"
                     alt="MasterCard payment logo - Royal Transfer EU accepts MasterCard"
-                    className="h-6 md:h-8 w-auto"
-                    width={70}
-                    height={67}
+                    className="h-10 md:h-10 w-auto"
+                    width={90}
+                    height={87}
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -110,7 +110,7 @@ const TrustBadges = () => {
                   <OptimizedImage
                     src="https://files.royaltransfereu.com/assets/google_pay_logo.png"
                     alt="Google Pay logo - Royal Transfer EU accepts Google Pay"
-                    className="h-6 md:h-8 w-auto"
+                    className="h-9 md:h-10 w-auto"
                     width={100}
                     height={46}
                     loading="eager"
@@ -121,9 +121,9 @@ const TrustBadges = () => {
                   <OptimizedImage
                     src="https://files.royaltransfereu.com/assets/applepay.png"
                     alt="Apple Pay logo - Royal Transfer EU accepts Apple Pay"
-                    className="h-6 md:h-8 w-auto"
-                    width={80}
-                    height={78}
+                    className="h-14 md:h-14 w-auto"
+                    width={120}
+                    height={118}
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -143,7 +143,7 @@ const TrustBadges = () => {
                   <OptimizedImage
                     src="https://files.royaltransfereu.com/assets/stripe_logo.png"
                     alt="Stripe secure payment processing logo - Royal Transfer EU uses Stripe for secure payments"
-                    className="h-6 md:h-10 w-auto"
+                    className="h-8 md:h-10 w-auto"
                     width={100}
                     height={40}
                     loading="eager"
