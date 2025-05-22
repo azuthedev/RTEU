@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
+import { v4 as uuidv4 } from 'npm:uuid@9.0.0';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,21 +73,29 @@ function generateOTP() {
   return `${firstPart}${letter}${secondPart}`;
 }
 
-// Check if domain has valid MX records using public DNS API
+// Generate a secure token for magic link
+function generateMagicLinkToken() {
+  return uuidv4().replace(/-/g, '');
+}
+
+// Check if domain has valid MX records using the API
 async function checkMxRecords(domain: string): Promise<boolean> {
   try {
-    // Using Google's public DNS API to lookup MX records
-    const response = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`);
+    const response = await fetch(`https://api.api-ninjas.com/v1/mxlookup?domain=${domain}`, {
+      headers: {
+        'X-Api-Key': '1fL7m1+wL7GjmkJKSVz0Mw==L0Fc9vi9AVFpoThd'
+      }
+    });
     
     if (!response.ok) {
-      console.error(`DNS API error: ${response.status} ${response.statusText}`);
+      console.error(`MX lookup API error: ${response.status} ${response.statusText}`);
       return true; // Fail open - assume domain is valid if API fails
     }
     
-    const data = await response.json();
+    const mxRecords = await response.json();
     
-    // Check if we have any MX records
-    return data.Answer && data.Answer.length > 0;
+    // If there are any MX records, the domain can receive email
+    return Array.isArray(mxRecords) && mxRecords.length > 0;
   } catch (error) {
     console.error('Error checking MX records:', error);
     return true; // Fail open - assume domain is valid if check fails
@@ -120,8 +129,8 @@ function checkEmailTypos(email: string): string | null {
   return null;
 }
 
-// Send OTP via the webhook
-async function sendOTPEmail(name: string, email: string, otpCode: string) {
+// Send verification email with both OTP and magic link
+async function sendVerificationEmail(name: string, email: string, otpCode: string, magicLink: string) {
   try {
     const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
       method: 'POST',
@@ -132,20 +141,27 @@ async function sendOTPEmail(name: string, email: string, otpCode: string) {
         name: name || email.split('@')[0], // Use part before @ if no name provided
         email: email,
         otp_code: otpCode,
-        email_type: 'OTP'
+        verify_link: magicLink,
+        email_type: 'VERIFICATION'
       })
     });
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`Failed to send OTP email: ${response.status} ${text}`);
+      throw new Error(`Failed to send verification email: ${response.status} ${text}`);
     }
 
     return true;
   } catch (error) {
-    console.error('Error sending OTP email:', error);
+    console.error('Error sending verification email:', error);
     throw error;
   }
+}
+
+// Create a base URL for verification links based on the request origin
+function getBaseUrl(req: Request): string {
+  const origin = req.headers.get('origin');
+  return origin || 'https://royaltransfereu.com';
 }
 
 Deno.serve(async (req) => {
@@ -162,7 +178,74 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Extract request data
+    // Handle URL path for magic link verification
+    const url = new URL(req.url);
+    if (url.pathname.startsWith('/verify') && req.method === 'GET') {
+      const token = url.searchParams.get('token');
+      const redirectUrl = url.searchParams.get('redirect') || '/';
+      
+      if (!token) {
+        return new Response('Missing verification token', {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'text/plain' }
+        });
+      }
+      
+      // Find verification record with this token
+      const { data: verification, error: verificationError } = await supabase
+        .from('email_verifications')
+        .select('*')
+        .eq('magic_token', token)
+        .single();
+      
+      if (verificationError || !verification) {
+        // Redirect with error
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${url.origin}/verification-failed?reason=invalid`
+          }
+        });
+      }
+      
+      // Check if token is expired
+      if (new Date(verification.expires_at) < new Date()) {
+        // Redirect with expiration error
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${url.origin}/verification-failed?reason=expired`
+          }
+        });
+      }
+      
+      // Mark as verified
+      await supabase
+        .from('email_verifications')
+        .update({ verified: true })
+        .eq('id', verification.id);
+      
+      // If we have a user_id, update the user's email_verified status
+      if (verification.user_id) {
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', verification.user_id);
+      }
+      
+      // Redirect to success page
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': `${url.origin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
+        }
+      });
+    }
+    
+    // Extract request data for API endpoints
     const requestData = await req.json();
     const { email, name, action } = requestData;
     
@@ -178,12 +261,10 @@ Deno.serve(async (req) => {
 
     // Process based on action
     if (action === 'validate') {
-      // 1. Basic email format validation is already done on client
-      
-      // 2. Check for typos using the comprehensive list
+      // Check for typos using the comprehensive list
       const correctedEmail = checkEmailTypos(email);
       
-      // 3. Check domain validity with MX records for non-standard domains
+      // Check domain validity with MX records for non-standard domains
       const emailDomain = email.split('@')[1];
       
       // List of common email domains that we assume are valid without checking MX records
@@ -210,6 +291,9 @@ Deno.serve(async (req) => {
       // Generate OTP
       const otpCode = generateOTP();
       
+      // Generate unique token for magic link
+      const magicLinkToken = generateMagicLinkToken();
+      
       // Calculate expiration time (15 minutes from now)
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
@@ -221,7 +305,7 @@ Deno.serve(async (req) => {
         .eq('email', email)
         .maybeSingle();
       
-      if (userError) {
+      if (userError && userError.code !== 'PGRST116') {
         throw new Error(`Error checking user: ${userError.message}`);
       }
       
@@ -247,12 +331,18 @@ Deno.serve(async (req) => {
           .eq('id', existingVerification.id);
       }
       
+      // Generate magic link URL
+      const baseUrl = getBaseUrl(req);
+      const magicLink = `${baseUrl}/verify-email?token=${magicLinkToken}&redirect=/login`;
+      
       // Insert new verification
       const { data: newVerification, error: insertError } = await supabase
         .from('email_verifications')
         .insert([{
           user_id: userData?.id || null,
-          token: otpCode,
+          token: otpCode, // Store OTP as token
+          magic_token: magicLinkToken, // New field for magic link token
+          email: email, // Store email to track who this verification is for
           expires_at: expiresAt,
           verified: false
         }])
@@ -265,14 +355,14 @@ Deno.serve(async (req) => {
       
       verificationId = newVerification.id;
       
-      // Send OTP email
-      await sendOTPEmail(name || '', email, otpCode);
+      // Send verification email with both OTP and magic link
+      await sendVerificationEmail(name || '', email, otpCode, magicLink);
       
       // Return success
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'OTP sent successfully',
+          message: 'Verification email sent successfully',
           verificationId
         }),
         {
@@ -306,7 +396,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Invalid OTP'
+            error: 'Invalid verification code'
           }),
           {
             status: 400,
@@ -320,7 +410,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'OTP has expired'
+            error: 'Verification code has expired'
           }),
           {
             status: 400,
@@ -339,11 +429,83 @@ Deno.serve(async (req) => {
         throw new Error(`Error updating verification: ${updateError.message}`);
       }
       
+      // If we have a user_id, update the user's email_verified status
+      if (verification.user_id) {
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', verification.user_id);
+      }
+      
       // Return success
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Email verified successfully'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    else if (action === 'check-verification') {
+      const { email } = requestData;
+      
+      if (!email) {
+        return new Response(
+          JSON.stringify({ error: 'Email is required' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Check if user exists and is verified
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, email_verified')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (userError) {
+        throw new Error(`Error checking user: ${userError.message}`);
+      }
+      
+      // If user doesn't exist or is already verified
+      if (!userData || userData.email_verified) {
+        return new Response(
+          JSON.stringify({ 
+            verified: userData ? userData.email_verified : false,
+            exists: !!userData
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // User exists but isn't verified, check for pending verifications
+      const { data: verifications, error: verificationError } = await supabase
+        .from('email_verifications')
+        .select('*')
+        .eq('user_id', userData.id)
+        .eq('verified', false)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (verificationError) {
+        throw new Error(`Error checking verifications: ${verificationError.message}`);
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          verified: false,
+          exists: true,
+          pendingVerification: verifications && verifications.length > 0,
+          requiresVerification: true
         }),
         {
           status: 200,

@@ -35,48 +35,13 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: mode !== 'production',
       rollupOptions: {
+        // Simplified chunking strategy to avoid dynamic import issues
         output: {
-          manualChunks: (id) => {
-            // Core React libraries in one chunk
-            if (id.includes('node_modules/react/') || 
-                id.includes('node_modules/react-dom/')) {
-              return 'react-core';
-            }
-            
-            // Router in separate chunk
-            if (id.includes('node_modules/react-router') ||
-                id.includes('node_modules/history')) {
-              return 'router';
-            }
-            
-            // UI libraries in one chunk
-            if (id.includes('node_modules/lucide-react') || 
-                id.includes('node_modules/framer-motion')) {
-              return 'animations';
-            }
-            
-            // Analytics and monitoring in one chunk
-            if (id.includes('node_modules/react-ga4') || 
-                id.includes('node_modules/web-vitals')) {
-              return 'analytics';
-            }
-            
-            // Date related libraries
-            if (id.includes('node_modules/date-fns') ||
-                id.includes('node_modules/react-day-picker')) {
-              return 'date-utils';
-            }
-            
-            // Radix UI components
-            if (id.includes('node_modules/@radix-ui')) {
-              return 'radix-ui';
-            }
-            
-            // Supabase
-            if (id.includes('node_modules/@supabase')) {
-              return 'supabase';
-            }
-          },
+          manualChunks: {
+            'react-core': ['react', 'react-dom'],
+            'router': ['react-router-dom', 'react-router'],
+            'ui': ['lucide-react', 'framer-motion'],
+          }
         },
       },
       target: 'es2020', // Modern target for smaller bundles
