@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { sendOtpEmail, checkEmailVerification } from '../utils/emailValidator';
 
 type UserData = Database['public']['Tables']['users']['Row'];
 
@@ -10,11 +11,23 @@ interface AuthContextType {
   user: User | null;
   userData: UserData | null;
   loading: boolean;
+  emailVerified: boolean;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: Error | null, data?: { user: User | null } }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null, session: Session | null }>;
   signOut: () => Promise<void>;
   updateUserData: (updates: Partial<Omit<UserData, 'id' | 'email' | 'created_at'>>) => 
     Promise<{ error: Error | null, data: UserData | null }>;
+  sendVerificationEmail: (email: string, name?: string) => Promise<{ 
+    success: boolean,
+    verificationId?: string,
+    error?: string
+  }>;
+  checkEmailVerification: (email: string) => Promise<{
+    verified: boolean,
+    exists: boolean,
+    requiresVerification: boolean,
+    error?: string
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(false);
   const initialStateLoadedRef = useRef(false);
   const authStateChangeSubscribed = useRef(false);
 
@@ -48,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       }
 
       setUserData(data);
+      setEmailVerified(!!data.email_verified);
       
       return data;
     } catch (error) {
@@ -105,6 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         setSession(null);
         setUser(null);
         setUserData(null);
+        setEmailVerified(false);
         
         // Track sign out in GA
         trackEvent('Authentication', 'Sign Out');
@@ -349,6 +365,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       setSession(null);
       setUser(null);
       setUserData(null);
+      setEmailVerified(false);
       
       // Clear user ID in GA
       setUserId('');
@@ -386,6 +403,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       setUserData(data);
       
+      // Update email verification status if it was included in the update
+      if ('email_verified' in updates) {
+        setEmailVerified(!!updates.email_verified);
+      }
+      
       // Refresh session to update JWT claims if user_role was updated
       if ('user_role' in updates) {
         const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
@@ -403,15 +425,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
+  // Send verification email with both OTP and magic link
+  const sendVerificationEmail = async (email: string, name?: string) => {
+    try {
+      trackEvent('Authentication', 'Send Verification Email Attempt', email);
+      
+      const { data, error } = await supabase.functions.invoke('email-verification', {
+        body: {
+          action: 'send-otp',
+          email,
+          name
+        }
+      });
+
+      if (error || !data.success) {
+        throw new Error(error?.message || data?.error || 'Failed to send verification email');
+      }
+
+      trackEvent('Authentication', 'Send Verification Email Success');
+      
+      return {
+        success: true,
+        verificationId: data.verificationId
+      };
+    } catch (err: any) {
+      console.error('Error sending verification email:', err);
+      trackEvent('Authentication', 'Send Verification Email Error', err.message);
+      
+      return {
+        success: false,
+        error: err.message || 'Failed to send verification email'
+      };
+    }
+  };
+  
+  // Check if an email has been verified
+  const checkEmailVerificationStatus = async (email: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('email-verification', {
+        body: {
+          action: 'check-verification',
+          email
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return {
+        verified: data.verified || false,
+        exists: data.exists || false,
+        requiresVerification: data.requiresVerification || false
+      };
+    } catch (err: any) {
+      console.error('Error checking email verification:', err);
+      return {
+        verified: false,
+        exists: false,
+        requiresVerification: false,
+        error: err.message || 'Failed to check email verification status'
+      };
+    }
+  };
+
   const value = {
     session,
     user,
     userData,
     loading,
+    emailVerified,
     signUp,
     signIn,
     signOut,
-    updateUserData
+    updateUserData,
+    sendVerificationEmail,
+    checkEmailVerification: checkEmailVerificationStatus
   };
 
   return (

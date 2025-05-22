@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, CheckCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import { validateBookingReference } from '../utils/bookingReferenceValidator';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { useAnalytics } from '../hooks/useAnalytics';
+import OTPVerificationModal from '../components/OTPVerificationModal';
 
 interface LocationState {
   message?: string;
   from?: Location;
   bookingReference?: string;
   email?: string;
+  requireVerification?: boolean;
 }
 
 const Login = () => {
@@ -28,9 +30,15 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { trackEvent } = useAnalytics();
 
+  // For verification handling
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationId, setVerificationId] = useState('');
+  const [isUnverifiedUser, setIsUnverifiedUser] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user } = useAuth();
+  const { signIn, user, sendVerificationEmail, checkEmailVerification } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -54,6 +62,14 @@ const Login = () => {
         ...prev,
         email: state.email || ''
       }));
+
+      // If this login was redirected due to verification requirement
+      if (state?.requireVerification) {
+        setIsUnverifiedUser(true);
+        setError('Your email address needs to be verified before you can continue.');
+        // Auto-trigger verification email
+        handleSendVerification(state.email);
+      }
     }
     
     // Clear state after reading it
@@ -75,6 +91,52 @@ const Login = () => {
     
     // Track event
     trackEvent('Form', 'Booking Reference Found on Login', data.booking_reference);
+  };
+
+  const handleSendVerification = async (email = formData.email) => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setIsSendingVerification(true);
+    setError(null);
+
+    try {
+      // First check if the user exists and requires verification
+      const verificationCheck = await checkEmailVerification(email);
+      
+      if (verificationCheck.error) {
+        throw new Error(verificationCheck.error);
+      }
+      
+      if (!verificationCheck.exists) {
+        throw new Error('No account found with this email address. Please sign up first.');
+      }
+      
+      if (verificationCheck.verified) {
+        throw new Error('This email is already verified. Please try logging in again.');
+      }
+      
+      // Send verification email
+      const result = await sendVerificationEmail(email);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send verification email');
+      }
+      
+      setVerificationId(result.verificationId || '');
+      setShowVerificationModal(true);
+      
+      // Mark user as needing verification
+      setIsUnverifiedUser(true);
+
+    } catch (error: any) {
+      setError(error.message || 'Failed to send verification email');
+      console.error('Error sending verification email:', error);
+    } finally {
+      setIsSendingVerification(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,6 +175,28 @@ const Login = () => {
         }
       }
       
+      // Check if user's email is verified
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('email_verified')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (!userData?.email_verified) {
+          // User needs to verify their email
+          setIsUnverifiedUser(true);
+          setError('Your email address needs to be verified before you can continue.');
+          
+          // Send verification email
+          await handleSendVerification(formData.email);
+          return;
+        }
+      } catch (verifyError) {
+        console.error('Error checking email verification:', verifyError);
+        // Continue with login even if verification check fails
+      }
+      
       // If we have a session, redirect immediately
       if (session) {
         const state = location.state as LocationState;
@@ -120,10 +204,23 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      setError(error.message || 'Failed to sign in. Please check your credentials.');
+      
+      // Check if this is an unverified user
+      if (error.message.includes('email') && error.message.includes('not verified')) {
+        setIsUnverifiedUser(true);
+        setError('Your email address needs to be verified. Please check your inbox or request a new verification email.');
+      } else {
+        setError(error.message || 'Failed to sign in. Please check your credentials.');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    setIsUnverifiedUser(false);
+    setSuccessMessage('Email verified successfully! You can now log in.');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,7 +283,7 @@ const Login = () => {
             )}
 
             {/* Booking Reference */}
-            {!isDriver && (
+            {!isDriver && !isUnverifiedUser && (
               <BookingReferenceInput
                 value={bookingReference}
                 onChange={setBookingReference}
@@ -196,7 +293,7 @@ const Login = () => {
             )}
 
             {/* Booking Reference Message */}
-            {bookingReference && bookingData && (
+            {bookingReference && bookingData && !isUnverifiedUser && (
               <div className="bg-blue-50 text-blue-700 p-3 rounded-md mb-6 text-sm">
                 <p className="font-medium">Your booking reference: {bookingReference}</p>
                 <p className="mt-1">Sign in to manage your booking.</p>
@@ -208,6 +305,33 @@ const Login = () => {
               <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm flex items-start">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <div className="ml-2">{error}</div>
+              </div>
+            )}
+
+            {/* Unverified User Message */}
+            {isUnverifiedUser && (
+              <div className="bg-yellow-50 text-yellow-700 p-4 rounded-md mb-6">
+                <h3 className="font-semibold mb-2">Email Verification Required</h3>
+                <p className="text-sm mb-4">
+                  Your account needs to be verified before you can log in. Please check your email for a verification link or request a new one.
+                </p>
+                <button
+                  onClick={() => handleSendVerification()}
+                  disabled={isSendingVerification}
+                  className="w-full bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700 transition-all duration-300 flex items-center justify-center"
+                >
+                  {isSendingVerification ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending verification email...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Resend Verification Email
+                    </>
+                  )}
+                </button>
               </div>
             )}
 
@@ -230,7 +354,7 @@ const Login = () => {
                   Go to Partner Portal
                 </button>
               </div>
-            ) : (
+            ) : !isUnverifiedUser && (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -317,6 +441,15 @@ const Login = () => {
           </div>
         </div>
       </main>
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerified={handleVerificationComplete}
+        email={formData.email}
+        verificationId={verificationId}
+      />
     </div>
   );
 };

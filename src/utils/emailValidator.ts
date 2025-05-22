@@ -9,7 +9,7 @@ export const validateEmail = async (email: string): Promise<{
   suggestedEmail?: string;
   error?: string;
 }> => {
-  // 1. Basic format validation
+  // Basic format validation with more permissive regex
   const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   if (!isValidFormat) {
     return {
@@ -18,7 +18,7 @@ export const validateEmail = async (email: string): Promise<{
     };
   }
 
-  // 2. Check for common typos
+  // Split email into local part and domain
   const [localPart, domain] = email.toLowerCase().split('@');
   if (!domain) {
     return {
@@ -38,44 +38,49 @@ export const validateEmail = async (email: string): Promise<{
     }
   }
 
-  // 3. For non-common domains, check MX records via Edge Function
-  const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
-  if (!commonDomains.includes(domain.toLowerCase())) {
-    try {
-      const { data, error } = await supabase.functions.invoke('email-verification', {
-        body: {
-          action: 'validate',
-          email
-        }
-      });
-
-      if (error) {
-        console.error('Error validating email:', error);
-        return { isValid: true }; // Fallback to valid if service fails
-      }
-
-      if (!data.valid) {
-        return {
-          isValid: false,
-          error: 'This email domain does not appear to accept emails'
-        };
-      }
-
-      if (data.suggested) {
-        return {
-          isValid: true,
-          suggestedEmail: data.suggested
-        };
-      }
-    } catch (err) {
-      console.error('Error checking email domain:', err);
-      // Fail gracefully - if we can't check, assume it's valid
-      return { isValid: true };
-    }
+  // Common domains are always considered valid
+  const commonDomains = [
+    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 
+    'icloud.com', 'protonmail.com', 'mail.com', 'zoho.com', 'yandex.com',
+    'gmx.com', 'live.com', 'me.com', 'mac.com', 'msn.com'
+  ];
+  
+  if (commonDomains.includes(domain.toLowerCase())) {
+    return { isValid: true };
   }
 
-  // All checks passed
-  return { isValid: true };
+  // For unknown domains, check MX records using the API
+  try {
+    const response = await fetch(`https://api.api-ninjas.com/v1/mxlookup?domain=${domain}`, {
+      headers: {
+        'X-Api-Key': '1fL7m1+wL7GjmkJKSVz0Mw==L0Fc9vi9AVFpoThd'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('MX lookup API error:', response.status);
+      // Fail open - if API is down, consider the email valid
+      return { isValid: true };
+    }
+
+    const mxRecords = await response.json();
+    
+    // If there are MX records, the domain can receive email
+    if (Array.isArray(mxRecords) && mxRecords.length > 0) {
+      return { isValid: true };
+    }
+    
+    // No MX records found
+    return {
+      isValid: false,
+      error: 'This email domain does not appear to accept emails'
+    };
+    
+  } catch (error) {
+    console.error('Error checking MX records:', error);
+    // Fail open - assume valid if check fails
+    return { isValid: true };
+  }
 };
 
 /**
@@ -140,6 +145,43 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     return {
       success: false,
       error: err.message || 'Failed to verify code'
+    };
+  }
+};
+
+/**
+ * Checks if an email has been verified
+ */
+export const checkEmailVerification = async (email: string): Promise<{
+  verified: boolean;
+  exists: boolean;
+  requiresVerification: boolean;
+  error?: string;
+}> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('email-verification', {
+      body: {
+        action: 'check-verification',
+        email
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      verified: data.verified || false,
+      exists: data.exists || false,
+      requiresVerification: data.requiresVerification || false
+    };
+  } catch (err: any) {
+    console.error('Error checking email verification:', err);
+    return {
+      verified: false,
+      exists: false,
+      requiresVerification: false,
+      error: err.message || 'Failed to check verification status'
     };
   }
 };

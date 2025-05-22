@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, AlertCircle, Loader2, Mail, Lock, Phone, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { ArrowLeft, User, AlertCircle, Loader2, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
-import { supabase } from '../lib/supabase';
 import FormField from '../components/ui/form-field';
 import useFormValidation from '../hooks/useFormValidation';
 import { useAnalytics } from '../hooks/useAnalytics';
 import EmailValidator from '../components/EmailValidator';
-import { sendOtpEmail } from '../utils/emailValidator';
 import OTPVerificationModal from '../components/OTPVerificationModal';
 import BookingReferenceInput from '../components/BookingReferenceInput';
-import { validateBookingReference } from '../utils/bookingReferenceValidator';
 
 const CustomerSignup = () => {
   const navigate = useNavigate();
@@ -40,7 +37,6 @@ const CustomerSignup = () => {
   const [emailValid, setEmailValid] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [verificationId, setVerificationId] = useState<string>('');
-  const [emailVerified, setEmailVerified] = useState(false);
 
   // Define validation rules
   const validationRules = {
@@ -189,9 +185,8 @@ const CustomerSignup = () => {
       email: value
     }));
     
-    // Reset email verification if email changes
+    // Reset verification state if email changes
     if (value !== formData.email) {
-      setEmailVerified(false);
       setUserHasAccount(false);
     }
   };
@@ -221,24 +216,21 @@ const CustomerSignup = () => {
   };
 
   const handleOtpVerified = () => {
-    setEmailVerified(true);
     setShowOtpModal(false);
     trackEvent('Authentication', 'Email Verified');
+    
+    // Continue with signup now that email is verified
+    completeSignup();
   };
 
-  const sendVerificationCode = async () => {
-    if (!emailValid) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
+  const sendVerificationCode = async (email: string, name: string) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      trackEvent('Authentication', 'Send OTP Attempt', formData.email);
+      trackEvent('Authentication', 'Send OTP Attempt', email);
       
-      const result = await sendOtpEmail(formData.email, formData.name);
+      const result = await sendVerificationEmail(email, name);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to send verification code');
@@ -253,32 +245,29 @@ const CustomerSignup = () => {
       } else {
         throw new Error('Missing verification ID');
       }
+      
+      return true;
     } catch (error: any) {
       console.error('Error sending verification code:', error);
       setError(error.message || 'Failed to send verification code');
       trackEvent('Authentication', 'Send OTP Error', error.message);
+      return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    // Validate all fields before submitting
-    const isFormValid = validateAllFields();
-    
-    if (!isFormValid) {
-      return;
-    }
+  const handleGoToLogin = () => {
+    trackEvent('Authentication', 'Redirect to Login', 'From Signup - Existing User');
+    navigate('/login', { 
+      state: { 
+        bookingReference: bookingReference || undefined,
+        email: formData.email 
+      } 
+    });
+  };
 
-    // Require email verification
-    if (!emailVerified) {
-      setError('Please verify your email address first');
-      return;
-    }
-
+  const completeSignup = async () => {
     try {
       setIsSubmitting(true);
       
@@ -325,7 +314,7 @@ const CustomerSignup = () => {
       // Navigate to login with success message
       navigate('/login', { 
         state: { 
-          message: 'Registration successful! Please sign in to continue.',
+          message: 'Registration successful! Your email has been verified. Please sign in to continue.',
           ...(bookingReference ? { bookingReference } : {})
         } 
       });
@@ -337,22 +326,45 @@ const CustomerSignup = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    
+    // Validate all fields before submitting
+    const isFormValid = validateAllFields();
+    
+    if (!isFormValid) {
+      return;
+    }
+
+    // If email is not valid, show error
+    if (!emailValid) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // If user has existing account, prompt them to sign in
+    if (userHasAccount) {
+      setError('An account with this email already exists. Please sign in instead.');
+      return;
+    }
+
+    // Initiate the OTP verification flow
+    const otpSent = await sendVerificationCode(formData.email, formData.name);
+    if (!otpSent) {
+      // Error already set by sendVerificationCode
+      return;
+    }
+    
+    // Show OTP modal - the rest of the signup process will continue after verification
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleGoToLogin = () => {
-    trackEvent('Authentication', 'Redirect to Login', 'From Signup - Existing User');
-    navigate('/login', { 
-      state: { 
-        bookingReference: bookingReference || undefined,
-        email: formData.email 
-      } 
-    });
   };
 
   const togglePasswordVisibility = () => {
@@ -366,7 +378,7 @@ const CustomerSignup = () => {
   // Helper function to determine if the button should be disabled
   const isButtonDisabled = () => {
     // Only disable if the form has been touched and is invalid, or if submission is in progress
-    return (formTouched && !isValid) || isSubmitting || !emailVerified;
+    return (formTouched && !isValid) || isSubmitting || userHasAccount;
   };
 
   if (loading || inviteLoading) {
@@ -412,34 +424,6 @@ const CustomerSignup = () => {
               </div>
             )}
             
-            {bookingReference && bookingData && (
-              <div className="bg-blue-50 text-blue-600 p-3 rounded-md mb-6 text-sm">
-                <p className="font-medium">Using booking reference: {bookingReference}</p>
-                <p className="mt-1">This booking will be linked to your new account.</p>
-              </div>
-            )}
-            
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm flex items-start">
-                <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-            
-            {!isValid && formTouched && (
-              <div className="bg-yellow-50 text-yellow-600 p-3 rounded-md mb-6 text-sm">
-                Please fill in all required fields correctly before submitting.
-              </div>
-            )}
-
-            {/* Booking Reference Input - New component */}
-            <BookingReferenceInput
-              value={bookingReference}
-              onChange={setBookingReference}
-              onValidBookingFound={handleValidBookingFound}
-              className="mb-6"
-            />
-
             {/* Show login button if user has an account */}
             {userHasAccount && (
               <div className="bg-blue-100 p-4 rounded-md mb-6">
@@ -467,33 +451,6 @@ const CustomerSignup = () => {
                 name="email"
                 required={true}
               />
-
-              {emailValid && !emailVerified && (
-                <div className="flex justify-end">
-                  <button 
-                    type="button"
-                    onClick={sendVerificationCode}
-                    disabled={isSubmitting || !emailValid}
-                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Verify Email'
-                    )}
-                  </button>
-                </div>
-              )}
-              
-              {emailVerified && (
-                <div className="bg-green-50 p-2 rounded-md flex items-center text-green-700 text-sm mb-2">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Email verified successfully
-                </div>
-              )}
 
               <FormField
                 id="name"
@@ -575,10 +532,10 @@ const CustomerSignup = () => {
 
               <button
                 type="submit"
-                disabled={isButtonDisabled() || userHasAccount}
+                disabled={isButtonDisabled()}
                 aria-busy={isSubmitting}
                 className={`w-full py-3 rounded-md transition-all duration-300 flex justify-center items-center mt-6
-                  ${(isButtonDisabled() || userHasAccount) 
+                  ${isButtonDisabled() 
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
@@ -590,6 +547,14 @@ const CustomerSignup = () => {
                   </>
                 ) : 'Create Account'}
               </button>
+              
+              {/* Error message moved below the button for better visibility */}
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-md mt-3 text-sm flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
             </form>
 
             <div className="mt-6 text-center">
