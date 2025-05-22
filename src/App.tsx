@@ -39,6 +39,9 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const CookieBanner = lazy(() => import('./components/ui/CookieBanner'));
 const Sitemap = lazy(() => import('./components/Sitemap'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
+const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -76,8 +79,9 @@ const RouteObserver = () => {
 
 // Protected route component with optimized loading
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, emailVerified } = useAuth();
   const { trackEvent } = useAnalytics();
+  const location = useLocation();
   
   useEffect(() => {
     if (!loading && !user) {
@@ -94,7 +98,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  
+  // Check if email is verified
+  if (user && !emailVerified) {
+    return <Navigate to="/login" replace state={{ 
+      from: location,
+      requireVerification: true,
+      email: user.email
+    }} />;
   }
   
   return <>{children}</>;
@@ -120,6 +133,9 @@ function AppRoutes() {
           <Route path="/services" element={<Services />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verification-success" element={<VerificationSuccess />} />
+          <Route path="/verification-failed" element={<VerificationFailed />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/customer-signup" element={<CustomerSignup />} />
           <Route path="/booking-success" element={<BookingSuccess />} />

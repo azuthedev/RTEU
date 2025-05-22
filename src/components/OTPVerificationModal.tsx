@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Loader2, MailQuestion, RefreshCw, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -26,6 +26,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const [success, setSuccess] = useState(false);
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
   const [isResending, setIsResending] = useState(false);
+  const [showSpamWarning, setShowSpamWarning] = useState(false);
   const otpRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
   const { trackEvent } = useAnalytics();
 
@@ -116,7 +117,10 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
       const result = await verifyOtp(otpString, verificationId);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to verify code');
+        if (result.error?.includes('expired')) {
+          throw new Error('This verification code has expired. Please request a new code.');
+        }
+        throw new Error(result.error || 'Invalid verification code. Please try again or request a new code.');
       }
 
       // If verification was successful
@@ -130,6 +134,12 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
       setError(err.message || 'Failed to verify OTP. Please try again.');
+      
+      // Show spam warning after first failure
+      if (!showSpamWarning) {
+        setShowSpamWarning(true);
+      }
+      
       trackEvent('Authentication', 'OTP Verification Error', err.message);
     } finally {
       setIsSubmitting(false);
@@ -140,6 +150,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const resendOtp = async () => {
     setIsResending(true);
     setError(null);
+    setShowSpamWarning(true); // Always show spam warning when resending
 
     try {
       trackEvent('Authentication', 'OTP Resend');
@@ -163,7 +174,13 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
       }
       
       // Show success message
-      setError('Verification code sent! Please check your email.');
+      setError(null);
+      
+      // Track successful resend
+      trackEvent('Authentication', 'OTP Resend Success');
+      
+      // Show confirmation message
+      setShowSpamWarning(true);
     } catch (err: any) {
       console.error('Error resending OTP:', err);
       setError(err.message || 'Failed to resend verification code. Please try again.');
@@ -230,6 +247,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                         We sent a verification code to <span className="font-semibold">{email}</span>. 
                         Please enter the code below to verify your email.
                       </p>
+                      <p className="text-sm text-blue-600 mt-2">
+                        A verification link was also sent to your email that you can use later if needed.
+                      </p>
                     </>
                   )}
                 </div>
@@ -240,6 +260,16 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                       <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 flex items-start">
                         <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
                         <p>{error}</p>
+                      </div>
+                    )}
+                    
+                    {showSpamWarning && (
+                      <div className="bg-yellow-50 text-yellow-700 p-3 rounded-md mb-6 flex items-start">
+                        <MailQuestion className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium">Don't see the email?</p>
+                          <p className="text-sm mt-1">Please check your spam/junk folder. The email should arrive within 2 minutes.</p>
+                        </div>
                       </div>
                     )}
 
@@ -283,6 +313,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                     </div>
 
                     <div className="text-center">
+                      <p className="text-sm text-gray-500 mb-2">
+                        Didn't receive a code or code expired?
+                      </p>
                       <button
                         onClick={resendOtp}
                         disabled={isResending || timeLeft > 14 * 60} // Disable for first minute
@@ -293,8 +326,18 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Sending...
                           </>
-                        ) : 'Resend code'}
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Resend verification email
+                          </>
+                        )}
                       </button>
+                      
+                      <p className="text-sm text-gray-500 mt-4 flex items-center justify-center gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        Check your email for a verification link
+                      </p>
                     </div>
                   </>
                 )}

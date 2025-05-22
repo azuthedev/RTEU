@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { validateEmail } from '../utils/emailValidator';
 
@@ -34,6 +34,12 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
+  const validationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Basic email format check (just for immediate feedback)
+  const isBasicEmailFormat = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   // Only validate after the user has stopped typing
   useEffect(() => {
@@ -46,7 +52,24 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
       return;
     }
     
-    const debounceTimer = setTimeout(async () => {
+    // Clear any previous timer
+    if (validationTimerRef.current) {
+      clearTimeout(validationTimerRef.current);
+    }
+    
+    // Check basic format first for immediate feedback
+    if (!isBasicEmailFormat(value)) {
+      setValidationError('Please enter a valid email address');
+      setSuggestion(null);
+      onValidationChange(false);
+      return;
+    } else {
+      setValidationError(null);
+      onValidationChange(true);
+    }
+    
+    // If it passes basic validation, do more thorough checks with a debounce
+    validationTimerRef.current = setTimeout(async () => {
       if (!value) return;
       
       setIsValidating(true);
@@ -64,7 +87,11 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
       }
     }, 800);
 
-    return () => clearTimeout(debounceTimer);
+    return () => {
+      if (validationTimerRef.current) {
+        clearTimeout(validationTimerRef.current);
+      }
+    };
   }, [value, onValidationChange, isTouched, isFocused]);
   
   // Apply external error message if provided
@@ -149,17 +176,6 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
         )}
       </div>
 
-      {/* Error message */}
-      {validationError && (
-        <p 
-          id={`${id}-error`}
-          className="mt-1 text-sm text-red-600 font-medium"
-          role="alert"
-        >
-          {validationError}
-        </p>
-      )}
-
       {/* Suggestion message */}
       {suggestion && !validationError && (
         <div 
@@ -175,6 +191,17 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
             Use this <ArrowRight className="ml-1 h-3 w-3" />
           </button>
         </div>
+      )}
+
+      {/* Error message */}
+      {validationError && (
+        <p 
+          id={`${id}-error`}
+          className="mt-1 text-sm text-red-600 font-medium"
+          role="alert"
+        >
+          {validationError}
+        </p>
       )}
     </div>
   );
