@@ -4,7 +4,6 @@ import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, RefreshCw } fro
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
-import { validateBookingReference } from '../utils/bookingReferenceValidator';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { useAnalytics } from '../hooks/useAnalytics';
 import OTPVerificationModal from '../components/OTPVerificationModal';
@@ -40,7 +39,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, sendVerificationEmail, checkEmailVerification } = useAuth();
+  const { signIn, user, sendVerificationEmail, checkEmailVerification, refreshSession } = useAuth();
 
   // Check if in development environment
   useEffect(() => {
@@ -113,17 +112,6 @@ const Login = () => {
     setError(null);
 
     try {
-      // For development environment, skip the actual verification
-      if (isDevEnvironment) {
-        console.log('DEVELOPMENT MODE: Simulating verification email send for', email);
-        setTimeout(() => {
-          setVerificationId(`dev-${Date.now()}`);
-          setShowVerificationModal(true);
-          setIsSendingVerification(false);
-        }, 1000);
-        return;
-      }
-
       // First check if the user exists and requires verification
       const verificationCheck = await checkEmailVerification(email);
       
@@ -139,6 +127,11 @@ const Login = () => {
         throw new Error('This email is already verified. Please try logging in again.');
       }
       
+      // Check if there's already a pending verification and it's recent
+      if (verificationCheck.hasPendingVerification && verificationCheck.verificationAge && verificationCheck.verificationAge < 2) {
+        throw new Error(`A verification email was recently sent. Please check your inbox or wait ${Math.max(1, 2 - verificationCheck.verificationAge)} minute(s) before requesting another.`);
+      }
+      
       // Send verification email
       const result = await sendVerificationEmail(email);
       
@@ -151,6 +144,9 @@ const Login = () => {
       
       // Mark user as needing verification
       setIsUnverifiedUser(true);
+      
+      // Track successful email send
+      trackEvent('Authentication', 'Verification Email Sent', 'From Login');
 
     } catch (error: any) {
       console.error('Error sending verification email:', error);
@@ -224,12 +220,18 @@ const Login = () => {
           
           // Send verification email
           await handleSendVerification(formData.email);
+          
+          // Force JWT refresh to ensure email_verified claim is current
+          await refreshSession();
           return;
         }
       } catch (verifyError) {
         console.error('Error checking email verification:', verifyError);
         // Continue with login even if verification check fails
       }
+      
+      // Force JWT refresh to ensure all claims are current
+      await refreshSession();
       
       // If we have a session, redirect immediately
       if (session) {
@@ -258,10 +260,21 @@ const Login = () => {
     }
   };
 
-  const handleVerificationComplete = () => {
+  const handleVerificationComplete = async () => {
+    // Track successful verification
+    trackEvent('Authentication', 'Email Verification Completed', 'From Login');
+    
     setShowVerificationModal(false);
     setIsUnverifiedUser(false);
     setSuccessMessage('Email verified successfully! You can now log in.');
+    
+    // Refresh the session to update the JWT claims
+    await refreshSession();
+    
+    // Try to login automatically if the form has both email and password
+    if (formData.email && formData.password) {
+      await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -496,6 +509,7 @@ const Login = () => {
         onVerified={handleVerificationComplete}
         email={formData.email}
         verificationId={verificationId}
+        emailSent={true}
       />
     </div>
   );

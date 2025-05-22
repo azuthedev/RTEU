@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle, AlertCircle, Loader2, MailQuestion, RefreshCw, ExternalLink } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Loader2, MailQuestion, RefreshCw, ExternalLink, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -11,6 +11,7 @@ interface OTPVerificationModalProps {
   onVerified: () => void;
   email: string;
   verificationId: string;
+  emailSent?: boolean;
 }
 
 const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
@@ -18,19 +19,24 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   onClose,
   onVerified,
   email,
-  verificationId
+  verificationId,
+  emailSent = false
 }) => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 character OTP
+  const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']); // 6 character OTP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_MINUTES * 60); // 15 minutes in seconds
   const [isResending, setIsResending] = useState(false);
-  const [showSpamWarning, setShowSpamWarning] = useState(false);
+  const [showSpamWarning, setShowSpamWarning] = useState(emailSent);
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const otpRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
   const { trackEvent } = useAnalytics();
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
 
+  // Default OTP expiry - 15 minutes
+  const OTP_EXPIRY_MINUTES = 15;
+  
   // Check if in development environment
   useEffect(() => {
     const isDev = window.location.hostname === 'localhost' || 
@@ -190,10 +196,13 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
     try {
       trackEvent('Authentication', 'OTP Resend');
 
-      // Send new OTP email through webhook
+      // Send new OTP email through updated function
       const result = await sendOtpEmail(email, '');
       
       if (!result.success) {
+        if (result.remainingAttempts !== undefined && result.remainingAttempts === 0) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        }
         throw new Error(result.error || 'Failed to resend verification code');
       }
 
@@ -204,7 +213,12 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         console.log(`New verification ID: ${newVerificationId}`);
         
         // Reset the timer
-        setTimeLeft(15 * 60);
+        setTimeLeft(OTP_EXPIRY_MINUTES * 60);
+        
+        // Update remaining attempts if provided
+        if (result.remainingAttempts !== undefined) {
+          setRemainingAttempts(result.remainingAttempts);
+        }
       }
       
       // Show success message
@@ -276,6 +290,11 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                     </div>
                   ) : (
                     <>
+                      <div className="mb-4 flex justify-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Mail className="w-8 h-8 text-blue-600" />
+                        </div>
+                      </div>
                       <h2 className="text-2xl font-bold mb-2">Verify Your Email</h2>
                       <p className="text-gray-600">
                         We sent a verification code to <span className="font-semibold">{email}</span>. 
@@ -334,6 +353,12 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
 
                       <div className="text-center text-sm text-gray-500 mb-4">
                         <p>Code expires in <span className="font-semibold">{formatTime(timeLeft)}</span></p>
+                        
+                        {remainingAttempts !== null && (
+                          <p className="mt-1 text-xs">
+                            You have {remainingAttempts} {remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining
+                          </p>
+                        )}
                       </div>
 
                       <button
