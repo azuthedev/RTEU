@@ -56,10 +56,12 @@ if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
   initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
 }
 
-// Initialize Voiceflow chat with delayed loading
+// Initialize Voiceflow chat with 5-second delay as requested
+// Note: The actual script is loaded directly in HTML with a delay,
+// but we also configure this as a fallback and for consistency
 initVoiceflowChat('67d817b721b78ba30f3baa7d', {
-  delay: 5000,
-  waitForInteraction: true
+  delay: 5000, // 5-second delay as requested
+  waitForInteraction: false
 });
 
 // Render the application

@@ -198,8 +198,10 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
   }
 };
 
-// The Voiceflow chat is now directly loaded in the HTML file
-// This function is just a stub for backward compatibility
+/**
+ * Enhanced Voiceflow chat initialization with 5-second delay
+ * Now properly delays loading to improve initial page performance
+ */
 export const initVoiceflowChat = (
   projectId: string, 
   options: {
@@ -208,8 +210,92 @@ export const initVoiceflowChat = (
     waitForInteraction?: boolean;
   } = {}
 ): void => {
-  // This function is intentionally empty since we're now loading Voiceflow directly in the HTML
-  console.log('Voiceflow chat is loaded directly from HTML');
+  // Default to a 5-second delay as requested
+  const delay = options.delay || 5000;
+  
+  // Flag to prevent multiple initializations
+  let hasInitialized = false;
+  
+  // Only initialize if the container exists
+  const container = document.getElementById('voiceflow-chat-container');
+  if (!container) {
+    console.warn('Voiceflow chat container not found');
+    return;
+  }
+  
+  // Function to initialize the Voiceflow script
+  const initChat = () => {
+    if (hasInitialized) return;
+    hasInitialized = true;
+    
+    console.log(`Initializing Voiceflow chat with ${delay}ms delay`);
+    
+    // Only initialize if not already loaded
+    if (window.voiceflow?.chat) {
+      console.log('Voiceflow chat already initialized');
+      return;
+    }
+    
+    // Create script element
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.innerHTML = `
+      (function(d, t) {
+        var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+        v.onload = function() {
+          window.voiceflow.chat.load({
+            verify: { projectID: '${projectId}' },
+            url: 'https://general-runtime.voiceflow.com',
+            versionID: 'production',
+            voice: {
+              url: "https://runtime-api.voiceflow.com"
+            }
+          });
+        }
+        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
+        v.type = "text/javascript"; 
+        s.parentNode.insertBefore(v, s);
+      })(document, 'script');
+    `;
+    
+    // Append script to head
+    document.head.appendChild(script);
+  };
+  
+  // Determine when to load Voiceflow chat
+  if (options.waitForInteraction) {
+    // Load after user interaction to prioritize core content
+    const events = ['click', 'scroll', 'touchstart', 'keydown'];
+    const handler = () => {
+      // Remove all event listeners
+      events.forEach(event => window.removeEventListener(event, handler));
+      // Delay initialization after interaction
+      setTimeout(initChat, 500);
+    };
+    
+    // Add event listeners
+    events.forEach(event => {
+      window.addEventListener(event, handler, { once: true, passive: true });
+    });
+    
+    // Fallback: load after 20 seconds regardless
+    setTimeout(initChat, 20000);
+  } else if (options.waitForIdle && 'requestIdleCallback' in window) {
+    // Load when browser is idle
+    window.requestIdleCallback(
+      () => setTimeout(initChat, delay),
+      { timeout: 10000 }
+    );
+  } else {
+    // Load after specified delay
+    if (document.readyState === 'complete') {
+      setTimeout(initChat, delay);
+    } else {
+      window.addEventListener('load', () => {
+        setTimeout(initChat, delay);
+      });
+    }
+  }
 };
 
 // Define global types

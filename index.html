@@ -168,27 +168,36 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Simple empty Voiceflow Chat Widget Container -->
+    <!-- Voiceflow Chat Widget Container -->
     <div id="voiceflow-chat-container"></div>
     
-    <!-- Voiceflow Chat Widget Script -->
+    <!-- Load Voiceflow script with a delay -->
     <script type="text/javascript">
-      (function(d, t) {
-        var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-        v.onload = function() {
-          window.voiceflow.chat.load({
-            verify: { projectID: '67d817b721b78ba30f3baa7d' },
-            url: 'https://general-runtime.voiceflow.com',
-            versionID: 'production',
-            voice: {
-              url: "https://runtime-api.voiceflow.com"
-            }
-          });
-        }
-        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
-        v.type = "text/javascript"; 
-        s.parentNode.insertBefore(v, s);
-      })(document, 'script');
+      document.addEventListener('DOMContentLoaded', function() {
+        // Delay Voiceflow loading by 5 seconds for better initial performance
+        setTimeout(function() {
+          (function(d, t) {
+            var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+            v.onload = function() {
+              if (window.voiceflow && window.voiceflow.chat) {
+                window.voiceflow.chat.load({
+                  verify: { projectID: '67d817b721b78ba30f3baa7d' },
+                  url: 'https://general-runtime.voiceflow.com',
+                  versionID: 'production',
+                  voice: {
+                    url: "https://runtime-api.voiceflow.com"
+                  }
+                });
+              }
+            };
+            v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
+            v.type = "text/javascript";
+            v.id = "voiceflow-script";
+            s.parentNode.insertBefore(v, s);
+          })(document, 'script');
+          console.log('Voiceflow chat script loaded after 5-second delay');
+        }, 5000); // 5 second delay as requested
+      });
     </script>
   </body>
 </html>
