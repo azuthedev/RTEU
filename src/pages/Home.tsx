@@ -122,9 +122,8 @@ function Home() {
         <Testimonials />
       </LazyComponent>
       
-      <DeferredComponent delay={300}>
         <CallToAction />
-      </DeferredComponent>
+
     </div>
   );
 }

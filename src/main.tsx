@@ -62,34 +62,38 @@ initVoiceflowChat('67d817b721b78ba30f3baa7d', {
   waitForInteraction: true
 });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => {
-        // Reset application state here if needed
-        window.location.href = '/';
-      }}
-      onError={(error, info) => {
-        // Log to error reporting service
-        console.error("Global error caught:", error);
-        console.error("Component stack:", info.componentStack);
-        
-        // Track in GA
-        if (window.gtag) {
-          window.gtag('event', 'exception', {
-            description: error.toString(),
-            fatal: true
-          });
-        }
-      }}
-    >
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </ErrorBoundary>
-  </StrictMode>
-);
+// Render the application
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(
+    <StrictMode>
+      <ErrorBoundary
+        FallbackComponent={ErrorFallback}
+        onReset={() => {
+          // Reset application state here if needed
+          window.location.href = '/';
+        }}
+        onError={(error, info) => {
+          // Log to error reporting service
+          console.error("Global error caught:", error);
+          console.error("Component stack:", info.componentStack);
+          
+          // Track in GA
+          if (window.gtag) {
+            window.gtag('event', 'exception', {
+              description: error.toString(),
+              fatal: true
+            });
+          }
+        }}
+      >
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
+      </ErrorBoundary>
+    </StrictMode>
+  );
+}
 
 // Report web vitals if GA is configured
 reportWebVitals();
