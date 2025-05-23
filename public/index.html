@@ -101,15 +101,6 @@
       }
     </script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
-    </script>
-
     <!-- Resource Hints -->
     <link rel="preconnect" href="https://general-runtime.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://files.royaltransfereu.com" crossorigin>
@@ -175,41 +166,10 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
     
     <!-- Voiceflow Chat Widget Container -->
     <div id="voiceflow-chat-container">
       <!-- Voiceflow chat will be dynamically loaded by our optimized loader -->
     </div>
-    
-    <!-- Google Maps loader script -->
-    <script type="module">
-      // Wait for DOM to be fully loaded
-      if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(() => {
-          const apiKey = "%VITE_GOOGLE_MAPS_API_KEY%";
-          if (apiKey && apiKey !== "%VITE_GOOGLE_MAPS_API_KEY%") {
-            // Create a script with proper loading attribute
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
-            script.async = true;
-            document.head.appendChild(script);
-          }
-        }, 1000);
-      } else {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(() => {
-            const apiKey = "%VITE_GOOGLE_MAPS_API_KEY%";
-            if (apiKey && apiKey !== "%VITE_GOOGLE_MAPS_API_KEY%") {
-              // Create a script with proper loading attribute
-              const script = document.createElement('script');
-              script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
-              script.async = true;
-              document.head.appendChild(script);
-            }
-          }, 1000);
-        });
-      }
-    </script>
   </body>
 </html>
