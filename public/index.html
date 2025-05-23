@@ -166,10 +166,29 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Voiceflow Chat Widget Container -->
-    <div id="voiceflow-chat-container">
-      <!-- Voiceflow chat will be dynamically loaded by our optimized loader -->
-    </div>
+    <!-- Simple empty Voiceflow Chat Widget Container -->
+    <div id="voiceflow-chat-container"></div>
+    
+    <!-- Voiceflow Chat Widget Script -->
+    <script type="text/javascript">
+      (function(d, t) {
+        var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+        v.onload = function() {
+          window.voiceflow.chat.load({
+            verify: { projectID: '67d817b721b78ba30f3baa7d' },
+            url: 'https://general-runtime.voiceflow.com',
+            versionID: 'production',
+            voice: {
+              url: "https://runtime-api.voiceflow.com"
+            }
+          });
+        }
+        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
+        v.type = "text/javascript"; 
+        s.parentNode.insertBefore(v, s);
+      })(document, 'script');
+    </script>
   </body>
 </html>
