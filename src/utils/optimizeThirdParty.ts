@@ -198,164 +198,18 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
   }
 };
 
-// Track Voiceflow chat loading state
-let voiceflowLoading = false;
-let voiceflowRetryCount = 0;
-const VOICEFLOW_MAX_RETRIES = 3;
-
-/**
- * Initializes Voiceflow chat with reliable loading strategy and improved error handling
- */
+// The Voiceflow chat is now directly loaded in the HTML file
+// This function is just a stub for backward compatibility
 export const initVoiceflowChat = (
-  projectId: string,
+  projectId: string, 
   options: {
     delay?: number;
     waitForIdle?: boolean;
     waitForInteraction?: boolean;
   } = {}
 ): void => {
-  // Don't initialize if already loaded or loading
-  if (document.getElementById('voiceflow-script') || window.voiceflow?.chat || voiceflowLoading) return;
-  
-  const { 
-    delay = 2000,
-    waitForIdle = false, 
-    waitForInteraction = false // Changed default to false to load immediately
-  } = options;
-  
-  const loadVoiceflow = () => {
-    // Mark as loading
-    voiceflowLoading = true;
-    
-    // Ensure DOM is ready before attempting to load
-    if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
-      window.addEventListener('DOMContentLoaded', () => {
-        voiceflowLoading = false;
-        loadVoiceflow();
-      });
-      return;
-    }
-    
-    // Check if the container exists before loading script
-    const container = document.getElementById('voiceflow-chat-container');
-    if (!container) {
-      console.error('Voiceflow chat container not found in the DOM, attempting to create one');
-      const newContainer = document.createElement('div');
-      newContainer.id = 'voiceflow-chat-container';
-      document.body.appendChild(newContainer);
-    }
-    
-    // Create the Voiceflow script with proper error handling
-    const script = document.createElement('script');
-    script.id = 'voiceflow-script';
-    script.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
-    script.type = 'module';
-    script.async = true;
-    
-    // Add proper error handling
-    script.onload = () => {
-      console.log('Voiceflow script loaded, initializing...');
-      
-      // Give the script a moment to fully initialize
-      setTimeout(() => {
-        if (window.voiceflow?.chat) {
-          try {
-            console.log('Initializing Voiceflow chat...');
-            // Initialize with comprehensive error handling
-            window.voiceflow.chat.load({
-              verify: { projectID: projectId },
-              url: 'https://general-runtime.voiceflow.com',
-              versionID: 'production',
-              voice: {
-                url: "https://runtime-api.voiceflow.com"
-              }
-            });
-            
-            // Mark as no longer loading
-            voiceflowLoading = false;
-            voiceflowRetryCount = 0;
-            console.log('Voiceflow chat initialized successfully');
-          } catch (e) {
-            console.error('Error initializing Voiceflow chat:', e);
-            handleVoiceflowLoadError();
-          }
-        } else {
-          console.warn('Voiceflow chat object not available after script load');
-          handleVoiceflowLoadError();
-        }
-      }, 1000);
-    };
-    
-    // Handle script load error
-    script.onerror = (error) => {
-      console.error('Failed to load Voiceflow chat script:', error);
-      handleVoiceflowLoadError();
-    };
-    
-    // Add the script to head for better loading sequence
-    document.head.appendChild(script);
-  };
-  
-  // Helper function to handle Voiceflow load errors
-  const handleVoiceflowLoadError = () => {
-    // Clean up any failed script
-    const failedScript = document.getElementById('voiceflow-script');
-    if (failedScript && failedScript.parentNode) {
-      failedScript.parentNode.removeChild(failedScript);
-    }
-    
-    // Reset loading state
-    voiceflowLoading = false;
-    
-    // Retry logic with exponential backoff
-    if (voiceflowRetryCount < VOICEFLOW_MAX_RETRIES) {
-      voiceflowRetryCount++;
-      console.log(`Retrying Voiceflow chat load (attempt ${voiceflowRetryCount}/${VOICEFLOW_MAX_RETRIES})...`);
-      
-      // Retry with exponential backoff
-      setTimeout(loadVoiceflow, Math.pow(2, voiceflowRetryCount) * 1000);
-    } else {
-      console.error(`Failed to load Voiceflow chat after ${VOICEFLOW_MAX_RETRIES} attempts`);
-    }
-  };
-  
-  // Determine loading strategy
-  if (waitForInteraction) {
-    // Load after user interaction
-    const interactionEvents = ['click', 'scroll', 'touchstart'];
-    const interactionHandler = throttle(() => {
-      interactionEvents.forEach(event => {
-        document.removeEventListener(event, interactionHandler);
-      });
-      loadVoiceflow();
-    }, 1000, { leading: true });
-    
-    interactionEvents.forEach(event => {
-      document.addEventListener(event, interactionHandler, { passive: true });
-    });
-    
-    // Fallback: Load after 10 seconds anyway
-    setTimeout(() => {
-      interactionEvents.forEach(event => {
-        document.removeEventListener(event, interactionHandler);
-      });
-      if (!document.getElementById('voiceflow-script') && !window.voiceflow?.chat && !voiceflowLoading) {
-        loadVoiceflow();
-      }
-    }, 10000);
-  } else if (waitForIdle && 'requestIdleCallback' in window) {
-    // Load when browser is idle
-    window.requestIdleCallback(() => loadVoiceflow(), { timeout: 10000 });
-  } else {
-    // Load after specified delay
-    if (document.readyState === 'complete') {
-      setTimeout(loadVoiceflow, delay);
-    } else {
-      window.addEventListener('load', () => {
-        setTimeout(loadVoiceflow, delay);
-      });
-    }
-  }
+  // This function is intentionally empty since we're now loading Voiceflow directly in the HTML
+  console.log('Voiceflow chat is loaded directly from HTML');
 };
 
 // Define global types
