@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { verifyOtp, sendOtpEmail } from '../utils/emailValidator';
 
+// Define this constant at the top level before it's used
+const OTP_EXPIRY_MINUTES = 15;
+
 interface OTPVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,9 +36,6 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const otpRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
   const { trackEvent } = useAnalytics();
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
-
-  // Default OTP expiry - 15 minutes
-  const OTP_EXPIRY_MINUTES = 15;
   
   // Check if in development environment
   useEffect(() => {
