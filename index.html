@@ -7,11 +7,6 @@
     <title>Royal Transfer EU | Premium Airport Transfers & Taxi in Italy</title>
     <meta name="description" content="Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers." />
     
-    <!-- CORS Headers -->
-    <meta http-equiv="Access-Control-Allow-Origin" content="https://get-price-941325580206.europe-southwest1.run.app" />
-    <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS" />
-    <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type" />
-    
     <!-- Structured Data for Local Business -->
     <script type="application/ld+json">
       {
@@ -110,7 +105,6 @@
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
     <link rel="preconnect" href="https://i.imgur.com" crossorigin>
     <link rel="preconnect" href="https://i.ibb.co" crossorigin>
-    <link rel="preconnect" href="https://get-price-941325580206.europe-southwest1.run.app" crossorigin>
     
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://general-runtime.voiceflow.com">
@@ -121,7 +115,6 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://i.imgur.com">
     <link rel="dns-prefetch" href="https://i.ibb.co">
-    <link rel="dns-prefetch" href="https://get-price-941325580206.europe-southwest1.run.app">
 
     <!-- Preload Critical Images -->
     <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" type="image/webp" fetchpriority="high">
@@ -169,35 +162,8 @@
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Voiceflow Chat Widget Container -->
-    <div id="voiceflow-chat-container"></div>
-    
-    <!-- Load Voiceflow script with a delay -->
-    <script type="text/javascript">
-      document.addEventListener('DOMContentLoaded', function() {
-        // Delay Voiceflow loading by 5 seconds for better initial performance
-        setTimeout(function() {
-          (function(d, t) {
-            var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-            v.onload = function() {
-              if (window.voiceflow && window.voiceflow.chat) {
-                window.voiceflow.chat.load({
-                  verify: { projectID: '67d817b721b78ba30f3baa7d' },
-                  url: 'https://general-runtime.voiceflow.com',
-                  versionID: 'production',
-                  voice: {
-                    url: "https://runtime-api.voiceflow.com"
-                  }
-                });
-              }
-            };
-            v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
-            v.type = "text/javascript";
-            v.id = "voiceflow-script";
-            s.parentNode.insertBefore(v, s);
-          })(document, 'script');
-          console.log('Voiceflow chat script loaded after 5-second delay');
-        }, 5000); // 5 second delay as requested
-      });
-    </script>
+    <div id="voiceflow-chat-container">
+      <!-- Voiceflow chat will be dynamically loaded by our optimized loader -->
+    </div>
   </body>
 </html>

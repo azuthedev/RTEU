@@ -56,46 +56,40 @@ if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
   initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
 }
 
-// Initialize Voiceflow chat with 5-second delay as requested
-// Note: The actual script is loaded directly in HTML with a delay,
-// but we also configure this as a fallback and for consistency
+// Initialize Voiceflow chat with delayed loading
 initVoiceflowChat('67d817b721b78ba30f3baa7d', {
-  delay: 5000, // 5-second delay as requested
-  waitForInteraction: false
+  delay: 5000,
+  waitForInteraction: true
 });
 
-// Render the application
-const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <ErrorBoundary
-        FallbackComponent={ErrorFallback}
-        onReset={() => {
-          // Reset application state here if needed
-          window.location.href = '/';
-        }}
-        onError={(error, info) => {
-          // Log to error reporting service
-          console.error("Global error caught:", error);
-          console.error("Component stack:", info.componentStack);
-          
-          // Track in GA
-          if (window.gtag) {
-            window.gtag('event', 'exception', {
-              description: error.toString(),
-              fatal: true
-            });
-          }
-        }}
-      >
-        <HelmetProvider>
-          <App />
-        </HelmetProvider>
-      </ErrorBoundary>
-    </StrictMode>
-  );
-}
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => {
+        // Reset application state here if needed
+        window.location.href = '/';
+      }}
+      onError={(error, info) => {
+        // Log to error reporting service
+        console.error("Global error caught:", error);
+        console.error("Component stack:", info.componentStack);
+        
+        // Track in GA
+        if (window.gtag) {
+          window.gtag('event', 'exception', {
+            description: error.toString(),
+            fatal: true
+          });
+        }
+      }}
+    >
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </ErrorBoundary>
+  </StrictMode>
+);
 
 // Report web vitals if GA is configured
 reportWebVitals();
