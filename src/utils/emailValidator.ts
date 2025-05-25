@@ -90,14 +90,18 @@ export const validateEmail = async (email: string): Promise<{
  * Sends an OTP verification code to the provided email
  * Uses the Edge Function for centralized verification
  */
-export const sendOtpEmail = async (email: string, name?: string): Promise<{
+export const sendOtpEmail = async (
+  email: string, 
+  name?: string, 
+  userId?: string
+): Promise<{
   success: boolean;
   verificationId?: string;
   error?: string;
   remainingAttempts?: number;
 }> => {
   try {
-    console.log(`Sending verification email to ${email}`);
+    console.log(`Sending verification email to ${email}${userId ? ` for user ${userId}` : ''}`);
     
     // Call the Supabase Edge Function
     const response = await fetch(
@@ -111,6 +115,7 @@ export const sendOtpEmail = async (email: string, name?: string): Promise<{
         body: JSON.stringify({
           email,
           name,
+          user_id: userId,
           action: 'send-otp'
         })
       }

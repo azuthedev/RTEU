@@ -62,7 +62,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     const libraryParams = libraries.join(',');
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraryParams}&callback=${callbackName}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraryParams}&callback=${callbackName}&loading=async`;
     script.async = true; // Ensure async attribute is set
     
     // Handle loading errors
@@ -179,17 +179,17 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
     script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
     script.id = 'ga-script';
     script.async = true;
-    script.defer = true; // Add defer attribute to reduce main thread blocking
+    script.defer = true;
     document.head.appendChild(script);
   };
   
   // Defer loading for better performance
   if (options.delayLoad) {
     if (document.readyState === 'complete') {
-      setTimeout(loadAnalyticsScript, 2000); // Increase delay for better performance
+      setTimeout(loadAnalyticsScript, 1000);
     } else {
       window.addEventListener('load', () => {
-        setTimeout(loadAnalyticsScript, 2000); // Increase delay for better performance
+        setTimeout(loadAnalyticsScript, 1000);
       });
     }
   } else {
@@ -199,52 +199,38 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
 };
 
 /**
- * Enhanced Voiceflow chat initialization with 5-second delay
- * Now properly delays loading to improve initial page performance
+ * Initializes Voiceflow chat with optimal loading strategy
  */
 export const initVoiceflowChat = (
-  projectId: string, 
+  projectId: string,
   options: {
     delay?: number;
     waitForIdle?: boolean;
     waitForInteraction?: boolean;
   } = {}
 ): void => {
-  // Default to a 5-second delay as requested
-  const delay = options.delay || 5000;
+  // Don't initialize if already loaded
+  if (document.getElementById('voiceflow-script') || window.voiceflow?.chat) return;
   
-  // Flag to prevent multiple initializations
-  let hasInitialized = false;
+  const { 
+    delay = 3000, 
+    waitForIdle = false, 
+    waitForInteraction = false 
+  } = options;
   
-  // Only initialize if the container exists
-  const container = document.getElementById('voiceflow-chat-container');
-  if (!container) {
-    console.warn('Voiceflow chat container not found');
-    return;
-  }
-  
-  // Function to initialize the Voiceflow script
-  const initChat = () => {
-    if (hasInitialized) return;
-    hasInitialized = true;
-    
-    console.log(`Initializing Voiceflow chat with ${delay}ms delay`);
-    
-    // Only initialize if not already loaded
-    if (window.voiceflow?.chat) {
-      console.log('Voiceflow chat already initialized');
-      return;
-    }
-    
-    // Create script element
+  const loadVoiceflow = () => {
     const script = document.createElement('script');
+    script.id = 'voiceflow-script';
+    script.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
     script.type = 'text/javascript';
-    script.innerHTML = `
-      (function(d, t) {
-        var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
-        v.onload = function() {
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      setTimeout(() => {
+        if (window.voiceflow?.chat) {
           window.voiceflow.chat.load({
-            verify: { projectID: '${projectId}' },
+            verify: { projectID: projectId },
             url: 'https://general-runtime.voiceflow.com',
             versionID: 'production',
             voice: {
@@ -252,47 +238,44 @@ export const initVoiceflowChat = (
             }
           });
         }
-        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; 
-        v.type = "text/javascript"; 
-        s.parentNode.insertBefore(v, s);
-      })(document, 'script');
-    `;
-    
-    // Append script to head
-    document.head.appendChild(script);
-  };
-  
-  // Determine when to load Voiceflow chat
-  if (options.waitForInteraction) {
-    // Load after user interaction to prioritize core content
-    const events = ['click', 'scroll', 'touchstart', 'keydown'];
-    const handler = () => {
-      // Remove all event listeners
-      events.forEach(event => window.removeEventListener(event, handler));
-      // Delay initialization after interaction
-      setTimeout(initChat, 500);
+      }, 500);
     };
     
-    // Add event listeners
-    events.forEach(event => {
-      window.addEventListener(event, handler, { once: true, passive: true });
+    document.body.appendChild(script);
+  };
+  
+  // Determine loading strategy
+  if (waitForInteraction) {
+    // Load after user interaction
+    const interactionEvents = ['click', 'scroll', 'touchstart'];
+    const interactionHandler = throttle(() => {
+      interactionEvents.forEach(event => {
+        document.removeEventListener(event, interactionHandler);
+      });
+      loadVoiceflow();
+    }, 1000, { leading: true });
+    
+    interactionEvents.forEach(event => {
+      document.addEventListener(event, interactionHandler, { passive: true });
     });
     
-    // Fallback: load after 20 seconds regardless
-    setTimeout(initChat, 20000);
-  } else if (options.waitForIdle && 'requestIdleCallback' in window) {
+    // Fallback: Load after 15 seconds anyway
+    setTimeout(() => {
+      interactionEvents.forEach(event => {
+        document.removeEventListener(event, interactionHandler);
+      });
+      loadVoiceflow();
+    }, 15000);
+  } else if (waitForIdle && 'requestIdleCallback' in window) {
     // Load when browser is idle
-    window.requestIdleCallback(
-      () => setTimeout(initChat, delay),
-      { timeout: 10000 }
-    );
+    window.requestIdleCallback(() => loadVoiceflow());
   } else {
     // Load after specified delay
     if (document.readyState === 'complete') {
-      setTimeout(initChat, delay);
+      setTimeout(loadVoiceflow, delay);
     } else {
       window.addEventListener('load', () => {
-        setTimeout(initChat, delay);
+        setTimeout(loadVoiceflow, delay);
       });
     }
   }

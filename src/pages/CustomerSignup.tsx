@@ -40,6 +40,7 @@ const CustomerSignup = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [verificationId, setVerificationId] = useState<string>('');
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
+  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
 
   // Check if in development environment
   useEffect(() => {
@@ -255,22 +256,117 @@ const CustomerSignup = () => {
     }
   };
 
+  // Create user first and then verify
+  const createUserWithoutVerification = async (): Promise<{success: boolean, userId?: string, error?: string}> => {
+    try {
+      console.log("Creating unverified user account");
+      setIsSubmitting(true);
+      
+      // Create metadata object
+      const metadata: Record<string, string | null> = {
+        name: formData.name.trim(),
+        phone: formData.phone ? formData.phone.trim() : null,
+        email_verified: 'false' // Mark explicitly as unverified
+      };
+      
+      // Add invite code to metadata if provided
+      if (inviteCode) {
+        metadata.invite = inviteCode.trim();
+      }
+      
+      console.log('Signup metadata being sent:', metadata);
+      
+      // Call Supabase signup with the metadata
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email.trim(),
+        password: formData.password,
+        options: {
+          data: metadata
+        }
+      });
+
+      if (error) {
+        console.error('Supabase signup error:', error);
+        trackEvent('Authentication', 'Sign Up Error', error.message);
+        return { success: false, error: error.message };
+      }
+      
+      if (!data.user) {
+        const errMsg = 'User creation failed - no user data returned';
+        trackEvent('Authentication', 'Sign Up Error', errMsg);
+        return { success: false, error: errMsg };
+      }
+      
+      // Store the newly created user ID
+      setCreatedUserId(data.user.id);
+      
+      // Track successful user creation
+      trackEvent('Authentication', 'User Created (Unverified)', data.user.id);
+      
+      return { success: true, userId: data.user.id };
+      
+    } catch (error: any) {
+      console.error('Error creating unverified user:', error);
+      return { success: false, error: error.message || 'Failed to create user' };
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleOtpVerified = () => {
     setShowOtpModal(false);
     trackEvent('Authentication', 'Email Verified');
     
-    // Continue with signup now that email is verified
-    completeSignup();
+    // Update user's verification status if we have a created user ID
+    if (createdUserId) {
+      updateUserVerificationStatus(createdUserId);
+    }
+    
+    // Navigate to login with success message
+    navigate('/login', { 
+      state: { 
+        message: 'Registration successful! Your email has been verified. Please sign in to continue.',
+        ...(bookingReference ? { bookingReference } : {})
+      } 
+    });
   };
 
-  const sendVerificationCode = async () => {
+  const updateUserVerificationStatus = async (userId: string) => {
+    try {
+      // Update the user's email_verified status
+      const { error } = await supabase
+        .from('users')
+        .update({ email_verified: true })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error updating user verification status:', error);
+      } else {
+        console.log('Successfully updated user verification status');
+        
+        // Also try to update auth.users if possible
+        try {
+          await supabase.auth.admin.updateUserById(
+            userId,
+            { user_metadata: { email_verified: true } }
+          );
+        } catch (metadataError) {
+          console.warn('Could not update auth metadata (non-critical):', metadataError);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+    }
+  };
+
+  const sendVerificationCode = async (userId: string) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
       trackEvent('Authentication', 'Send OTP Attempt', formData.email);
       
-      const result = await sendOtpEmail(formData.email, formData.name);
+      const result = await sendOtpEmail(formData.email, formData.name, userId);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to send verification code');
@@ -307,85 +403,6 @@ const CustomerSignup = () => {
     });
   };
 
-  const completeSignup = async () => {
-    try {
-      setIsSubmitting(true);
-      
-      // Debug logging
-      console.log('Submitting with invite code:', inviteCode);
-      console.log('Form data:', {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone
-      });
-      
-      // Call signUp function with invite code
-      const { error: signUpError, data: signupData } = await signUp(
-        formData.email, 
-        formData.password,
-        formData.name,
-        formData.phone,
-        inviteCode || undefined
-      );
-
-      if (signUpError) {
-        console.error('Signup error details:', signUpError);
-        
-        if (isDevEnvironment) {
-          // In development, show a specific message but allow proceeding for testing
-          console.log('DEVELOPMENT MODE: Signup would fail in production but continuing for testing');
-          
-          // Navigate to login with success message
-          navigate('/login', { 
-            state: { 
-              message: 'DEVELOPMENT: Registration successful! Your email has been verified. Please sign in to continue.',
-              ...(bookingReference ? { bookingReference } : {})
-            } 
-          });
-          return;
-        }
-        
-        throw signUpError;
-      }
-
-      // If we have a booking reference and user was created, link the booking to the user
-      if (bookingReference && signupData?.user) {
-        // Update the trip's user_id to link it to the new account
-        try {
-          const { error: updateError } = await supabase
-            .from('trips')
-            .update({ user_id: signupData.user.id })
-            .eq('booking_reference', bookingReference);
-          
-          if (updateError) {
-            console.error('Error linking booking to user:', updateError);
-            // Don't fail the account creation just because linking failed
-            // But we'll track it for monitoring
-            trackEvent('Authentication', 'Booking Link Error', updateError.message);
-          } else {
-            trackEvent('Authentication', 'Booking Link Success', bookingReference);
-          }
-        } catch (linkErr) {
-          console.error('Failed to link booking:', linkErr);
-          // Non-critical error, continue with signup
-        }
-      }
-
-      // Navigate to login with success message
-      navigate('/login', { 
-        state: { 
-          message: 'Registration successful! Your email has been verified. Please sign in to continue.',
-          ...(bookingReference ? { bookingReference } : {})
-        } 
-      });
-    } catch (error: any) {
-      console.error('Error during sign up:', error);
-      setError(error.message || 'An unexpected error occurred during registration.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -409,8 +426,43 @@ const CustomerSignup = () => {
       return;
     }
 
-    // Initiate the OTP verification flow
-    const otpSent = await sendVerificationCode();
+    // Step 1: Create the user account first (marked as unverified)
+    const createUserResult = await createUserWithoutVerification();
+    
+    if (!createUserResult.success) {
+      setError(createUserResult.error || 'Failed to create user account');
+      return;
+    }
+    
+    // Step 2: Send verification email with the user ID
+    const userId = createUserResult.userId;
+    if (!userId) {
+      setError('Failed to get user ID after account creation');
+      return;
+    }
+    
+    // Link booking if available
+    if (bookingReference && userId) {
+      try {
+        const { error: linkError } = await supabase
+          .from('trips')
+          .update({ user_id: userId })
+          .eq('booking_reference', bookingReference);
+        
+        if (linkError) {
+          console.error('Error linking booking to user:', linkError);
+        } else {
+          console.log(`Successfully linked booking ${bookingReference} to user ${userId}`);
+          trackEvent('Authentication', 'Booking Linked at Signup', bookingReference);
+        }
+      } catch (linkError) {
+        console.error('Error linking booking:', linkError);
+        // Don't fail signup just because linking failed
+      }
+    }
+    
+    // Send verification code with the user ID
+    const otpSent = await sendVerificationCode(userId);
     if (!otpSent) {
       // Error already set by sendVerificationCode
       return;
