@@ -89,7 +89,7 @@ const TrustBadges = () => {
                     src="https://files.royaltransfereu.com/assets/visa.png"
                     alt="Visa payment logo - Royal Transfer EU accepts Visa cards"
                     className="h-7 md:h-8 w-auto"
-                    width={90}
+                    width={100}
                     height={30}
                     loading="eager"
                     fetchPriority="high"
