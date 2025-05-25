@@ -74,6 +74,17 @@ Deno.serve(async (req) => {
           .from('users')
           .update({ email_verified: true })
           .eq('id', verification.user_id);
+          
+        // Also try to update auth.users metadata
+        try {
+          // This requires admin access and might not work depending on permissions
+          await supabase.auth.admin.updateUserById(
+            verification.user_id,
+            { user_metadata: { email_verified: true } }
+          );
+        } catch (e) {
+          console.warn('Could not update auth metadata (non-critical):', e);
+        }
       }
       
       // Get userId and email for response
@@ -154,6 +165,17 @@ Deno.serve(async (req) => {
           .from('users')
           .update({ email_verified: true })
           .eq('id', verification.user_id);
+          
+        // Also try to update auth.users metadata
+        try {
+          // This requires admin access and might not work depending on permissions
+          await supabase.auth.admin.updateUserById(
+            verification.user_id,
+            { user_metadata: { email_verified: true } }
+          );
+        } catch (e) {
+          console.warn('Could not update auth metadata (non-critical):', e);
+        }
       }
       
       // Return success

@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
     // Check if this is a POST request for sending verification
     if (req.method === 'POST') {
       const requestData = await req.json();
-      const { email, name, action } = requestData;
+      const { email, name, user_id, action } = requestData;
       
       if (!email) {
         return new Response(
@@ -216,16 +216,23 @@ Deno.serve(async (req) => {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
         
-        // Store verification data with created_at timestamp
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
+        // Use provided user_id or try to find user by email
+        let userId = user_id;
         
-        // Handle user lookup error
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error checking user:', userError);
+        if (!userId) {
+          // Try to find user by email
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
+          
+          if (userError && userError.code !== 'PGRST116') {
+            console.error('Error checking user:', userError);
+          } else if (userData) {
+            userId = userData.id;
+            console.log(`Found existing user ID for ${email}: ${userId}`);
+          }
         }
         
         // Check for existing verification records for this email
@@ -251,13 +258,13 @@ Deno.serve(async (req) => {
         
         // Generate magic link URL
         const baseUrl = getBaseUrl(req);
-        const magicLink = `${baseUrl}/email-verification/verify?token=${magicLinkToken}&redirect=/login`;
+        const magicLink = `${baseUrl}/verify-email?token=${magicLinkToken}&redirect=/login`;
         
         // Insert new verification with created_at timestamp
         const { data: newVerification, error: insertError } = await supabase
           .from('email_verifications')
           .insert([{
-            user_id: userData?.id || null,
+            user_id: userId || null,
             token: otpCode, // Store OTP as token
             magic_token: magicLinkToken, // Store magic link token
             email: email, // Store email to track who this verification is for
@@ -385,7 +392,7 @@ Deno.serve(async (req) => {
       {
         status: 405,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+        }
     );
   } catch (error) {
     console.error('Error:', error);
