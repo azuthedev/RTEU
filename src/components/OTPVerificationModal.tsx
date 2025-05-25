@@ -78,9 +78,17 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
     
-    // Only allow alphanumeric characters
-    if (!/^[a-zA-Z0-9]$/.test(value) && value !== '') {
-      return;
+    // Only allow valid characters based on position
+    if (index === 2) { // Third position (letter)
+      // Only allow letters a-z
+      if (!/^[a-zA-Z]$/.test(value) && value !== '') {
+        return;
+      }
+    } else { // All other positions (numbers)
+      // Only allow digits
+      if (!/^\d$/.test(value) && value !== '') {
+        return;
+      }
     }
     
     // Update OTP array
@@ -337,7 +345,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                           <input
                             key={index}
                             ref={otpRefs[index]}
-                            type="text"
+                            type={index === 2 ? "text" : "number"}
+                            inputMode={index === 2 ? "text" : "numeric"}
+                            pattern={index === 2 ? "[a-zA-Z]" : "[0-9]"}
                             maxLength={1}
                             value={digit}
                             onChange={(e) => handleOtpChange(e, index)}
