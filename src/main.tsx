@@ -28,39 +28,60 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-// Initialize Google Maps API with async loading
-if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-  // Wait until the page has shown some content before loading the heavy Maps API
-  const loadMapsAfterDelay = () => {
-    setTimeout(() => {
-      initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
-        .then(success => {
-          console.log('Google Maps API initialized with async loading:', success);
-        })
-        .catch(error => {
-          console.error('Error initializing Google Maps API:', error);
-        });
-    }, 1000); // 1s delay to let initial page render complete
+// Function to load third-party scripts when the browser is idle
+const loadThirdPartyScripts = () => {
+  // Use requestIdleCallback to load scripts when the browser is idle
+  const loadWithIdleCallback = () => {
+    // Load Google Maps API when browser is idle
+    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(
+          () => {
+            initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+              .then(success => {
+                console.log('Google Maps API initialized during idle time:', success);
+              });
+          },
+          { timeout: 5000 }
+        );
+      } else {
+        // Fallback for browsers that don't support requestIdleCallback
+        setTimeout(() => {
+          initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+            .then(success => {
+              console.log('Google Maps API initialized with timeout fallback:', success);
+            });
+        }, 3000);
+      }
+    }
+
+    // Initialize Google Analytics with idle callback or fallback
+    if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
+    }
+
+    // Initialize Voiceflow chat with interaction detection
+    initVoiceflowChat('67d817b721b78ba30f3baa7d', {
+      delay: 5000,
+      waitForInteraction: true
+    });
   };
-  
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    loadMapsAfterDelay();
+
+  // If the page is already loaded, use idle callback immediately
+  if (document.readyState === 'complete') {
+    loadWithIdleCallback();
   } else {
-    // If document not yet loaded, add event listener
-    window.addEventListener('DOMContentLoaded', loadMapsAfterDelay);
+    // Otherwise wait for the page to load first
+    window.addEventListener('load', loadWithIdleCallback, { once: true });
   }
-}
 
-// Initialize Google Analytics with delay
-if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
-  initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
-}
+  // Fallback timeout to ensure scripts eventually load even if 
+  // the browser never becomes idle or load event doesn't fire
+  setTimeout(loadWithIdleCallback, 10000);
+};
 
-// Initialize Voiceflow chat with delayed loading
-initVoiceflowChat('67d817b721b78ba30f3baa7d', {
-  delay: 5000,
-  waitForInteraction: true
-});
+// Start loading third-party scripts
+loadThirdPartyScripts();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

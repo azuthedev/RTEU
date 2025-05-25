@@ -4,9 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { verifyOtp, sendOtpEmail } from '../utils/emailValidator';
-
-// Define this constant at the top level before it's used
-const OTP_EXPIRY_MINUTES = 15;
+import { VerificationConfig } from '../config/verification';
 
 interface OTPVerificationModalProps {
   isOpen: boolean;
@@ -29,7 +27,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_MINUTES * 60); // 15 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(VerificationConfig.OTP_EXPIRY_MINUTES * 60); // 15 minutes in seconds
   const [isResending, setIsResending] = useState(false);
   const [showSpamWarning, setShowSpamWarning] = useState(emailSent);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
@@ -213,7 +211,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         console.log(`New verification ID: ${newVerificationId}`);
         
         // Reset the timer
-        setTimeLeft(OTP_EXPIRY_MINUTES * 60);
+        setTimeLeft(VerificationConfig.OTP_EXPIRY_MINUTES * 60);
         
         // Update remaining attempts if provided
         if (result.remainingAttempts !== undefined) {

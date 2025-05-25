@@ -183,14 +183,23 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
     document.head.appendChild(script);
   };
   
-  // Defer loading for better performance
+  // Use requestIdleCallback with fallback to setTimeout
   if (options.delayLoad) {
+    const loadWithIdleCallback = () => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => loadAnalyticsScript(), { timeout: 5000 });
+      } else {
+        // Fallback for browsers that don't support requestIdleCallback
+        setTimeout(loadAnalyticsScript, 3000);
+      }
+    };
+    
+    // If document is already loaded, schedule with idle callback
     if (document.readyState === 'complete') {
-      setTimeout(loadAnalyticsScript, 1000);
+      loadWithIdleCallback();
     } else {
-      window.addEventListener('load', () => {
-        setTimeout(loadAnalyticsScript, 1000);
-      });
+      // Otherwise wait for load event then schedule
+      window.addEventListener('load', loadWithIdleCallback);
     }
   } else {
     // Load immediately
@@ -268,7 +277,7 @@ export const initVoiceflowChat = (
     }, 15000);
   } else if (waitForIdle && 'requestIdleCallback' in window) {
     // Load when browser is idle
-    window.requestIdleCallback(() => loadVoiceflow());
+    window.requestIdleCallback(() => loadVoiceflow(), { timeout: 5000 });
   } else {
     // Load after specified delay
     if (document.readyState === 'complete') {
