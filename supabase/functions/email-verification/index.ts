@@ -103,10 +103,18 @@ async function checkRateLimits(email: string, supabase: any): Promise<{ allowed:
 // Send verification email with both OTP and magic link
 async function sendVerificationEmail(name: string, email: string, otpCode: string, magicLink: string) {
   try {
+    // Get the webhook secret from environment variables
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    
+    if (!webhookSecret) {
+      throw new Error('Webhook secret is missing from environment variables');
+    }
+    
     const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Auth': webhookSecret
       },
       body: JSON.stringify({
         name: name || email.split('@')[0], // Use part before @ if no name provided
