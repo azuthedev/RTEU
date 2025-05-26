@@ -345,7 +345,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                           <input
                             key={index}
                             ref={otpRefs[index]}
-                            type={index === 2 ? "text" : "number"}
+                            type={index === 2 ? "text" : "tel"}
                             inputMode={index === 2 ? "text" : "numeric"}
                             pattern={index === 2 ? "[a-zA-Z]" : "[0-9]"}
                             maxLength={1}

@@ -86,6 +86,15 @@ export const validateEmail = async (email: string): Promise<{
   }
 };
 
+// Helper to determine if we're in a development environment
+const isDevelopmentEnvironment = (): boolean => {
+  return typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname.includes('local-credentialless') ||
+    window.location.hostname.includes('webcontainer')
+  );
+};
+
 /**
  * Sends an OTP verification code to the provided email
  * Uses the Edge Function for centralized verification
@@ -103,67 +112,107 @@ export const sendOtpEmail = async (
   try {
     console.log(`Sending verification email to ${email}${userId ? ` for user ${userId}` : ''}`);
     
-    // Call the Supabase Edge Function
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          user_id: userId,
-          action: 'send-otp'
-        })
-      }
-    );
-    
-    if (!response.ok) {
-      // Check for rate limiting
-      if (response.status === 429) {
-        throw new Error('Too many verification attempts. Please try again later.');
-      }
+    // Check if we're in development mode first for faster fallback
+    const isDev = isDevelopmentEnvironment();
+    if (isDev) {
+      console.log('DEVELOPMENT MODE: Simulating email verification without calling Edge Function');
       
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to send verification email');
+      // Generate a fake verification ID for dev testing
+      return {
+        success: true,
+        verificationId: `dev-${Date.now()}`,
+        message: "DEV MODE: Verification code simulated (no actual email sent)"
+      };
     }
     
-    const data = await response.json();
+    // Get webhook secret from environment variables
+    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
     
-    return {
-      success: data.success,
-      verificationId: data.verificationId,
-      remainingAttempts: data.remainingAttempts
-    };
+    if (!webhookSecret) {
+      console.error('Missing WEBHOOK_SECRET environment variable');
+      
+      // Fallback for development
+      if (isDev) {
+        return {
+          success: true,
+          verificationId: `dev-${Date.now()}`,
+          message: "DEV MODE: No webhook secret found, verification simulated"
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'Server configuration error: Missing webhook authentication'
+      };
+    }
+    
+    // Call the Supabase Edge Function
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'X-Auth': webhookSecret // Add the authentication header
+          },
+          body: JSON.stringify({
+            email,
+            name,
+            user_id: userId,
+            action: 'send-otp'
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        // Check for rate limiting
+        if (response.status === 429) {
+          throw new Error('Too many verification attempts. Please try again later.');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send verification email');
+      }
+      
+      const data = await response.json();
+      
+      return {
+        success: data.success,
+        verificationId: data.verificationId,
+        remainingAttempts: data.remainingAttempts
+      };
+    } catch (fetchError) {
+      console.error('Fetch error sending OTP via Edge Function:', fetchError);
+      
+      // If in development, use fallback
+      if (isDev) {
+        console.log('DEVELOPMENT FALLBACK: Simulating email verification after fetch error');
+        return {
+          success: true,
+          verificationId: `dev-${Date.now()}`,
+          message: "DEV MODE: Verification code simulated after fetch error"
+        };
+      }
+      
+      throw fetchError;
+    }
   } catch (err: any) {
     console.error('Error sending OTP:', err);
     
     // Try fallback for development environment
-    const isDev = typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname.includes('local-credentialless') ||
-      window.location.hostname.includes('webcontainer')
-    );
+    const isDev = isDevelopmentEnvironment();
     
     if (isDev) {
-      console.log('DEVELOPMENT FALLBACK: Simulating email verification');
+      console.log('DEVELOPMENT FALLBACK: Simulating email verification after error');
       
-      try {
-        // Generate a fake verification ID for dev testing
-        return {
-          success: true,
-          verificationId: `dev-${Date.now()}`
-        };
-      } catch (devError) {
-        console.error('Error in dev fallback:', devError);
-        return {
-          success: true,
-          verificationId: `dev-${Date.now()}`
-        };
-      }
+      // Generate a fake verification ID for dev testing
+      return {
+        success: true,
+        verificationId: `dev-${Date.now()}`,
+        message: "DEV MODE: Verification code simulated after error"
+      };
     }
     
     return {
@@ -187,41 +236,73 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       return { success: true };
     }
     
-    // Call the Edge Function to verify the OTP
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          token: otp,
-          verificationId
-        })
-      }
-    );
+    // Get webhook secret from environment variables
+    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Invalid verification code');
+    if (!webhookSecret) {
+      console.error('Missing WEBHOOK_SECRET environment variable');
+      
+      // Fallback for development
+      const isDev = isDevelopmentEnvironment();
+      if (isDev) {
+        return {
+          success: true,
+          message: "DEV MODE: No webhook secret found, verification simulated"
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'Server configuration error: Missing webhook authentication'
+      };
     }
     
-    const data = await response.json();
-    
-    return { 
-      success: data.success
-    };
+    // Call the Edge Function to verify the OTP
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'X-Auth': webhookSecret // Add the authentication header
+          },
+          body: JSON.stringify({
+            token: otp,
+            verificationId
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Invalid verification code');
+      }
+      
+      const data = await response.json();
+      
+      return { 
+        success: data.success
+      };
+    } catch (fetchError) {
+      console.error('Fetch error verifying OTP:', fetchError);
+      
+      // Development fallback
+      const isDev = isDevelopmentEnvironment();
+      
+      if (isDev) {
+        console.log('DEVELOPMENT FALLBACK: Accepting verification code after fetch error');
+        return { success: true };
+      }
+      
+      throw fetchError;
+    }
   } catch (err: any) {
     console.error('Error verifying OTP:', err);
     
     // Development fallback
-    const isDev = typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname.includes('local-credentialless') ||
-      window.location.hostname.includes('webcontainer')
-    );
+    const isDev = isDevelopmentEnvironment();
     
     if (isDev) {
       console.log('DEVELOPMENT FALLBACK: Accepting verification code in dev mode');
@@ -247,45 +328,8 @@ export const checkEmailVerification = async (email: string): Promise<{
   error?: string;
 }> => {
   try {
-    // Call the Edge Function to check verification status
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          email,
-          action: 'check-verification'
-        })
-      }
-    );
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to check verification status');
-    }
-    
-    const data = await response.json();
-    
-    return {
-      verified: data.verified,
-      exists: data.exists,
-      requiresVerification: data.requiresVerification,
-      hasPendingVerification: data.hasPendingVerification,
-      verificationAge: data.verificationAge
-    };
-  } catch (err: any) {
-    console.error('Error checking email verification:', err);
-    
-    // Development fallback
-    const isDev = typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname.includes('local-credentialless') ||
-      window.location.hostname.includes('webcontainer')
-    );
+    // Check for development environment first for faster response
+    const isDev = isDevelopmentEnvironment();
     
     if (isDev) {
       // Provide test cases for development
@@ -297,10 +341,100 @@ export const checkEmailVerification = async (email: string): Promise<{
       
       const emailKey = email.toLowerCase();
       if (testCases[emailKey]) {
+        console.log(`DEVELOPMENT MODE: Using test case for ${emailKey}`);
         return testCases[emailKey];
       }
       
       // Default test case
+      console.log(`DEVELOPMENT MODE: Using default test case for ${email}`);
+      return {
+        verified: false,
+        exists: true,
+        requiresVerification: true
+      };
+    }
+    
+    // Get webhook secret from environment variables
+    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+    
+    if (!webhookSecret) {
+      console.error('Missing WEBHOOK_SECRET environment variable');
+      
+      // Fallback for development
+      if (isDev) {
+        return {
+          verified: false,
+          exists: true,
+          requiresVerification: true,
+          message: "DEV MODE: No webhook secret found, verification check simulated"
+        };
+      }
+      
+      return {
+        verified: false,
+        exists: false,
+        requiresVerification: false,
+        error: 'Server configuration error: Missing webhook authentication'
+      };
+    }
+    
+    // Call the Edge Function to check verification status
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'X-Auth': webhookSecret // Add the authentication header
+          },
+          body: JSON.stringify({
+            email,
+            action: 'check-verification'
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to check verification status');
+      }
+      
+      const data = await response.json();
+      
+      return {
+        verified: data.verified,
+        exists: data.exists,
+        requiresVerification: data.requiresVerification,
+        hasPendingVerification: data.hasPendingVerification,
+        verificationAge: data.verificationAge
+      };
+    } catch (fetchError) {
+      console.error('Fetch error checking verification status:', fetchError);
+      
+      // If in development, use fallback
+      if (isDev) {
+        // Default test case for development when fetch fails
+        console.log(`DEVELOPMENT FALLBACK: Using default test case after fetch error`);
+        return {
+          verified: false,
+          exists: true,
+          requiresVerification: true
+        };
+      }
+      
+      throw fetchError;
+    }
+  } catch (err: any) {
+    console.error('Error checking email verification:', err);
+    
+    // Development fallback
+    const isDev = isDevelopmentEnvironment();
+    
+    if (isDev) {
+      // Default test case
+      console.log(`DEVELOPMENT FALLBACK: Using default test case after error`);
       return {
         verified: false,
         exists: true,
