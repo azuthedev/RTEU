@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'npm:uuid@9.0.0';
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Auth",
 };
 
 Deno.serve(async (req) => {
@@ -17,6 +17,27 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify the X-Auth header if not in development
+    const authHeader = req.headers.get('X-Auth');
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    const isDev = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname.includes('local-credentialless') ||
+      window.location.hostname.includes('webcontainer')
+    );
+    
+    if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unauthorized - Invalid authentication header' 
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
