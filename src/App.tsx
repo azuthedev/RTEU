@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, Suspense, lazy, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from './components/ui/toaster';
@@ -16,6 +16,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { useAnalytics } from './hooks/useAnalytics';
 import { FeatureFlagProvider, useFeatureFlags } from './components/FeatureFlagProvider';
+import OTPVerificationModal from './components/OTPVerificationModal';
 
 // Lazily load all pages to improve initial load time
 const Home = lazy(() => import('./pages/Home'));
@@ -77,17 +78,59 @@ const RouteObserver = () => {
   return null;
 };
 
-// Protected route component with optimized loading
+// Updated ProtectedRoute to handle unverified users
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, emailVerified } = useAuth();
   const { trackEvent } = useAnalytics();
   const location = useLocation();
-  
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationId, setVerificationId] = useState("");
+
   useEffect(() => {
     if (!loading && !user) {
       trackEvent('Authentication', 'Access Denied', 'Protected Route', 0, true);
     }
   }, [user, loading, trackEvent]);
+  
+  // Check if user needs email verification when accessing profile
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (user && !emailVerified && location.pathname === '/profile') {
+        try {
+          // Prompt to verify email
+          const result = await sendVerificationEmail(user.email || "");
+          if (result.success && result.verificationId) {
+            setVerificationId(result.verificationId);
+            setShowVerificationModal(true);
+          }
+        } catch (error) {
+          console.error("Failed to send verification email:", error);
+        }
+      }
+    };
+    
+    if (!loading && user && !emailVerified) {
+      checkVerification();
+    }
+  }, [user, emailVerified, loading, location.pathname]);
+  
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    // Refresh the page to update verification status
+    window.location.reload();
+  };
+  
+  const sendVerificationEmail = async (email: string) => {
+    if (!email) return { success: false, error: "Email is required" };
+    
+    try {
+      const { sendVerificationEmail } = useAuth();
+      return await sendVerificationEmail(email);
+    } catch (error) {
+      console.error("Error sending verification:", error);
+      return { success: false, error: "Failed to send verification" };
+    }
+  };
   
   if (loading) {
     return (
@@ -101,16 +144,80 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
   
-  // Check if email is verified
-  if (user && !emailVerified) {
-    return <Navigate to="/login" replace state={{ 
-      from: location,
-      requireVerification: true,
-      email: user.email
-    }} />;
-  }
-  
-  return <>{children}</>;
+  // Always render children and verification modal if needed
+  return (
+    <>
+      {children}
+      
+      {/* OTP Verification Modal */}
+      {showVerificationModal && (
+        <OTPVerificationModal
+          isOpen={showVerificationModal}
+          onClose={() => setShowVerificationModal(false)}
+          onVerified={handleVerificationComplete}
+          email={user.email || ""}
+          verificationId={verificationId}
+          emailSent={true}
+        />
+      )}
+    </>
+  );
+};
+
+// Main component to handle unverified users showing verification modal
+const UnverifiedUserHandler = () => {
+  const { user, emailVerified, sendVerificationEmail, loading } = useAuth();
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationId, setVerificationId] = useState("");
+  const checkPerformedRef = useRef(false);
+
+  useEffect(() => {
+    const handleUnverifiedUser = async () => {
+      // Only check once per session
+      if (checkPerformedRef.current) return;
+      
+      // If user is logged in but email isn't verified
+      if (user && !emailVerified) {
+        console.log("User needs email verification, showing modal");
+        try {
+          // Send verification email
+          const result = await sendVerificationEmail(user.email || "");
+          if (result.success && result.verificationId) {
+            setVerificationId(result.verificationId);
+            setShowVerificationModal(true);
+          }
+        } catch (error) {
+          console.error("Failed to send verification email:", error);
+        }
+      }
+      
+      checkPerformedRef.current = true;
+    };
+
+    // Run the check when auth state is determined
+    if (!loading) {
+      handleUnverifiedUser();
+    }
+  }, [user, emailVerified, loading, sendVerificationEmail]);
+
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    // Refresh the page to update verification status
+    window.location.reload();
+  };
+
+  return (
+    showVerificationModal && (
+      <OTPVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerified={handleVerificationComplete}
+        email={user?.email || ""}
+        verificationId={verificationId}
+        emailSent={true}
+      />
+    )
+  );
 };
 
 function AppRoutes() {
@@ -165,6 +272,9 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      
+      {/* Handle unverified users */}
+      <UnverifiedUserHandler />
       
       {/* Conditionally render the CookieBanner based on the feature flag */}
       {flags.showCookieBanner && (
