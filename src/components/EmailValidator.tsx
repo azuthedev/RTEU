@@ -14,6 +14,7 @@ interface EmailValidatorProps {
   disabled?: boolean;
   label?: string;
   errorMessage?: string;
+  onBlur?: () => void;
 }
 
 const EmailValidator: React.FC<EmailValidatorProps> = ({
@@ -27,7 +28,8 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
   className = '',
   disabled = false,
   label = 'Email',
-  errorMessage
+  errorMessage,
+  onBlur
 }) => {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -109,6 +111,11 @@ const EmailValidator: React.FC<EmailValidatorProps> = ({
   const handleBlur = () => {
     setIsFocused(false);
     setIsTouched(true);
+    
+    // Call external onBlur handler if provided
+    if (onBlur) {
+      onBlur();
+    }
   };
 
   const applySuggestion = () => {

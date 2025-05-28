@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, User, AlertCircle, Loader2, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,15 @@ import OTPVerificationModal from '../components/OTPVerificationModal';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { sendOtpEmail } from '../utils/emailValidator';
 import { supabase } from '../lib/supabase';
+
+// Simple debounce function to prevent excessive API calls
+const debounce = (fn: Function, ms = 300) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function(...args: any[]) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  };
+};
 
 const CustomerSignup = () => {
   const navigate = useNavigate();
@@ -41,6 +50,13 @@ const CustomerSignup = () => {
   const [verificationId, setVerificationId] = useState<string>('');
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+  
+  // Ref to track if a user check is in progress to prevent multiple simultaneous calls
+  const isCheckingUserRef = useRef(false);
+  // Ref to store the last checked email to prevent redundant checks
+  const lastCheckedEmailRef = useRef('');
+  // Ref to count how many times we've checked user existence
+  const checkCountRef = useRef(0);
 
   // Check if in development environment
   useEffect(() => {
@@ -183,7 +199,10 @@ const CustomerSignup = () => {
         email: data.customer_email
       }));
       
-      await checkUserExists(data.customer_email);
+      // Only check if email is different from last checked
+      if (data.customer_email !== lastCheckedEmailRef.current) {
+        debouncedCheckUserExists(data.customer_email);
+      }
     }
     
     if (data.customer_phone) {
@@ -211,14 +230,29 @@ const CustomerSignup = () => {
 
   const handleEmailValidationChange = (isValid: boolean) => {
     setEmailValid(isValid);
-    
-    // Check if a user with this email exists when validation passes
-    if (isValid && formData.email) {
-      checkUserExists(formData.email);
+    // No longer checking user existence here - will do it on blur instead
+  };
+  
+  // Handle email blur - only check user existence when user leaves the field
+  const handleEmailBlur = () => {
+    if (emailValid && formData.email && formData.email !== lastCheckedEmailRef.current) {
+      debouncedCheckUserExists(formData.email);
     }
   };
 
+  // Improved user existence check with safeguards
   const checkUserExists = async (email: string) => {
+    // If already checking, max checks reached, or email already checked, don't check again
+    if (isCheckingUserRef.current || checkCountRef.current >= 2 || email === lastCheckedEmailRef.current) {
+      return;
+    }
+    
+    isCheckingUserRef.current = true;
+    lastCheckedEmailRef.current = email;
+    checkCountRef.current += 1; // Increment check counter
+    
+    console.log(`Checking if user exists (check #${checkCountRef.current}/2): ${email}`);
+    
     try {
       let exists = false;
 
@@ -253,8 +287,13 @@ const CustomerSignup = () => {
       console.error('Error checking user existence:', error);
       // Default to not existing in case of error
       setUserHasAccount(false);
+    } finally {
+      isCheckingUserRef.current = false;
     }
   };
+  
+  // Create debounced version of the check function to prevent excessive API calls
+  const debouncedCheckUserExists = debounce(checkUserExists, 500);
 
   // Create user first and then verify
   const createUserWithoutVerification = async (): Promise<{success: boolean, userId?: string, error?: string}> => {
@@ -407,6 +446,9 @@ const CustomerSignup = () => {
     e.preventDefault();
     setError(null);
     
+    // Reset check counter for final submission check
+    checkCountRef.current = 0;
+    
     // Validate all fields before submitting
     const isFormValid = validateAllFields();
     
@@ -418,6 +460,12 @@ const CustomerSignup = () => {
     if (!emailValid) {
       setError('Please enter a valid email address');
       return;
+    }
+
+    // Do a final check if user has an account 
+    if (!userHasAccount && formData.email) {
+      // Final check before submission (using the synchronous version)
+      await checkUserExists(formData.email);
     }
 
     // If user has existing account, prompt them to sign in
@@ -565,6 +613,7 @@ const CustomerSignup = () => {
                 value={formData.email}
                 onChange={handleEmailChange}
                 onValidationChange={handleEmailValidationChange}
+                onBlur={handleEmailBlur}
                 label="Email Address"
                 id="email"
                 name="email"
@@ -578,9 +627,9 @@ const CustomerSignup = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 onBlur={() => handleBlur('name')}
+                error={errors.name}
                 required
                 icon={<User className="h-5 w-5" />}
-                error={errors.name}
                 autoComplete="name"
               />
 

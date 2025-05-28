@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Mail, Save, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
+import { User, Phone, Mail, Save, AlertTriangle, Loader2, CheckCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/ui/form-field';
 import useFormValidation from '../hooks/useFormValidation';
+import OTPVerificationModal from '../components/OTPVerificationModal';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, userData, loading, updateUserData } = useAuth();
+  const { user, userData, loading, updateUserData, emailVerified, sendVerificationEmail } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +22,11 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Verification modal state
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationId, setVerificationId] = useState('');
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
 
   // Define validation rules
   const validationRules = {
@@ -118,6 +124,44 @@ const Profile = () => {
     return user_role && ['admin', 'support', 'driver'].includes(user_role.toLowerCase());
   };
 
+  // Handle email verification
+  const handleVerifyEmail = async () => {
+    if (!user?.email) {
+      setError('No email address found for verification');
+      return;
+    }
+    
+    setIsSendingVerification(true);
+    setError(null);
+    
+    try {
+      // Send verification email
+      const result = await sendVerificationEmail(user.email);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send verification email');
+      }
+      
+      // Set verification ID and show modal
+      setVerificationId(result.verificationId || '');
+      setShowVerificationModal(true);
+    } catch (err: any) {
+      console.error('Error sending verification email:', err);
+      setError(err.message || 'Failed to send verification email');
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+  
+  // Handle verification completion
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    setSuccessMessage('Email verified successfully!');
+    
+    // Refresh the page to update the verification status
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -161,6 +205,21 @@ const Profile = () => {
                   {shouldShowRole(userData?.user_role) && (
                     <p className="text-gray-700 capitalize">{userData?.user_role}</p>
                   )}
+                  
+                  {/* Email verification badge */}
+                  <div className="mt-2">
+                    {emailVerified ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Unverified
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -173,6 +232,29 @@ const Profile = () => {
                     <span className="text-gray-700">{userData?.phone || 'Not provided'}</span>
                   </div>
                 </div>
+
+                {/* Show verification button if not verified */}
+                {!emailVerified && (
+                  <div className="mt-6">
+                    <button
+                      onClick={handleVerifyEmail}
+                      disabled={isSendingVerification}
+                      className="w-full bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700 transition-colors flex items-center justify-center"
+                    >
+                      {isSendingVerification ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Verify Email Address
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 <hr className="my-6" />
 
@@ -282,10 +364,32 @@ const Profile = () => {
                   )}
                 </button>
               </form>
+              
+              {/* Email verification explanation */}
+              {!emailVerified && (
+                <div className="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h3 className="font-semibold text-yellow-800 mb-2">
+                    Email Verification Required
+                  </h3>
+                  <p className="text-yellow-700 mb-4 text-sm">
+                    Your email address is not verified. Verifying your email helps secure your account and enables all features of your account.
+                  </p>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
       </main>
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerified={handleVerificationComplete}
+        email={userData?.email || ''}
+        verificationId={verificationId}
+        emailSent={true}
+      />
 
       <Sitemap />
     </div>
