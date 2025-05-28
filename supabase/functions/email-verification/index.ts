@@ -113,6 +113,11 @@ async function checkRateLimits(email: string, supabase: any): Promise<{ allowed:
 // Send verification email with both OTP and magic link
 async function sendVerificationEmail(name: string, email: string, otpCode: string, magicLink: string, req: Request) {
   try {
+    console.log('=== EMAIL VERIFICATION SENDING ATTEMPT ===');
+    console.log('To:', email);
+    console.log('OTP Code:', otpCode);
+    console.log('Magic Link:', magicLink);
+
     // Check if we're in development mode
     if (isDevEnvironment(req)) {
       console.log('DEVELOPMENT MODE: Skipping actual email sending');
@@ -125,9 +130,16 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
 
     // Get the webhook secret from environment variables
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    console.log('Webhook Secret available:', !!webhookSecret);
+    if (webhookSecret) {
+      console.log('First 3 chars of webhook secret:', webhookSecret.substring(0, 3));
+      console.log('Length of webhook secret:', webhookSecret.length);
+    }
     
     if (!webhookSecret) {
       console.warn('Webhook secret is missing from environment variables, using fallback for development');
+      console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => !key.includes('SECRET')).join(', '));
+      
       // In production, we'd throw an error, but in development we'll simulate success
       if (!isDevEnvironment(req)) {
         throw new Error('Webhook secret is missing from environment variables');
@@ -136,29 +148,69 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     }
     
     try {
+      console.log('=== PREPARING WEBHOOK REQUEST ===');
+      const requestBody = {
+        name: name || email.split('@')[0], // Use part before @ if no name provided
+        email: email,
+        otp_code: otpCode,
+        verify_link: magicLink,
+        email_type: 'OTP'
+      };
+
+      console.log('Request URL: https://n8n.capohq.com/webhook/rteu-tx-email');
+      console.log('Request Method: POST');
+      console.log('Request Body:', JSON.stringify(requestBody));
+      console.log('Request Headers: Content-Type: application/json, X-Auth: [REDACTED]');
+
+      // Actual webhook call
+      console.log('Sending webhook request...');
+      const startTime = Date.now();
+
       const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Auth': webhookSecret
         },
-        body: JSON.stringify({
-          name: name || email.split('@')[0], // Use part before @ if no name provided
-          email: email,
-          otp_code: otpCode,
-          verify_link: magicLink,
-          email_type: 'OTP'
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Failed to send verification email: ${response.status} ${text}`);
+      const duration = Date.now() - startTime;
+      console.log('Webhook response time:', duration, 'ms');
+      console.log('Webhook response status:', response.status);
+      console.log('Webhook response status text:', response.statusText);
+      
+      // Log response headers
+      console.log('Webhook response headers:');
+      for (const [key, value] of response.headers.entries()) {
+        console.log(`  ${key}: ${value}`);
       }
 
+      // Get the response text
+      let responseText;
+      try {
+        responseText = await response.text();
+        console.log('Webhook response body:', responseText);
+      } catch (textError) {
+        console.error('Error reading response text:', textError);
+        responseText = '[Failed to read response body]';
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to send verification email: ${response.status} ${responseText}`);
+      }
+
+      console.log('Webhook request successful!');
       return true;
     } catch (fetchError) {
-      console.error('Fetch error sending verification email:', fetchError);
+      console.error('=== WEBHOOK REQUEST FAILED ===');
+      console.error('Error type:', fetchError.constructor.name);
+      console.error('Error message:', fetchError.message);
+      console.error('Error stack:', fetchError.stack);
+      
+      if (fetchError.cause) {
+        console.error('Error cause:', fetchError.cause);
+      }
       
       // If in development, simulate success
       if (isDevEnvironment(req)) {
@@ -168,7 +220,10 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
       throw fetchError;
     }
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error('=== EMAIL VERIFICATION ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     // If in development, simulate success
     if (isDevEnvironment(req)) {
