@@ -288,7 +288,7 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       console.log('Calling verify Edge Function with X-Auth header');
       
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
         {
           method: 'POST',
           headers: {
@@ -298,7 +298,8 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
           },
           body: JSON.stringify({
             token: otp,
-            verificationId
+            verificationId,
+            action: 'verify-otp'
           })
         }
       );

@@ -1,5 +1,4 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
-import { v4 as uuidv4 } from 'npm:uuid@9.0.0';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,11 +40,7 @@ Deno.serve(async (req) => {
     }
     
     // Check if we're in a development environment
-    const isDev = typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname.includes('local-credentialless') ||
-      window.location.hostname.includes('webcontainer')
-    ) || (new URL(req.url).hostname.endsWith('.supabase.co'));
+    const isDev = isDevEnvironment(req);
     
     console.log("Is dev environment:", isDev);
     
@@ -74,15 +69,24 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get verification token from query string for magic links
-    const url = new URL(req.url);
-    const token = url.searchParams.get('token');
-    console.log("Token from URL params:", token ? `${token.substring(0, 3)}...` : 'none');
-    
-    // If token is provided in URL, it's a magic link verification
-    if (token && req.method === 'GET') {
-      console.log("Processing magic link verification");
+    // Handle GET requests (magic links)
+    if (req.method === 'GET') {
+      console.log("Processing GET request (magic link verification)");
+      // Get verification token from query string for magic links
+      const url = new URL(req.url);
+      const token = url.searchParams.get('token');
+      console.log("Token from URL params:", token ? `${token.substring(0, 3)}...` : 'none');
       const redirectUrl = url.searchParams.get('redirect') || '/';
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: 'Missing token parameter' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
       
       // Find verification record with this token
       const { data: verification, error: verificationError } = await supabase
@@ -141,10 +145,6 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Get userId and email for response
-      const userId = verification.user_id;
-      const email = verification.email;
-      
       // Redirect to success page
       return new Response(null, {
         status: 302,
@@ -157,6 +157,8 @@ Deno.serve(async (req) => {
     
     // For API requests (POST)
     if (req.method === 'POST') {
+      console.log('Processing POST request to verify OTP');
+      
       let requestBody;
       try {
         requestBody = await req.json();
@@ -295,3 +297,13 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper function to check if we're in a development environment
+function isDevEnvironment(req: Request): boolean {
+  const url = new URL(req.url);
+  const host = url.hostname;
+  return host === 'localhost' || 
+         host.includes('local-credentialless') || 
+         host.includes('webcontainer') ||
+         host.endsWith('.supabase.co');
+}

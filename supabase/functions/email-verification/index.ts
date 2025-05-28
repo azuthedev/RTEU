@@ -278,11 +278,87 @@ Deno.serve(async (req) => {
     
     // Get URL path and redirect to verify endpoint if needed
     const url = new URL(req.url);
-    if (url.pathname === '/email-verification/verify') {
-      // Redirect to the dedicated verify endpoint
-      const newUrl = new URL(url);
-      newUrl.pathname = '/functions/v1/email-verification/verify';
-      return fetch(newUrl.toString(), req);
+    // IMPORTANT: Do not redirect, handle directly
+    if (url.pathname.endsWith('/verify') && req.method === 'GET') {
+      // Handle verification GET requests directly
+      const token = url.searchParams.get('token');
+      const redirectUrl = url.searchParams.get('redirect') || '/';
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: 'Missing token parameter' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Find verification record with this token
+      const { data: verification, error: verificationError } = await supabase
+        .from('email_verifications')
+        .select('*')
+        .eq('magic_token', token)
+        .single();
+      
+      if (verificationError || !verification) {
+        console.error('Invalid verification token:', verificationError);
+        // Redirect with error
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${url.origin}/verification-failed?reason=invalid`
+          }
+        });
+      }
+      
+      // Check if token is expired
+      if (new Date(verification.expires_at) < new Date()) {
+        console.error('Verification token expired');
+        // Redirect with expiration error
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${url.origin}/verification-failed?reason=expired`
+          }
+        });
+      }
+      
+      // Mark verification as complete
+      await supabase
+        .from('email_verifications')
+        .update({ verified: true })
+        .eq('id', verification.id);
+      
+      // Update user's email_verified status if we have a user_id
+      if (verification.user_id) {
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', verification.user_id);
+          
+        // Also try to update auth.users metadata
+        try {
+          // This requires admin access and might not work depending on permissions
+          await supabase.auth.admin.updateUserById(
+            verification.user_id,
+            { user_metadata: { email_verified: true } }
+          );
+        } catch (e) {
+          console.warn('Could not update auth metadata (non-critical):', e);
+        }
+      }
+      
+      // Redirect to success page
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': `${url.origin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
+        }
+      });
     }
     
     // Check if this is a POST request for sending verification
@@ -461,17 +537,95 @@ Deno.serve(async (req) => {
         }
       }
       else if (action === 'verify-otp') {
-        // Redirect to the verify endpoint
-        const verifyUrl = new URL(url);
-        verifyUrl.pathname = '/functions/v1/email-verification/verify';
+        // Handle OTP verification directly
+        const { token, verificationId } = requestData;
         
-        const proxyReq = new Request(verifyUrl.toString(), {
-          method: 'POST',
-          headers: req.headers,
-          body: JSON.stringify(requestData)
-        });
+        if (!token || !verificationId) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Verification code and ID are required'
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
         
-        return fetch(proxyReq);
+        // Find the verification record
+        const { data: verification, error: verificationError } = await supabase
+          .from('email_verifications')
+          .select('*')
+          .eq('id', verificationId)
+          .eq('token', token)
+          .single();
+        
+        if (verificationError) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Invalid verification code'
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        // Check expiration
+        if (new Date(verification.expires_at) < new Date()) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Verification code has expired'
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        // Mark as verified
+        await supabase
+          .from('email_verifications')
+          .update({ verified: true })
+          .eq('id', verificationId);
+        
+        // If we have a user_id, update the user's email_verified status
+        if (verification.user_id) {
+          await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('id', verification.user_id);
+            
+          // Also try to update auth.users metadata
+          try {
+            // This requires admin access and might not work depending on permissions
+            await supabase.auth.admin.updateUserById(
+              verification.user_id,
+              { user_metadata: { email_verified: true } }
+            );
+          } catch (e) {
+            console.warn('Could not update auth metadata (non-critical):', e);
+          }
+        }
+        
+        // Return success
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Email verified successfully',
+            userId: verification.user_id,
+            email: verification.email
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
       else if (action === 'check-verification') {
         console.log("Checking verification status for email:", email);
