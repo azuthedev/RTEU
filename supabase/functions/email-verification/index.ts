@@ -189,15 +189,44 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("Edge Function Called: email-verification");
+    console.log("Request method:", req.method);
+    console.log("Headers received:", Array.from(req.headers.entries())
+      .filter(([key]) => !key.toLowerCase().includes('authorization'))
+      .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
+    );
+    
     // Verify the X-Auth header if not in development
     const authHeader = req.headers.get('X-Auth');
-    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-    const isDev = isDevEnvironment(req);
+    console.log("X-Auth header present:", !!authHeader);
     
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    console.log("WEBHOOK_SECRET env var present:", !!webhookSecret);
+    
+    // Print first few characters of both for comparison (safely)
+    if (authHeader && webhookSecret) {
+      const authPrefix = authHeader.substring(0, 3);
+      const secretPrefix = webhookSecret.substring(0, 3);
+      console.log(`Auth header starts with: ${authPrefix}...`);
+      console.log(`Secret starts with: ${secretPrefix}...`);
+      console.log("Do they match?", authHeader === webhookSecret);
+    }
+    
+    const isDev = isDevEnvironment(req);
+    console.log("Is dev environment:", isDev);
+    
+    // More permissive in development, strict in production
     if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+      console.error("Authentication failed: Header doesn't match expected secret");
+      
       return new Response(
         JSON.stringify({ 
-          error: 'Unauthorized - Invalid authentication header' 
+          error: 'Unauthorized - Invalid authentication header',
+          debug: {
+            headerPresent: !!authHeader,
+            secretPresent: !!webhookSecret,
+            match: false
+          }
         }),
         {
           status: 401,
@@ -224,7 +253,21 @@ Deno.serve(async (req) => {
     
     // Check if this is a POST request for sending verification
     if (req.method === 'POST') {
-      const requestData = await req.json();
+      let requestData;
+      try {
+        requestData = await req.json();
+        console.log("Request data action:", requestData.action);
+      } catch (e) {
+        console.error("Failed to parse request body:", e);
+        return new Response(
+          JSON.stringify({ error: 'Invalid request body - could not parse JSON' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       const { email, name, user_id, action } = requestData;
       
       if (!email) {
@@ -254,6 +297,8 @@ Deno.serve(async (req) => {
         );
       } 
       else if (action === 'send-otp') {
+        console.log("Processing send-otp action for email:", email);
+        
         // Check rate limits
         const { allowed, remainingAttempts } = await checkRateLimits(email, supabase);
         
@@ -278,6 +323,7 @@ Deno.serve(async (req) => {
         
         // Generate OTP
         const otpCode = generateOTP();
+        console.log("Generated OTP code:", otpCode);
         
         // Generate unique token for magic link
         const magicLinkToken = generateMagicLinkToken();
@@ -317,6 +363,7 @@ Deno.serve(async (req) => {
         if (existingVerifications && existingVerifications.length > 0) {
           // Keep track of the IDs to delete
           const idsToDelete = existingVerifications.map(v => v.id);
+          console.log(`Cleaning up ${idsToDelete.length} old verification records`);
           
           if (idsToDelete.length > 0) {
             await supabase
@@ -331,6 +378,7 @@ Deno.serve(async (req) => {
         const magicLink = `${baseUrl}/verify-email?token=${magicLinkToken}&redirect=/login`;
         
         // Insert new verification with created_at timestamp
+        console.log("Creating new verification record");
         const { data: newVerification, error: insertError } = await supabase
           .from('email_verifications')
           .insert([{
@@ -346,14 +394,18 @@ Deno.serve(async (req) => {
           .single();
         
         if (insertError) {
+          console.error("Error inserting verification record:", insertError);
           throw new Error(`Error creating verification: ${insertError.message}`);
         }
         
         const verificationId = newVerification.id;
+        console.log("Created verification record with ID:", verificationId);
         
         // Send verification email with both OTP and magic link
         try {
+          console.log("Sending verification email");
           await sendVerificationEmail(name || '', email, otpCode, magicLink, req);
+          console.log("Verification email sent successfully");
           
           // Return success with remaining attempts
           return new Response(
@@ -405,6 +457,8 @@ Deno.serve(async (req) => {
         return fetch(proxyReq);
       }
       else if (action === 'check-verification') {
+        console.log("Checking verification status for email:", email);
+        
         // Check if user exists and is verified
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -413,11 +467,13 @@ Deno.serve(async (req) => {
           .maybeSingle();
         
         if (userError) {
+          console.error("Error checking user:", userError);
           throw new Error(`Error checking user: ${userError.message}`);
         }
         
         // If user doesn't exist or is already verified
         if (!userData) {
+          console.log("No user found with email:", email);
           return new Response(
             JSON.stringify({ 
               verified: false,
@@ -430,6 +486,8 @@ Deno.serve(async (req) => {
             }
           );
         }
+        
+        console.log("User found, email_verified status:", userData.email_verified);
         
         // Check if there are any pending verifications
         const { data: verifications, error: verificationError } = await supabase
@@ -452,6 +510,8 @@ Deno.serve(async (req) => {
           
           hasPendingVerification = ageInMinutes < 5; // Consider "pending" if less than 5 minutes old
           verificationAge = Math.round(ageInMinutes);
+          
+          console.log("Found pending verification, age:", verificationAge, "minutes");
         }
         
         return new Response(

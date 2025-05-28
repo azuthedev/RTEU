@@ -126,10 +126,16 @@ export const sendOtpEmail = async (
     }
     
     // Get webhook secret from environment variables
+    // Access it directly from import.meta.env
     const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+    
+    console.log('Webhook secret available:', !!webhookSecret);
     
     if (!webhookSecret) {
       console.error('Missing WEBHOOK_SECRET environment variable');
+      console.log('Available env variables:', Object.keys(import.meta.env)
+        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .join(', '));
       
       // Fallback for development
       if (isDev) {
@@ -148,15 +154,21 @@ export const sendOtpEmail = async (
     
     // Call the Supabase Edge Function
     try {
+      console.log('Calling Edge Function with X-Auth header');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'X-Auth': webhookSecret
+      };
+      
+      console.log('Request headers:', Object.keys(headers).join(', '));
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'X-Auth': webhookSecret // Add the authentication header
-          },
+          headers,
           body: JSON.stringify({
             email,
             name,
@@ -166,17 +178,29 @@ export const sendOtpEmail = async (
         }
       );
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         // Check for rate limiting
         if (response.status === 429) {
           throw new Error('Too many verification attempts. Please try again later.');
         }
         
-        const errorData = await response.json();
+        const errorText = await response.text();
+        console.error('Error response from Edge Function:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
         throw new Error(errorData.error || 'Failed to send verification email');
       }
       
       const data = await response.json();
+      console.log('Successful response from Edge Function:', data);
       
       return {
         success: data.success,
@@ -259,6 +283,8 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     
     // Call the Edge Function to verify the OTP
     try {
+      console.log('Calling verify Edge Function with X-Auth header');
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify`,
         {
@@ -266,7 +292,7 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'X-Auth': webhookSecret // Add the authentication header
+            'X-Auth': webhookSecret
           },
           body: JSON.stringify({
             token: otp,
@@ -275,8 +301,19 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
         }
       );
       
+      console.log('Verify response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        console.error('Error response from verify Edge Function:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
         throw new Error(errorData.error || 'Invalid verification code');
       }
       
@@ -359,6 +396,9 @@ export const checkEmailVerification = async (email: string): Promise<{
     
     if (!webhookSecret) {
       console.error('Missing WEBHOOK_SECRET environment variable');
+      console.log('Available env variables:', Object.keys(import.meta.env)
+        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .join(', '));
       
       // Fallback for development
       if (isDev) {
@@ -380,6 +420,8 @@ export const checkEmailVerification = async (email: string): Promise<{
     
     // Call the Edge Function to check verification status
     try {
+      console.log('Checking verification status with webhook secret');
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
         {
@@ -387,7 +429,7 @@ export const checkEmailVerification = async (email: string): Promise<{
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'X-Auth': webhookSecret // Add the authentication header
+            'X-Auth': webhookSecret
           },
           body: JSON.stringify({
             email,
@@ -397,7 +439,16 @@ export const checkEmailVerification = async (email: string): Promise<{
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        console.error('Error response from check verification:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
         throw new Error(errorData.error || 'Failed to check verification status');
       }
       

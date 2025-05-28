@@ -17,19 +17,50 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("Edge Function Called: email-verification/verify");
+    console.log("Request method:", req.method);
+    console.log("Headers received:", Array.from(req.headers.entries())
+      .filter(([key]) => !key.toLowerCase().includes('authorization'))
+      .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
+    );
+    
     // Verify the X-Auth header if not in development
     const authHeader = req.headers.get('X-Auth');
+    console.log("X-Auth header present:", !!authHeader);
+    
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    console.log("WEBHOOK_SECRET env var present:", !!webhookSecret);
+    
+    // Print first few characters of both for comparison (safely)
+    if (authHeader && webhookSecret) {
+      const authPrefix = authHeader.substring(0, 3);
+      const secretPrefix = webhookSecret.substring(0, 3);
+      console.log(`Auth header starts with: ${authPrefix}...`);
+      console.log(`Secret starts with: ${secretPrefix}...`);
+      console.log("Do they match?", authHeader === webhookSecret);
+    }
+    
+    // Check if we're in a development environment
     const isDev = typeof window !== 'undefined' && (
       window.location.hostname === 'localhost' ||
       window.location.hostname.includes('local-credentialless') ||
       window.location.hostname.includes('webcontainer')
-    );
+    ) || (new URL(req.url).hostname.endsWith('.supabase.co'));
     
+    console.log("Is dev environment:", isDev);
+    
+    // More permissive in development, strict in production
     if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+      console.error("Authentication failed: Header doesn't match expected secret");
+      
       return new Response(
         JSON.stringify({ 
-          error: 'Unauthorized - Invalid authentication header' 
+          error: 'Unauthorized - Invalid authentication header',
+          debug: {
+            headerPresent: !!authHeader,
+            secretPresent: !!webhookSecret,
+            match: false
+          }
         }),
         {
           status: 401,
@@ -46,9 +77,11 @@ Deno.serve(async (req) => {
     // Get verification token from query string for magic links
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
+    console.log("Token from URL params:", token ? `${token.substring(0, 3)}...` : 'none');
     
     // If token is provided in URL, it's a magic link verification
     if (token && req.method === 'GET') {
+      console.log("Processing magic link verification");
       const redirectUrl = url.searchParams.get('redirect') || '/';
       
       // Find verification record with this token
@@ -124,7 +157,27 @@ Deno.serve(async (req) => {
     
     // For API requests (POST)
     if (req.method === 'POST') {
-      const { token, verificationId } = await req.json();
+      let requestBody;
+      try {
+        requestBody = await req.json();
+        console.log("Request body received:", {
+          hasToken: !!requestBody.token,
+          hasVerificationId: !!requestBody.verificationId
+        });
+      } catch (e) {
+        console.error("Failed to parse request body:", e);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid request body - could not parse JSON'
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      const { token, verificationId } = requestBody;
       
       if (!token || !verificationId) {
         return new Response(
@@ -148,6 +201,7 @@ Deno.serve(async (req) => {
         .single();
       
       if (verificationError) {
+        console.error("Verification query error:", verificationError);
         return new Response(
           JSON.stringify({
             success: false,
@@ -162,6 +216,7 @@ Deno.serve(async (req) => {
       
       // Check expiration
       if (new Date(verification.expires_at) < new Date()) {
+        console.log("Verification has expired");
         return new Response(
           JSON.stringify({
             success: false,
@@ -174,6 +229,8 @@ Deno.serve(async (req) => {
         );
       }
       
+      console.log("Verification is valid, marking as verified");
+      
       // Mark as verified
       await supabase
         .from('email_verifications')
@@ -182,6 +239,7 @@ Deno.serve(async (req) => {
       
       // If we have a user_id, update the user's email_verified status
       if (verification.user_id) {
+        console.log("Updating user email_verified status for user:", verification.user_id);
         await supabase
           .from('users')
           .update({ email_verified: true })
