@@ -5,32 +5,6 @@ import { getFallbackImageUrl, getPrimaryDomainUrl } from '../utils/imageFallback
 import OptimizedImage from './OptimizedImage';
 
 const Hero = () => {
-  // Preload critical images
-  useEffect(() => {
-    const imagesToPreload = [
-      'https://files.royaltransfereu.com/assets/mobileherotest.webp',
-      'https://files.royaltransfereu.com/assets/newherotest.webp'
-    ];
-
-    // Also prepare fallback images
-    const fallbackImagesToPreload = imagesToPreload.map(getFallbackImageUrl);
-    const allImages = [...new Set([...imagesToPreload, ...fallbackImagesToPreload])];
-
-    allImages.forEach(src => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = src;
-      link.type = src.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
-      document.head.appendChild(link);
-      
-      // Clean up when component unmounts
-      return () => {
-        document.head.removeChild(link);
-      };
-    });
-  }, []);
-
   return (
     <div id="booking-form" className="relative h-[800px] md:h-auto md:min-h-[700px]">
       {/* Background Image Container */}
