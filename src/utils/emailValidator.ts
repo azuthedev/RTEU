@@ -126,7 +126,6 @@ export const sendOtpEmail = async (
     }
     
     // Get webhook secret from environment variables
-    // Access it directly from import.meta.env
     const webhookSecret = import.meta.env.WEBHOOK_SECRET;
     
     console.log('Webhook secret available:', !!webhookSecret);
@@ -265,6 +264,9 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     
     if (!webhookSecret) {
       console.error('Missing WEBHOOK_SECRET environment variable');
+      console.log('Available env variables:', Object.keys(import.meta.env)
+        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .join(', '));
       
       // Fallback for development
       const isDev = isDevelopmentEnvironment();

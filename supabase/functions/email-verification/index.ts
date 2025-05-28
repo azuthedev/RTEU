@@ -118,16 +118,6 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     console.log('OTP Code:', otpCode);
     console.log('Magic Link:', magicLink);
 
-    // Check if we're in development mode
-    if (isDevEnvironment(req)) {
-      console.log('DEVELOPMENT MODE: Skipping actual email sending');
-      console.log('Would have sent email to:', email);
-      console.log('OTP Code:', otpCode);
-      console.log('Magic Link:', magicLink);
-      // Return success for development environment
-      return true;
-    }
-
     // Get the webhook secret from environment variables
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     console.log('Webhook Secret available:', !!webhookSecret);
@@ -137,12 +127,12 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     }
     
     if (!webhookSecret) {
-      console.warn('Webhook secret is missing from environment variables, using fallback for development');
+      console.error('Missing WEBHOOK_SECRET environment variable');
       console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => !key.includes('SECRET')).join(', '));
       
       // In production, we'd throw an error, but in development we'll simulate success
       if (!isDevEnvironment(req)) {
-        throw new Error('Webhook secret is missing from environment variables');
+        throw new Error('Server configuration error: Missing webhook authentication');
       }
       return true;
     }
@@ -212,11 +202,7 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
         console.error('Error cause:', fetchError.cause);
       }
       
-      // If in development, simulate success
-      if (isDevEnvironment(req)) {
-        console.log('DEVELOPMENT FALLBACK: Simulating successful email sending');
-        return true;
-      }
+      // Always throw the error to ensure it's reported properly
       throw fetchError;
     }
   } catch (error) {
@@ -225,11 +211,7 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
-    // If in development, simulate success
-    if (isDevEnvironment(req)) {
-      console.log('DEVELOPMENT FALLBACK: Simulating successful email sending after error');
-      return true;
-    }
+    // Always throw the error to ensure it's reported properly
     throw error;
   }
 }
@@ -285,10 +267,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -477,23 +456,6 @@ Deno.serve(async (req) => {
           );
         } catch (emailError) {
           console.error('Error sending email:', emailError);
-          
-          // If in development, return success anyway
-          if (isDevEnvironment(req)) {
-            console.log('DEVELOPMENT MODE: Returning success despite email error');
-            return new Response(
-              JSON.stringify({ 
-                success: true, 
-                message: 'DEV MODE: Verification recorded (email sending simulated)',
-                verificationId,
-                remainingAttempts: remainingAttempts - 1
-              }),
-              {
-                status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
-          }
           
           throw emailError;
         }
