@@ -69,12 +69,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       
       const result = await requestPasswordReset(resetEmail);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to send password reset email');
-      }
-      
+      // Always show success message to prevent user enumeration
       setSuccess(true);
-      trackEvent('Authentication', 'Password Reset Email Sent');
+      trackEvent('Authentication', 'Password Reset Request Completed');
       
       // Auto-close after 5 seconds
       setTimeout(() => {
@@ -90,7 +87,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
         return;
       }
       
-      setError(error.message || 'Failed to send password reset email');
+      setError('An unexpected error occurred. Please try again later.');
       trackEvent('Authentication', 'Password Reset Error', error.message);
     } finally {
       setIsSubmitting(false);
@@ -145,10 +142,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
                         <CheckCircle className="w-10 h-10 text-green-600" />
                       </div>
                     </div>
-                    <h3 className="text-xl font-semibold mb-3">Reset Link Sent!</h3>
+                    <h3 className="text-xl font-semibold mb-3">Check Your Email</h3>
                     <p className="text-gray-600 mb-6">
-                      We've sent a password reset link to <strong>{resetEmail}</strong>. 
-                      Please check your inbox and follow the instructions to reset your password.
+                      If an account with that email exists, a password reset link has been sent to your inbox.
                     </p>
                     <p className="text-sm text-gray-500">
                       This window will close automatically in a few seconds.

@@ -1,75 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Mail, Save, AlertTriangle, Loader2, CheckCircle, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { 
+  User, Shield, Mail, Phone, AlertCircle, Loader2, 
+  CheckCircle, PenSquare, X, Eye, EyeOff, Key 
+} from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
+import { useAnalytics } from '../hooks/useAnalytics';
 import FormField from '../components/ui/form-field';
 import useFormValidation from '../hooks/useFormValidation';
-import OTPVerificationModal from '../components/OTPVerificationModal';
+import PasswordResetModal from '../components/PasswordResetModal';
 
 const Profile = () => {
+  const { userData, loading, updateUserData, user } = useAuth();
+  const { trackEvent } = useAnalytics();
   const navigate = useNavigate();
-  const { user, userData, loading, updateUserData, emailVerified, sendVerificationEmail } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
+    email: ''
   });
-  
+  const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   
-  // Verification modal state
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationId, setVerificationId] = useState('');
-  const [isSendingVerification, setIsSendingVerification] = useState(false);
-
+  // Password reset modal state
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  
   // Define validation rules
   const validationRules = {
     name: [
-      { required: true, message: 'Please enter your name' }
+      { required: true, message: 'Name is required' }
     ],
-    phone: [
-      { 
-        pattern: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
-        message: 'Please enter a valid phone number'
-      }
-    ]
+    // Optional fields don't need validation
   };
-
+  
   const {
     errors,
     isValid,
     validateAllFields,
-    handleBlur,
-    resetForm
+    handleBlur
   } = useFormValidation(formData, validationRules);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login', { 
-        state: { from: location },
-        replace: true 
-      });
-    }
-  }, [user, loading, navigate]);
-
-  // Populate form with user data when available
+  
+  // Initialize form data when user data is loaded
   useEffect(() => {
     if (userData) {
       setFormData({
         name: userData.name || '',
-        email: userData.email || '',
         phone: userData.phone || '',
+        email: userData.email || ''
       });
     }
   }, [userData]);
-
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -77,40 +62,59 @@ const Profile = () => {
       [name]: value
     }));
   };
-
+  
+  const handleCancelEdit = () => {
+    // Reset form to original data
+    if (userData) {
+      setFormData({
+        name: userData.name || '',
+        phone: userData.phone || '',
+        email: userData.email || ''
+      });
+    }
+    setIsEditing(false);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
     
-    // Validate all fields before submitting
-    const isFormValid = validateAllFields();
-    
-    if (!isFormValid) {
+    if (!validateAllFields()) {
       return;
     }
     
-    if (!user) {
-      setError('You must be logged in to update your profile');
-      return;
-    }
-
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      const { error } = await updateUserData({
-        name: formData.name,
-        phone: formData.phone
-      });
-
-      if (error) throw error;
-
-      setSuccessMessage('Profile updated successfully!');
+      // Only update fields that have changed
+      const updates: Record<string, any> = {};
       
-      // Clear success message after 5 seconds
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      if (formData.name !== userData?.name) {
+        updates.name = formData.name;
+      }
+      
+      if (formData.phone !== userData?.phone) {
+        updates.phone = formData.phone;
+      }
+      
+      // Don't allow email change for now as it requires reverification
+      // if (formData.email !== userData?.email) {
+      //   updates.email = formData.email;
+      // }
+      
+      // Only call update if there are changes
+      if (Object.keys(updates).length > 0) {
+        const { error } = await updateUserData(updates);
+        
+        if (error) {
+          throw new Error('Failed to update profile: ' + error.message);
+        }
+        
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
+      
+      setIsEditing(false);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       setError(error.message || 'Failed to update profile');
@@ -118,280 +122,178 @@ const Profile = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Function to determine if role should be displayed
-  const shouldShowRole = (user_role?: string) => {
-    return user_role && ['admin', 'support', 'driver'].includes(user_role.toLowerCase());
-  };
-
-  // Handle email verification
-  const handleVerifyEmail = async () => {
-    if (!user?.email) {
-      setError('No email address found for verification');
-      return;
-    }
-    
-    setIsSendingVerification(true);
-    setError(null);
-    
-    try {
-      // Send verification email
-      const result = await sendVerificationEmail(user.email);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to send verification email');
-      }
-      
-      // Set verification ID and show modal
-      setVerificationId(result.verificationId || '');
-      setShowVerificationModal(true);
-    } catch (err: any) {
-      console.error('Error sending verification email:', err);
-      setError(err.message || 'Failed to send verification email');
-    } finally {
-      setIsSendingVerification(false);
-    }
+  
+  const handlePasswordReset = () => {
+    setShowPasswordResetModal(true);
+    trackEvent('Authentication', 'Password Reset Modal Opened', 'From Profile');
   };
   
-  // Handle verification completion
-  const handleVerificationComplete = () => {
-    setShowVerificationModal(false);
-    setSuccessMessage('Email verified successfully!');
-    
-    // Refresh the page to update the verification status
-    window.location.reload();
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p>Loading...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
         </div>
       </div>
     );
   }
-
+  
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       
-      <main className="pt-32 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.h1 
-            className="text-3xl font-bold mb-8 text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Your Profile
-          </motion.h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Profile Sidebar */}
-            <motion.div
-              className="bg-white rounded-lg shadow-md overflow-hidden md:col-span-1 h-fit"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="p-6">
-                <div className="flex flex-col items-center text-center mb-6">
-                  <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <User className="w-12 h-12 text-blue-600" />
-                  </div>
-                  <h2 className="text-xl font-bold">{userData?.name || 'User'}</h2>
-                  {shouldShowRole(userData?.user_role) && (
-                    <p className="text-gray-700 capitalize">{userData?.user_role}</p>
-                  )}
-                  
-                  {/* Email verification badge */}
-                  <div className="mt-2">
-                    {emailVerified ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Verified
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <AlertTriangle className="w-3 h-3 mr-1" />
-                        Unverified
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <Mail className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="text-gray-700">{userData?.email}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="text-gray-700">{userData?.phone || 'Not provided'}</span>
-                  </div>
-                </div>
-
-                {/* Show verification button if not verified */}
-                {!emailVerified && (
-                  <div className="mt-6">
+      <main className="flex-1 py-16 mt-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* Profile Header */}
+            <div className="bg-blue-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold text-white flex items-center">
+                  <User className="mr-2 h-5 w-5" />
+                  Your Profile
+                </h1>
+                
+                {isEditing ? (
+                  <div className="flex space-x-2">
                     <button
-                      onClick={handleVerifyEmail}
-                      disabled={isSendingVerification}
-                      className="w-full bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700 transition-colors flex items-center justify-center"
+                      onClick={handleCancelEdit}
+                      className="flex items-center px-3 py-1.5 rounded bg-white/20 text-white hover:bg-white/30 transition-colors"
                     >
-                      {isSendingVerification ? (
+                      <X className="w-4 h-4 mr-1" />
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center px-3 py-1.5 rounded bg-white/20 text-white hover:bg-white/30 transition-colors"
+                  >
+                    <PenSquare className="w-4 h-4 mr-1" />
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Main Content */}
+            <div className="p-6">
+              {/* Status Messages */}
+              {error && (
+                <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-md flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
+              
+              {success && (
+                <div className="mb-6 p-3 bg-green-50 text-green-600 rounded-md flex items-start">
+                  <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Profile updated successfully!</p>
+                </div>
+              )}
+              
+              {/* Profile Form */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name */}
+                  <FormField
+                    id="name"
+                    name="name"
+                    label="Full Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    onBlur={() => handleBlur('name')}
+                    error={errors.name}
+                    required
+                    icon={<User className="h-5 w-5" />}
+                    disabled={!isEditing}
+                  />
+                  
+                  {/* Email (Read only) */}
+                  <FormField
+                    id="email"
+                    name="email"
+                    label="Email Address"
+                    value={formData.email}
+                    onChange={() => {}}
+                    icon={<Mail className="h-5 w-5" />}
+                    disabled={true}
+                    helpText="Email cannot be changed"
+                  />
+                  
+                  {/* Phone */}
+                  <FormField
+                    id="phone"
+                    name="phone"
+                    label="Phone Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    icon={<Phone className="h-5 w-5" />}
+                    disabled={!isEditing}
+                    helpText="Used for booking notifications"
+                  />
+                </div>
+                
+                {/* Update Button */}
+                {isEditing && (
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !isValid}
+                      className={`px-6 py-2 rounded transition-all duration-300 flex items-center
+                        ${isSubmitting || !isValid
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                    >
+                      {isSubmitting ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Sending...
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Updating...
                         </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Verify Email Address
-                        </>
-                      )}
+                      ) : 'Update Profile'}
                     </button>
                   </div>
                 )}
-
-                <hr className="my-6" />
-
-                <div className="space-y-2">
-                  <a href="/bookings" className="block py-2 text-blue-600 hover:text-blue-700">
-                    My Bookings
-                  </a>
-                  <a href="#" className="block py-2 text-blue-600 hover:text-blue-700">
-                    Payment History
-                  </a>
-                  <a href="#" className="block py-2 text-blue-600 hover:text-blue-700">
-                    Support Tickets
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-            
-            {/* Profile Edit Form */}
-            <motion.div
-              className="bg-white rounded-lg shadow-md p-6 md:col-span-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <h2 className="text-xl font-bold mb-6">Edit Profile</h2>
-
-              {error && (
-                <div 
-                  className="bg-red-50 text-red-600 p-4 rounded-md mb-6 flex items-start"
-                  role="alert"
-                  aria-live="assertive"
-                >
-                  <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                  <p className="ml-2">{error}</p>
-                </div>
-              )}
-
-              {successMessage && (
-                <div 
-                  className="bg-green-50 text-green-600 p-4 rounded-md mb-6 flex items-center"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  <p>{successMessage}</p>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                <FormField
-                  id="name"
-                  name="name"
-                  label="Full Name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  onBlur={() => handleBlur('name')}
-                  required
-                  error={errors.name}
-                  autoComplete="name"
-                />
-
-                <FormField
-                  id="email"
-                  name="email"
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled
-                  helpText="Email cannot be changed"
-                  autoComplete="email"
-                />
-
-                <FormField
-                  id="phone"
-                  name="phone"
-                  label="Phone Number"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  onBlur={() => handleBlur('phone')}
-                  error={errors.phone}
-                  autoComplete="tel"
-                  helpText="Enter your phone number with country code"
-                />
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !isValid}
-                  aria-busy={isSubmitting}
-                  className={`px-6 py-3 rounded-md transition-all duration-300 flex items-center mt-4
-                    ${isSubmitting || !isValid 
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </button>
               </form>
               
-              {/* Email verification explanation */}
-              {!emailVerified && (
-                <div className="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h3 className="font-semibold text-yellow-800 mb-2">
-                    Email Verification Required
-                  </h3>
-                  <p className="text-yellow-700 mb-4 text-sm">
-                    Your email address is not verified. Verifying your email helps secure your account and enables all features of your account.
-                  </p>
+              {/* Account Security Section */}
+              <div className="mt-10 pt-6 border-t border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <Shield className="mr-2 h-5 w-5 text-blue-600" />
+                  Account Security
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Password Reset Card */}
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-md font-semibold text-gray-800 mb-2">Password</h3>
+                    <p className="text-gray-600 text-sm mb-4">
+                      Change your password to keep your account secure.
+                    </p>
+                    <button
+                      onClick={handlePasswordReset}
+                      className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      <Key className="w-4 h-4 mr-1" />
+                      Reset password
+                    </button>
+                  </div>
                 </div>
-              )}
-            </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
-
-      {/* OTP Verification Modal */}
-      <OTPVerificationModal
-        isOpen={showVerificationModal}
-        onClose={() => setShowVerificationModal(false)}
-        onVerified={handleVerificationComplete}
-        email={userData?.email || ''}
-        verificationId={verificationId}
-        emailSent={true}
+      
+      {/* Password Reset Modal */}
+      <PasswordResetModal 
+        isOpen={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+        email={user?.email || ''}
       />
-
-      <Sitemap />
     </div>
   );
 };

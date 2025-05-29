@@ -584,26 +584,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Password Reset Request Initiated', email);
       
-      // Check if the user exists
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('name')
-        .eq('email', email)
-        .maybeSingle();
-        
-      if (userError) {
-        console.error('Error checking user existence:', userError);
-        throw new Error('Error processing your request. Please try again.');
-      }
-      
-      // If user doesn't exist, return appropriate message
-      if (!userData) {
-        trackEvent('Authentication', 'Password Reset Failed', 'User not found');
-        return { 
-          success: false, 
-          error: 'No account found with this email address. Please sign up instead.' 
-        };
-      }
+      // Following security best practices, we don't check if the user exists
+      // This prevents user enumeration attacks
       
       // Generate a password reset token using Supabase Auth
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -617,7 +599,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       }
       
       // Also send a more customized email using our webhook
-      await sendPasswordResetEmail(userData.name || '', email);
+      try {
+        await sendPasswordResetEmail(email, email);
+      } catch (webhookError) {
+        // Log but don't fail if the webhook fails - the Supabase email will still be sent
+        console.warn('Failed to send custom reset email via webhook:', webhookError);
+      }
       
       trackEvent('Authentication', 'Password Reset Email Sent', email);
       return { success: true };
