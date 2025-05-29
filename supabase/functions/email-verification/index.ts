@@ -1,10 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
+// Updated CORS headers to be more permissive
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
+  "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400"
 };
 
 // Configuration constants
@@ -71,16 +73,6 @@ function checkEmailTypos(email: string): string | null {
 function getBaseUrl(req: Request): string {
   const origin = req.headers.get('origin');
   return origin || 'https://royaltransfereu.com';
-}
-
-// Check if we're in a development environment
-function isDevEnvironment(req: Request): boolean {
-  const url = new URL(req.url);
-  const host = url.hostname;
-  return host === 'localhost' || 
-         host.includes('local-credentialless') || 
-         host.includes('webcontainer') ||
-         host.endsWith('.supabase.co');
 }
 
 // Check if a user has exceeded rate limits for OTP/verification requests
@@ -217,7 +209,7 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight request
+  // Handle CORS preflight request - critical for browser security
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -380,8 +372,9 @@ Deno.serve(async (req) => {
         );
       }
       
-      const { email, name, user_id, action } = requestData;
+      const { email, name, user_id, action, token, verificationId } = requestData;
       
+      // Only require email for non-verification actions
       if (!email && action !== 'verify-otp') {
         return new Response(
           JSON.stringify({ error: 'Email is required' }),
@@ -540,7 +533,7 @@ Deno.serve(async (req) => {
       }
       else if (action === 'verify-otp') {
         // Handle OTP verification directly
-        const { token, verificationId } = requestData;
+        console.log("Processing verify-otp action");
         
         if (!token || !verificationId) {
           return new Response(
@@ -555,6 +548,8 @@ Deno.serve(async (req) => {
           );
         }
         
+        console.log(`Verifying OTP: ${token} for ID: ${verificationId}`);
+        
         // Find the verification record
         const { data: verification, error: verificationError } = await supabase
           .from('email_verifications')
@@ -564,6 +559,7 @@ Deno.serve(async (req) => {
           .single();
         
         if (verificationError) {
+          console.error("Verification query error:", verificationError);
           return new Response(
             JSON.stringify({
               success: false,
@@ -578,6 +574,7 @@ Deno.serve(async (req) => {
         
         // Check expiration
         if (new Date(verification.expires_at) < new Date()) {
+          console.log("Verification has expired");
           return new Response(
             JSON.stringify({
               success: false,
@@ -590,6 +587,8 @@ Deno.serve(async (req) => {
           );
         }
         
+        console.log("Verification is valid, marking as verified");
+        
         // Mark as verified
         await supabase
           .from('email_verifications')
@@ -598,6 +597,7 @@ Deno.serve(async (req) => {
         
         // If we have a user_id, update the user's email_verified status
         if (verification.user_id) {
+          console.log("Updating user email_verified status for user:", verification.user_id);
           await supabase
             .from('users')
             .update({ email_verified: true })
@@ -637,7 +637,7 @@ Deno.serve(async (req) => {
           .from('users')
           .select('id, email_verified')
           .eq('email', email)
-          .maybeSingle();
+          .single();
         
         if (userError) {
           console.error("Error checking user:", userError);
