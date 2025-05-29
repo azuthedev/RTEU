@@ -69,8 +69,8 @@ function checkEmailTypos(email: string): string | null {
 
 // Create a base URL for verification links based on the request origin
 function getBaseUrl(req: Request): string {
-  const origin = req.headers.get('origin');
-  return origin || 'https://royaltransfereu.com';
+  const origin = req.headers.get('origin') || 'https://www.royaltransfereu.com';
+  return origin;
 }
 
 // Check if we're in a development environment
@@ -202,7 +202,12 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
         console.error('Error cause:', fetchError.cause);
       }
       
-      // Always throw the error to ensure it's reported properly
+      // For development, still allow the process to continue
+      if (isDevEnvironment(req)) {
+        console.log('DEV MODE: Continuing despite webhook error for testing');
+        return true;
+      }
+      
       throw fetchError;
     }
   } catch (error) {
@@ -211,7 +216,12 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
-    // Always throw the error to ensure it's reported properly
+    // For development, still allow the process to continue
+    if (isDevEnvironment(req)) {
+      console.log('DEV MODE: Continuing despite error for testing');
+      return true;
+    }
+    
     throw error;
   }
 }
@@ -276,9 +286,10 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get URL path and redirect to verify endpoint if needed
+    // Get URL path
     const url = new URL(req.url);
-    // IMPORTANT: Do not redirect, handle directly
+    
+    // Handle magic link verification (GET request)
     if (url.pathname.endsWith('/verify') && req.method === 'GET') {
       // Handle verification GET requests directly
       const token = url.searchParams.get('token');
@@ -303,12 +314,13 @@ Deno.serve(async (req) => {
       
       if (verificationError || !verification) {
         console.error('Invalid verification token:', verificationError);
-        // Redirect with error
+        // Redirect with error - IMPORTANT: Use client app URL
+        const clientOrigin = getBaseUrl(req);
         return new Response(null, {
           status: 302,
           headers: {
             ...corsHeaders,
-            'Location': `${url.origin}/verification-failed?reason=invalid`
+            'Location': `${clientOrigin}/verification-failed?reason=invalid`
           }
         });
       }
@@ -316,12 +328,13 @@ Deno.serve(async (req) => {
       // Check if token is expired
       if (new Date(verification.expires_at) < new Date()) {
         console.error('Verification token expired');
-        // Redirect with expiration error
+        // Redirect with expiration error - IMPORTANT: Use client app URL
+        const clientOrigin = getBaseUrl(req);
         return new Response(null, {
           status: 302,
           headers: {
             ...corsHeaders,
-            'Location': `${url.origin}/verification-failed?reason=expired`
+            'Location': `${clientOrigin}/verification-failed?reason=expired`
           }
         });
       }
@@ -351,12 +364,13 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Redirect to success page
+      // Redirect to success page - IMPORTANT: Use client app URL
+      const clientOrigin = getBaseUrl(req);
       return new Response(null, {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': `${url.origin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
+          'Location': `${clientOrigin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
         }
       });
     }
@@ -378,18 +392,8 @@ Deno.serve(async (req) => {
         );
       }
       
-      const { email, name, user_id, action } = requestData;
+      const { email, name, user_id, action, token, verificationId } = requestData;
       
-      if (!email) {
-        return new Response(
-          JSON.stringify({ error: 'Email is required' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
       // Process based on action
       if (action === 'validate') {
         // Check for typos in email
@@ -408,6 +412,17 @@ Deno.serve(async (req) => {
       } 
       else if (action === 'send-otp') {
         console.log("Processing send-otp action for email:", email);
+        
+        // Validate that email is provided
+        if (!email) {
+          return new Response(
+            JSON.stringify({ error: 'Email is required' }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
         
         // Check rate limits
         const { allowed, remainingAttempts } = await checkRateLimits(email, supabase);
@@ -538,7 +553,7 @@ Deno.serve(async (req) => {
       }
       else if (action === 'verify-otp') {
         // Handle OTP verification directly
-        const { token, verificationId } = requestData;
+        console.log("Processing verify-otp action");
         
         if (!token || !verificationId) {
           return new Response(
@@ -553,6 +568,8 @@ Deno.serve(async (req) => {
           );
         }
         
+        console.log(`Verifying token ${token} with verification ID: ${verificationId}`);
+        
         // Find the verification record
         const { data: verification, error: verificationError } = await supabase
           .from('email_verifications')
@@ -562,6 +579,7 @@ Deno.serve(async (req) => {
           .single();
         
         if (verificationError) {
+          console.error("Verification query error:", verificationError);
           return new Response(
             JSON.stringify({
               success: false,
@@ -576,6 +594,7 @@ Deno.serve(async (req) => {
         
         // Check expiration
         if (new Date(verification.expires_at) < new Date()) {
+          console.log("Verification has expired");
           return new Response(
             JSON.stringify({
               success: false,
@@ -588,6 +607,8 @@ Deno.serve(async (req) => {
           );
         }
         
+        console.log("Verification is valid, marking as verified");
+        
         // Mark as verified
         await supabase
           .from('email_verifications')
@@ -596,6 +617,7 @@ Deno.serve(async (req) => {
         
         // If we have a user_id, update the user's email_verified status
         if (verification.user_id) {
+          console.log("Updating user email_verified status for user:", verification.user_id);
           await supabase
             .from('users')
             .update({ email_verified: true })
@@ -629,6 +651,16 @@ Deno.serve(async (req) => {
       }
       else if (action === 'check-verification') {
         console.log("Checking verification status for email:", email);
+        
+        if (!email) {
+          return new Response(
+            JSON.stringify({ error: 'Email is required' }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
         
         // Check if user exists and is verified
         const { data: userData, error: userError } = await supabase
