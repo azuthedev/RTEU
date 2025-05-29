@@ -60,6 +60,17 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true,
       cors: true,
+      proxy: {
+        // Proxy Edge Function requests to avoid CORS issues during development
+        '/api/email-verification': {
+          target: 'https://phcqdnzuicgmlhkmnpxc.supabase.co/functions/v1',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+          headers: {
+            'Origin': 'http://localhost:3000'
+          },
+        }
+      }
     },
     preview: {
       port: 4000,
