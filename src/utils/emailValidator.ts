@@ -114,6 +114,7 @@ export const sendOtpEmail = async (
     
     // Check if we're in development mode first for faster fallback
     const isDev = isDevelopmentEnvironment();
+    
     if (isDev) {
       console.log('DEVELOPMENT MODE: Simulating email verification without calling Edge Function');
       
@@ -262,6 +263,7 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     // Get webhook secret from environment variables
     const webhookSecret = import.meta.env.WEBHOOK_SECRET;
     
+    console.log('Webhook secret available:', !!webhookSecret);
     if (!webhookSecret) {
       console.error('Missing WEBHOOK_SECRET environment variable');
       console.log('Available env variables:', Object.keys(import.meta.env)
