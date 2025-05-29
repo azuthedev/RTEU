@@ -43,6 +43,7 @@ const Sitemap = lazy(() => import('./components/Sitemap'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
 const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
+const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPrompt'));
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -80,11 +81,10 @@ const RouteObserver = () => {
 
 // Updated ProtectedRoute to handle unverified users
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, emailVerified } = useAuth();
+  const { user, loading, emailVerified, emailVerificationChecked } = useAuth();
   const { trackEvent } = useAnalytics();
   const location = useLocation();
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationId, setVerificationId] = useState("");
+  const [showUnverifiedPrompt, setShowUnverifiedPrompt] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,45 +92,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, loading, trackEvent]);
   
-  // Check if user needs email verification when accessing profile
   useEffect(() => {
-    const checkVerification = async () => {
-      if (user && !emailVerified && location.pathname === '/profile') {
-        try {
-          // Prompt to verify email
-          const result = await sendVerificationEmail(user.email || "");
-          if (result.success && result.verificationId) {
-            setVerificationId(result.verificationId);
-            setShowVerificationModal(true);
-          }
-        } catch (error) {
-          console.error("Failed to send verification email:", error);
-        }
-      }
-    };
-    
-    if (!loading && user && !emailVerified) {
-      checkVerification();
+    // Check if user needs email verification
+    if (!loading && user && emailVerificationChecked && !emailVerified) {
+      setShowUnverifiedPrompt(true);
+    } else {
+      setShowUnverifiedPrompt(false);
     }
-  }, [user, emailVerified, loading, location.pathname]);
-  
-  const handleVerificationComplete = () => {
-    setShowVerificationModal(false);
-    // Refresh the page to update verification status
-    window.location.reload();
-  };
-  
-  const sendVerificationEmail = async (email: string) => {
-    if (!email) return { success: false, error: "Email is required" };
-    
-    try {
-      const { sendVerificationEmail } = useAuth();
-      return await sendVerificationEmail(email);
-    } catch (error) {
-      console.error("Error sending verification:", error);
-      return { success: false, error: "Failed to send verification" };
-    }
-  };
+  }, [loading, user, emailVerified, emailVerificationChecked]);
   
   if (loading) {
     return (
@@ -144,80 +113,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
   
-  // Always render children and verification modal if needed
-  return (
-    <>
-      {children}
-      
-      {/* OTP Verification Modal */}
-      {showVerificationModal && (
-        <OTPVerificationModal
-          isOpen={showVerificationModal}
-          onClose={() => setShowVerificationModal(false)}
-          onVerified={handleVerificationComplete}
+  // If user is authenticated but not verified, show the verification prompt
+  if (showUnverifiedPrompt) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <UnverifiedUserPrompt 
+          redirectUrl={location.pathname}
           email={user.email || ""}
-          verificationId={verificationId}
-          emailSent={true}
         />
-      )}
-    </>
-  );
-};
-
-// Main component to handle unverified users showing verification modal
-const UnverifiedUserHandler = () => {
-  const { user, emailVerified, sendVerificationEmail, loading } = useAuth();
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationId, setVerificationId] = useState("");
-  const checkPerformedRef = useRef(false);
-
-  useEffect(() => {
-    const handleUnverifiedUser = async () => {
-      // Only check once per session
-      if (checkPerformedRef.current) return;
-      
-      // If user is logged in but email isn't verified
-      if (user && !emailVerified) {
-        console.log("User needs email verification, showing modal");
-        try {
-          // Send verification email
-          const result = await sendVerificationEmail(user.email || "");
-          if (result.success && result.verificationId) {
-            setVerificationId(result.verificationId);
-            setShowVerificationModal(true);
-          }
-        } catch (error) {
-          console.error("Failed to send verification email:", error);
-        }
-      }
-      
-      checkPerformedRef.current = true;
-    };
-
-    // Run the check when auth state is determined
-    if (!loading) {
-      handleUnverifiedUser();
-    }
-  }, [user, emailVerified, loading, sendVerificationEmail]);
-
-  const handleVerificationComplete = () => {
-    setShowVerificationModal(false);
-    // Refresh the page to update verification status
-    window.location.reload();
-  };
-
-  return (
-    showVerificationModal && (
-      <OTPVerificationModal
-        isOpen={showVerificationModal}
-        onClose={() => setShowVerificationModal(false)}
-        onVerified={handleVerificationComplete}
-        email={user?.email || ""}
-        verificationId={verificationId}
-        emailSent={true}
-      />
-    )
-  );
+      </Suspense>
+    );
+  }
+  
+  // User is authenticated and verified, render children
+  return <>{children}</>;
 };
 
 function AppRoutes() {
@@ -272,9 +181,6 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-      
-      {/* Handle unverified users */}
-      <UnverifiedUserHandler />
       
       {/* Conditionally render the CookieBanner based on the feature flag */}
       {flags.showCookieBanner && (

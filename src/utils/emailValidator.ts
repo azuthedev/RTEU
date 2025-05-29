@@ -287,7 +287,7 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     
     // Call the Edge Function to verify the OTP
     try {
-      console.log('Calling verify Edge Function with X-Auth header');
+      console.log('Calling verify Edge Function with token and verificationId');
       
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,

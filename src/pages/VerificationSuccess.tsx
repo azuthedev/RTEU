@@ -5,15 +5,20 @@ import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useAuth } from '../contexts/AuthContext';
 
 const VerificationSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
+  const { refreshSession } = useAuth();
   
   useEffect(() => {
     // Track successful verification
     trackEvent('Authentication', 'Email Verification Success Page');
+    
+    // Try to refresh the session to update JWT claims
+    refreshSession();
     
     // Get redirect parameter
     const params = new URLSearchParams(location.search);
@@ -25,7 +30,7 @@ const VerificationSuccess = () => {
     }, 5000);
     
     return () => clearTimeout(timer);
-  }, [location, navigate, trackEvent]);
+  }, [location, navigate, trackEvent, refreshSession]);
   
   const handleContinue = () => {
     const params = new URLSearchParams(location.search);

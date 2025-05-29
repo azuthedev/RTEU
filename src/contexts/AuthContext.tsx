@@ -12,6 +12,7 @@ interface AuthContextType {
   userData: UserData | null;
   loading: boolean;
   emailVerified: boolean;
+  emailVerificationChecked: boolean;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: Error | null, data?: { user: User | null } }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null, session: Session | null }>;
   signOut: () => Promise<void>;
@@ -47,6 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [emailVerificationChecked, setEmailVerificationChecked] = useState(false);
   const initialStateLoadedRef = useRef(false);
   const authStateChangeSubscribed = useRef(false);
   const isDevEnvironment = useRef(
@@ -73,6 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
 
       setUserData(data);
       setEmailVerified(!!data.email_verified);
+      setEmailVerificationChecked(true);
       
       return data;
     } catch (error) {
@@ -148,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         setUser(null);
         setUserData(null);
         setEmailVerified(false);
+        setEmailVerificationChecked(false);
         
         // Track sign out in GA
         trackEvent('Authentication', 'Sign Out');
@@ -270,7 +274,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       // Create metadata object
       const metadata: Record<string, string | null> = {
         name: name.trim(),
-        phone: phone ? phone.trim() : null
+        phone: phone ? phone.trim() : null,
+        email_verified: 'false' // Start with unverified
       };
       
       // Important: Add invite code to metadata if provided
@@ -425,6 +430,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       setUser(null);
       setUserData(null);
       setEmailVerified(false);
+      setEmailVerificationChecked(false);
       
       // Clear user ID in GA
       setUserId('');
@@ -568,6 +574,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     userData,
     loading,
     emailVerified,
+    emailVerificationChecked,
     signUp,
     signIn,
     signOut,

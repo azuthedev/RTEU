@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { verifyOtp, sendOtpEmail } from '../utils/emailValidator';
 import { VerificationConfig } from '../config/verification';
+import { useAuth } from '../contexts/AuthContext';
 
 interface OTPVerificationModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const otpRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
   const { trackEvent } = useAnalytics();
+  const { refreshSession } = useAuth();
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
   
   // Check if in development environment
@@ -161,6 +163,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
       setSuccess(true);
       trackEvent('Authentication', 'OTP Verification Success');
       
+      // Refresh the session to update JWT claims
+      await refreshSession();
+      
       // Call onVerified after a short delay to show the success state
       setTimeout(() => {
         onVerified();
@@ -173,6 +178,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         console.log('DEVELOPMENT MODE: Accepting any OTP for testing');
         setSuccess(true);
         trackEvent('Authentication', 'OTP Verification Dev Success');
+        
+        // Refresh the session to update JWT claims
+        await refreshSession();
         
         setTimeout(() => {
           onVerified();
@@ -217,6 +225,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         // Display new verification ID
         const newVerificationId = result.verificationId;
         console.log(`New verification ID: ${newVerificationId}`);
+        setVerificationId(newVerificationId);
         
         // Reset the timer
         setTimeLeft(VerificationConfig.OTP_EXPIRY_MINUTES * 60);
