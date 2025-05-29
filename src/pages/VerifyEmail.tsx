@@ -15,7 +15,7 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent, setUserId } = useAnalytics();
-  const { user, signIn } = useAuth();
+  const { user, refreshSession } = useAuth();
 
   useEffect(() => {
     const verifyEmailToken = async () => {
@@ -34,38 +34,60 @@ const VerifyEmail = () => {
 
         setRedirectTo(redirect);
 
-        // Call the Edge Function to verify the token
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification/verify?token=${token}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            }
+        // Direct verification using the token - find the record in the database
+        const { data: verification, error: verificationError } = await supabase
+          .from('email_verifications')
+          .select('*')
+          .eq('magic_token', token)
+          .single();
+
+        if (verificationError || !verification) {
+          console.error("Verification error:", verificationError);
+          setVerificationStatus('error');
+          setErrorMessage('Invalid or expired verification token');
+          trackEvent('Authentication', 'Email Verification Failed', 'Invalid Token');
+          return;
+        }
+
+        // Check if the verification has expired
+        if (new Date(verification.expires_at) < new Date()) {
+          setVerificationStatus('error');
+          setErrorMessage('This verification link has expired. Please request a new one.');
+          trackEvent('Authentication', 'Email Verification Failed', 'Expired Token');
+          return;
+        }
+
+        // Mark the verification as verified
+        await supabase
+          .from('email_verifications')
+          .update({ verified: true })
+          .eq('id', verification.id);
+
+        // If there's a user_id associated with this verification, mark their email as verified
+        if (verification.user_id) {
+          await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('id', verification.user_id);
+            
+          setUserId(verification.user_id);
+          
+          // Try to refresh the session if the current user matches
+          if (user && user.id === verification.user_id) {
+            await refreshSession();
           }
-        );
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to verify email');
         }
 
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Verification failed');
-        }
-
+        // Success!
         setVerificationStatus('success');
         trackEvent('Authentication', 'Email Verification Success', 'Magic Link');
-        
-        // If we have user data and credentials, sign the user in
-        if (data.userId && data.email) {
-          setUserId(data.userId);
-        }
 
-      } catch (error) {
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+          navigate(redirect);
+        }, 3000);
+
+      } catch (error: any) {
         console.error('Verification error:', error);
         setVerificationStatus('error');
         setErrorMessage(error.message || 'Failed to verify your email. The link may have expired.');
@@ -74,14 +96,10 @@ const VerifyEmail = () => {
     };
 
     verifyEmailToken();
-  }, [location.search, trackEvent, navigate, setUserId, signIn]);
+  }, [location.search, trackEvent, navigate, setUserId, user, refreshSession]);
 
   const handleContinue = () => {
-    if (redirectTo) {
-      navigate(redirectTo);
-    } else {
-      navigate('/');
-    }
+    navigate(redirectTo);
   };
 
   const handleTryAgain = () => {
@@ -121,9 +139,14 @@ const VerifyEmail = () => {
                 <p className="text-gray-600 mb-8">
                   Thank you for verifying your email address. Your account is now active.
                 </p>
+                <div className="bg-gray-50 p-4 rounded-md mb-8">
+                  <p className="text-sm text-gray-600">
+                    You will be redirected to the login page in a few seconds...
+                  </p>
+                </div>
                 <button
                   onClick={handleContinue}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
                 >
                   Continue <ArrowRight className="ml-2 h-4 w-4" />
                 </button>
@@ -143,7 +166,7 @@ const VerifyEmail = () => {
                 </p>
                 <button
                   onClick={handleTryAgain}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
                 >
                   Try Again <ArrowRight className="ml-2 h-4 w-4" />
                 </button>

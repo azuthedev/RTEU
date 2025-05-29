@@ -203,7 +203,7 @@ export const sendOtpEmail = async (
       console.log('Successful response from Edge Function:', data);
       
       return {
-        success: data.success,
+        success: true,
         verificationId: data.verificationId,
         remainingAttempts: data.remainingAttempts
       };
@@ -399,6 +399,7 @@ export const checkEmailVerification = async (email: string): Promise<{
     // Get webhook secret from environment variables
     const webhookSecret = import.meta.env.WEBHOOK_SECRET;
     
+    console.log('Webhook secret available:', !!webhookSecret);
     if (!webhookSecret) {
       console.error('Missing WEBHOOK_SECRET environment variable');
       console.log('Available env variables:', Object.keys(import.meta.env)

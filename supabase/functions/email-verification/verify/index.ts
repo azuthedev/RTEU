@@ -1,9 +1,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
 
+// Updated CORS headers to be more permissive
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Auth",
+  "Access-Control-Allow-Origin": "*", 
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 Deno.serve(async (req) => {

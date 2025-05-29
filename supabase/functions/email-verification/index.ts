@@ -71,8 +71,37 @@ function checkEmailTypos(email: string): string | null {
 
 // Create a base URL for verification links based on the request origin
 function getBaseUrl(req: Request): string {
+  // Extract the Origin header which contains the source domain
   const origin = req.headers.get('origin');
-  return origin || 'https://royaltransfereu.com';
+  
+  // Use referrer as a fallback
+  const referrer = req.headers.get('referer');
+  let refOrigin = null;
+  
+  if (referrer) {
+    try {
+      const refUrl = new URL(referrer);
+      refOrigin = `${refUrl.protocol}//${refUrl.host}`;
+    } catch (e) {
+      console.error("Failed to parse referrer:", e);
+    }
+  }
+  
+  // Use either the Origin header, referer, or fall back to production URL
+  const baseUrl = origin || refOrigin || 'https://www.royaltransfereu.com';
+  console.log("Using base URL for redirects:", baseUrl);
+  
+  return baseUrl;
+}
+
+// Check if we're in a development environment
+function isDevEnvironment(req: Request): boolean {
+  const url = new URL(req.url);
+  const host = url.hostname;
+  return host === 'localhost' || 
+         host.includes('local-credentialless') || 
+         host.includes('webcontainer') ||
+         host.endsWith('.supabase.co'); // Local Supabase development
 }
 
 // Check if a user has exceeded rate limits for OTP/verification requests
@@ -122,11 +151,8 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
       console.error('Missing WEBHOOK_SECRET environment variable');
       console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => !key.includes('SECRET')).join(', '));
       
-      // In production, we'd throw an error, but in development we'll simulate success
-      if (!isDevEnvironment(req)) {
-        throw new Error('Server configuration error: Missing webhook authentication');
-      }
-      return true;
+      // Always throw error if webhook secret is missing
+      throw new Error('Server configuration error: Missing webhook authentication');
     }
     
     try {
@@ -225,6 +251,117 @@ Deno.serve(async (req) => {
       .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
     );
     
+    // Get URL path and handle 'verify' endpoint if needed
+    const url = new URL(req.url);
+    if (url.pathname.endsWith('/verify') && req.method === 'GET') {
+      console.log("Magic link verification detected");
+      // Handle verification directly for magic links
+      
+      // Get token from query parameters
+      const token = url.searchParams.get('token');
+      const redirectUrl = url.searchParams.get('redirect') || '/';
+      console.log("Token from URL:", token ? `${token.substring(0, 3)}...` : 'none');
+      console.log("Redirect URL:", redirectUrl);
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: 'Missing token parameter' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Initialize Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Find verification record with this magic_token
+      console.log("Looking up verification record with token");
+      const { data: verification, error: verificationError } = await supabase
+        .from('email_verifications')
+        .select('*')
+        .eq('magic_token', token)
+        .single();
+      
+      if (verificationError || !verification) {
+        console.error('Invalid verification token:', verificationError);
+        
+        // Get the client's origin for redirect
+        const clientOrigin = getBaseUrl(req);
+        
+        // Redirect with error to the client's origin
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${clientOrigin}/verification-failed?reason=invalid&redirect=${encodeURIComponent(redirectUrl)}`
+          }
+        });
+      }
+      
+      // Check if token is expired
+      if (new Date(verification.expires_at) < new Date()) {
+        console.error('Verification token expired');
+        
+        // Get the client's origin for redirect
+        const clientOrigin = getBaseUrl(req);
+        
+        // Redirect with expiration error
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...corsHeaders,
+            'Location': `${clientOrigin}/verification-failed?reason=expired&redirect=${encodeURIComponent(redirectUrl)}`
+          }
+        });
+      }
+      
+      console.log("Valid verification token, marking as verified");
+      
+      // Mark verification as complete
+      await supabase
+        .from('email_verifications')
+        .update({ verified: true })
+        .eq('id', verification.id);
+      
+      // Update user's email_verified status if we have a user_id
+      if (verification.user_id) {
+        console.log("Updating user email_verified status for user:", verification.user_id);
+        
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', verification.user_id);
+          
+        // Also try to update auth.users metadata
+        try {
+          // This requires admin access and might not work depending on permissions
+          await supabase.auth.admin.updateUserById(
+            verification.user_id,
+            { user_metadata: { email_verified: true } }
+          );
+        } catch (e) {
+          console.warn('Could not update auth metadata (non-critical):', e);
+        }
+      }
+      
+      // Get the client's origin for redirect
+      const clientOrigin = getBaseUrl(req);
+      console.log("Redirecting to:", `${clientOrigin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`);
+      
+      // Redirect to success page on the client's origin
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': `${clientOrigin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
+        }
+      });
+    }
+    
     // Verify the X-Auth header if not in development
     const authHeader = req.headers.get('X-Auth');
     console.log("X-Auth header present:", !!authHeader);
@@ -268,92 +405,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get URL path and redirect to verify endpoint if needed
-    const url = new URL(req.url);
-    
-    // IMPORTANT: Do not redirect, handle directly
-    if (url.pathname.endsWith('/verify') && req.method === 'GET') {
-      // Handle verification GET requests directly
-      const token = url.searchParams.get('token');
-      const redirectUrl = url.searchParams.get('redirect') || '/';
-      
-      if (!token) {
-        return new Response(
-          JSON.stringify({ error: 'Missing token parameter' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      // Find verification record with this token
-      const { data: verification, error: verificationError } = await supabase
-        .from('email_verifications')
-        .select('*')
-        .eq('magic_token', token)
-        .single();
-      
-      if (verificationError || !verification) {
-        console.error('Invalid verification token:', verificationError);
-        // Redirect with error
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            'Location': `${url.origin}/verification-failed?reason=invalid`
-          }
-        });
-      }
-      
-      // Check if token is expired
-      if (new Date(verification.expires_at) < new Date()) {
-        console.error('Verification token expired');
-        // Redirect with expiration error
-        return new Response(null, {
-          status: 302,
-          headers: {
-            ...corsHeaders,
-            'Location': `${url.origin}/verification-failed?reason=expired`
-          }
-        });
-      }
-      
-      // Mark verification as complete
-      await supabase
-        .from('email_verifications')
-        .update({ verified: true })
-        .eq('id', verification.id);
-      
-      // Update user's email_verified status if we have a user_id
-      if (verification.user_id) {
-        await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('id', verification.user_id);
-          
-        // Also try to update auth.users metadata
-        try {
-          // This requires admin access and might not work depending on permissions
-          await supabase.auth.admin.updateUserById(
-            verification.user_id,
-            { user_metadata: { email_verified: true } }
-          );
-        } catch (e) {
-          console.warn('Could not update auth metadata (non-critical):', e);
-        }
-      }
-      
-      // Redirect to success page
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          'Location': `${url.origin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
-        }
-      });
-    }
     
     // Check if this is a POST request for sending verification
     if (req.method === 'POST') {
@@ -637,7 +688,7 @@ Deno.serve(async (req) => {
           .from('users')
           .select('id, email_verified')
           .eq('email', email)
-          .single();
+          .maybeSingle();
         
         if (userError) {
           console.error("Error checking user:", userError);
@@ -717,7 +768,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Allow': 'GET, POST, OPTIONS' }
       }
     );
   } catch (error) {
