@@ -44,6 +44,7 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
 const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
 const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPrompt'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -149,6 +150,7 @@ function AppRoutes() {
           <Route path="/services" element={<Services />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/verification-success" element={<VerificationSuccess />} />
           <Route path="/verification-failed" element={<VerificationFailed />} />

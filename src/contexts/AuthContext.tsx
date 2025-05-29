@@ -32,6 +32,14 @@ interface AuthContextType {
     error?: string
   }>;
   refreshSession: () => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<{ 
+    success: boolean, 
+    error?: string 
+  }>;
+  resetPassword: (password: string, token: string) => Promise<{ 
+    success: boolean, 
+    error?: string 
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -218,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             if (isDevEnvironment.current) {
               console.log('DEVELOPMENT MODE: Using mock invite data');
               inviteData = {
-                id: 'dev-invite-id',
+                id: 'dev-' + Date.now(),
                 role: 'customer',
                 status: 'active'
               };
@@ -243,7 +251,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
               if (isDevEnvironment.current) {
                 console.log('DEVELOPMENT MODE: Using mock invite data despite expiration');
                 inviteData = {
-                  id: 'dev-invite-id',
+                  id: 'dev-' + Date.now(),
                   role: 'customer',
                   status: 'active'
                 };
@@ -259,7 +267,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           if (isDevEnvironment.current) {
             console.log('DEVELOPMENT MODE: Using mock invite data despite error', err);
             inviteData = {
-              id: 'dev-invite-id',
+              id: 'dev-' + Date.now(),
               role: 'customer',
               status: 'active'
             };
@@ -568,6 +576,159 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
+  // Request a password reset
+  const requestPasswordReset = async (email: string): Promise<{ 
+    success: boolean, 
+    error?: string 
+  }> => {
+    try {
+      trackEvent('Authentication', 'Password Reset Request Initiated', email);
+      
+      // Check if the user exists
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('name')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (userError) {
+        console.error('Error checking user existence:', userError);
+        throw new Error('Error processing your request. Please try again.');
+      }
+      
+      // If user doesn't exist, return appropriate message
+      if (!userData) {
+        trackEvent('Authentication', 'Password Reset Failed', 'User not found');
+        return { 
+          success: false, 
+          error: 'No account found with this email address. Please sign up instead.' 
+        };
+      }
+      
+      // Generate a password reset token using Supabase Auth
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        console.error('Error initiating password reset:', error);
+        trackEvent('Authentication', 'Password Reset Error', error.message);
+        throw new Error('Failed to send password reset email: ' + error.message);
+      }
+      
+      // Also send a more customized email using our webhook
+      await sendPasswordResetEmail(userData.name || '', email);
+      
+      trackEvent('Authentication', 'Password Reset Email Sent', email);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error in password reset request:', err);
+      
+      // In development, provide a fallback
+      if (isDevEnvironment.current) {
+        console.log('DEVELOPMENT MODE: Simulating successful password reset request');
+        trackEvent('Authentication', 'Password Reset Dev Fallback');
+        return { success: true };
+      }
+      
+      return { 
+        success: false, 
+        error: err.message || 'Failed to process password reset request'
+      };
+    }
+  };
+
+  // Send password reset email via webhook
+  const sendPasswordResetEmail = async (name: string, email: string): Promise<boolean> => {
+    try {
+      // Get webhook secret from environment
+      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.error('Missing WEBHOOK_SECRET environment variable');
+        
+        // In development, just log and continue
+        if (isDevEnvironment.current) {
+          console.log('DEVELOPMENT MODE: Skipping webhook call - missing secret');
+          return true;
+        }
+        
+        return false;
+      }
+      
+      // Generate reset link
+      // Use Supabase's native password reset link mechanism
+      const resetLink = `${window.location.origin}/reset-password`;
+      
+      // Call webhook
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            reset_link: resetLink,
+            email_type: 'PWReset'
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Webhook error:', errorData);
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Error sending password reset email via webhook:', err);
+      return false;
+    }
+  };
+
+  // Reset password with token
+  const resetPassword = async (password: string, token: string): Promise<{ 
+    success: boolean, 
+    error?: string 
+  }> => {
+    try {
+      trackEvent('Authentication', 'Password Reset Attempt');
+      
+      // Update user's password using Supabase Auth API
+      const { error } = await supabase.auth.updateUser({ 
+        password 
+      });
+      
+      if (error) {
+        console.error('Error resetting password:', error);
+        trackEvent('Authentication', 'Password Reset Error', error.message);
+        throw new Error('Failed to reset password: ' + error.message);
+      }
+      
+      trackEvent('Authentication', 'Password Reset Success');
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error in password reset:', err);
+      
+      // In development, provide a fallback
+      if (isDevEnvironment.current) {
+        console.log('DEVELOPMENT MODE: Simulating successful password reset');
+        trackEvent('Authentication', 'Password Reset Dev Success');
+        return { success: true };
+      }
+      
+      return { 
+        success: false, 
+        error: err.message || 'Failed to reset password'
+      };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -581,7 +742,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     updateUserData,
     sendVerificationEmail,
     checkEmailVerification: checkEmailVerificationStatus,
-    refreshSession
+    refreshSession,
+    requestPasswordReset,
+    resetPassword
   };
 
   return (

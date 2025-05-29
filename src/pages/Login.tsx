@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { useAnalytics } from '../hooks/useAnalytics';
 import OTPVerificationModal from '../components/OTPVerificationModal';
+import PasswordResetModal from '../components/PasswordResetModal';
 import { supabase } from '../lib/supabase';
 
 interface LocationState {
@@ -36,6 +37,9 @@ const Login = () => {
   const [isUnverifiedUser, setIsUnverifiedUser] = useState(false);
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
+  
+  // Password reset
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -277,6 +281,11 @@ const Login = () => {
     }
   };
 
+  const handlePasswordResetClick = () => {
+    setShowPasswordResetModal(true);
+    trackEvent('Authentication', 'Password Reset Modal Opened');
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -460,9 +469,13 @@ const Login = () => {
                 </button>
 
                 <div className="text-center mt-3">
-                  <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+                  <button
+                    type="button"
+                    onClick={handlePasswordResetClick}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
                     Forgot your password?
-                  </a>
+                  </button>
                 </div>
               </form>
             )}
@@ -510,6 +523,13 @@ const Login = () => {
         email={formData.email}
         verificationId={verificationId}
         emailSent={true}
+      />
+      
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+        email={formData.email}
       />
     </div>
   );
