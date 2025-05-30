@@ -61,9 +61,91 @@ interface BookingState {
 interface BookingContextType {
   bookingState: BookingState;
   setBookingState: React.Dispatch<React.SetStateAction<BookingState>>;
+  clearBookingState: () => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
+
+const BOOKING_STORAGE_KEY = 'royaltransfer_booking_state';
+
+// Serialize booking state for storage
+// Explicitly exclude sensitive payment information
+const serializeBookingState = (state: BookingState): string => {
+  // Create a copy to avoid modifying the original state
+  const stateCopy = { ...state };
+
+  // Convert Set to Array for JSON serialization
+  if (stateCopy.personalDetails?.selectedExtras) {
+    stateCopy.personalDetails = {
+      ...stateCopy.personalDetails,
+      selectedExtras: Array.from(stateCopy.personalDetails.selectedExtras)
+    };
+  }
+
+  // Remove sensitive payment information
+  if (stateCopy.paymentDetails) {
+    stateCopy.paymentDetails = {
+      method: stateCopy.paymentDetails.method,
+      discountCode: stateCopy.paymentDetails.discountCode
+    };
+  }
+
+  return JSON.stringify(stateCopy);
+};
+
+// Deserialize booking state from storage
+const deserializeBookingState = (serialized: string | null): BookingState | null => {
+  if (!serialized) return null;
+
+  try {
+    const parsed = JSON.parse(serialized);
+
+    // Convert Array back to Set for selectedExtras
+    if (parsed.personalDetails?.selectedExtras) {
+      parsed.personalDetails = {
+        ...parsed.personalDetails,
+        selectedExtras: new Set(parsed.personalDetails.selectedExtras)
+      };
+    }
+
+    // Ensure we have proper vehicle object with all methods and properties
+    if (parsed.selectedVehicle) {
+      // Find the matching vehicle from our data
+      const matchedVehicle = vehicles.find(v => v.id === parsed.selectedVehicle.id);
+      if (matchedVehicle) {
+        parsed.selectedVehicle = matchedVehicle;
+      } else {
+        parsed.selectedVehicle = vehicles[0]; // Default to first vehicle if not found
+      }
+    }
+
+    return parsed;
+  } catch (e) {
+    console.error('Failed to parse booking state:', e);
+    return null;
+  }
+};
+
+// Save booking state to sessionStorage
+const saveBookingState = (state: BookingState): void => {
+  try {
+    const serialized = serializeBookingState(state);
+    sessionStorage.setItem(BOOKING_STORAGE_KEY, serialized);
+  } catch (e) {
+    console.error('Failed to save booking state:', e);
+  }
+};
+
+// Load booking state from sessionStorage
+const loadBookingState = (): BookingState | null => {
+  try {
+    const serialized = sessionStorage.getItem(BOOKING_STORAGE_KEY);
+    return deserializeBookingState(serialized);
+  } catch (e) {
+    console.error('Failed to load booking state:', e);
+    return null;
+  }
+};
 
 export const useBooking = () => {
   const context = useContext(BookingContext);
@@ -74,27 +156,36 @@ export const useBooking = () => {
 };
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [bookingState, setBookingState] = useState<BookingState>({
-    step: 1,
-    selectedVehicle: vehicles[0],
-    personalDetails: {
-      title: 'mr',
-      firstName: '',
-      lastName: '',
-      email: '',
-      country: '',
-      phone: '',
-      selectedExtras: new Set()
-    },
-    paymentDetails: {
-      method: 'card'
-    }
+  // Initialize with default state or loaded state from sessionStorage
+  const [bookingState, setBookingState] = useState<BookingState>(() => {
+    const savedState = loadBookingState();
+    
+    // Return saved state if available, otherwise use default state
+    return savedState || {
+      step: 1,
+      selectedVehicle: vehicles[0],
+      personalDetails: {
+        title: 'mr',
+        firstName: '',
+        lastName: '',
+        email: '',
+        country: '',
+        phone: '',
+        selectedExtras: new Set()
+      },
+      paymentDetails: {
+        method: 'card'
+      }
+    };
   });
 
   // Track previous step for animation purposes
-  const previousStepRef = useRef<1 | 2 | 3>(1);
+  const previousStepRef = useRef<1 | 2 | 3>(bookingState.step);
   
+  // Save to sessionStorage whenever bookingState changes
   useEffect(() => {
+    saveBookingState(bookingState);
+    
     // When step changes, update the previousStep value
     if (bookingState.step !== previousStepRef.current) {
       setBookingState(prev => ({
@@ -103,7 +194,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
       previousStepRef.current = bookingState.step;
     }
-  }, [bookingState.step]);
+  }, [bookingState]);
 
   // Log state changes for debugging
   useEffect(() => {
@@ -115,8 +206,33 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay]);
 
+  // Function to clear booking state
+  const clearBookingState = () => {
+    sessionStorage.removeItem(BOOKING_STORAGE_KEY);
+    setBookingState({
+      step: 1,
+      selectedVehicle: vehicles[0],
+      personalDetails: {
+        title: 'mr',
+        firstName: '',
+        lastName: '',
+        email: '',
+        country: '',
+        phone: '',
+        selectedExtras: new Set()
+      },
+      paymentDetails: {
+        method: 'card'
+      }
+    });
+  };
+
   return (
-    <BookingContext.Provider value={{ bookingState, setBookingState }}>
+    <BookingContext.Provider value={{ 
+      bookingState, 
+      setBookingState,
+      clearBookingState
+    }}>
       {children}
     </BookingContext.Provider>
   );

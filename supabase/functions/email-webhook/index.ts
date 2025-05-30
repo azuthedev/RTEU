@@ -8,16 +8,6 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 
-// Check if we're in a development environment
-function isDevEnvironment(req: Request): boolean {
-  const url = new URL(req.url);
-  const host = url.hostname;
-  return host === 'localhost' || 
-         host.includes('local-credentialless') || 
-         host.includes('webcontainer') ||
-         host.endsWith('.supabase.co');
-}
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -35,7 +25,7 @@ Deno.serve(async (req) => {
       .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
     );
     
-    // Verify the X-Auth header if not in development
+    // Verify the X-Auth header
     const authHeader = req.headers.get('X-Auth');
     console.log("X-Auth header present:", !!authHeader);
     
@@ -51,11 +41,7 @@ Deno.serve(async (req) => {
       console.log("Do they match?", authHeader === webhookSecret);
     }
     
-    const isDev = isDevEnvironment(req);
-    console.log("Is dev environment:", isDev);
-    
-    // Stricter auth in production
-    if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+    if (!webhookSecret || authHeader !== webhookSecret) {
       console.error("Authentication failed: Header doesn't match expected secret");
       
       return new Response(
@@ -73,6 +59,11 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Handle POST requests for sending emails
     if (req.method === 'POST') {
@@ -128,16 +119,49 @@ Deno.serve(async (req) => {
           console.log('To:', email);
           console.log('Reset Link:', reset_link);
           
-          // Get the webhook secret from environment variables
-          const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-          console.log('Webhook Secret available:', !!webhookSecret);
+          // Forward the request to our n8n webhook
+          const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth': webhookSecret
+            },
+            body: JSON.stringify({
+              name: name || email.split('@')[0],
+              email: email,
+              reset_link: reset_link,
+              email_type: 'PWReset'
+            })
+          });
           
-          // In a real implementation, this would call an email service
-          // For this example, we'll just log the attempt and return success
-          console.log('Sending password reset email to:', email);
-          console.log('Reset link:', reset_link);
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error from n8n webhook:', errorText);
+            throw new Error('Failed to send password reset email');
+          }
           
-          // Simulating successful email send
+          console.log('Password reset email sent successfully');
+          
+          // Check if user exists (for logging purposes only)
+          try {
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('id, email')
+              .eq('email', email)
+              .maybeSingle();
+              
+            if (userError) {
+              console.warn('Error checking user existence:', userError);
+            } else if (userData) {
+              console.log('User found:', userData.id);
+            } else {
+              console.log('No user found with email:', email);
+            }
+          } catch (e) {
+            console.warn('Error checking user existence:', e);
+          }
+          
+          // Return success response
           return new Response(
             JSON.stringify({ 
               success: true, 
@@ -150,7 +174,17 @@ Deno.serve(async (req) => {
           );
         } catch (emailError) {
           console.error('Error sending password reset email:', emailError);
-          throw emailError;
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: emailError.message || 'Failed to send password reset email'
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
         }
       } 
       else {
@@ -178,8 +212,7 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An unexpected error occurred',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message || 'An unexpected error occurred'
       }),
       {
         status: 500,
