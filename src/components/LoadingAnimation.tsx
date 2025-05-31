@@ -23,55 +23,78 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 }) => {
   const [progress, setProgress] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    // Clear any existing intervals
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+    // Clear any existing intervals when component mounts or unmounts
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+    };
+  }, []);
+
+  // Handle progress updates
+  useEffect(() => {
+    // Clear any existing progress interval
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
 
     if (loadingComplete) {
       // If loading is complete, immediately set progress to 100%
       setProgress(100);
-      setMessageIndex(loadingMessages.length); // Set to a "final" message index
       return;
     }
 
-    const initialFastPhaseDuration = 800; // 0.8 seconds to reach 75%
-    const slowIncrementInterval = 100; // How often to increment progress in slow phase
+    // Start with 0% progress
+    setProgress(0);
 
-    // Start progress to 75%
-    const startProgress = () => {
-      setProgress(0); // Reset for new animation
-      setTimeout(() => {
-        if (!loadingComplete) { // Only set to 75% if not already complete
-          setProgress(75);
+    // Schedule progress increments - 15% every 0.5 seconds until 85%
+    progressIntervalRef.current = setInterval(() => {
+      setProgress(prev => {
+        const nextProgress = prev + 15;
+        if (nextProgress >= 85) {
+          // Stop at 85%, the rest will fill when loading is complete
+          clearInterval(progressIntervalRef.current!);
+          return 85;
         }
-      }, 50); // Small delay to ensure initial render before animation starts
-
-      // Start slow increment towards 99% after the initial fast phase
-      intervalRef.current = setInterval(() => {
-        if (!loadingComplete && progress < 99) {
-          setProgress(prev => Math.min(prev + 0.5, 99)); // Increment slowly up to 99%
-        }
-      }, slowIncrementInterval);
-    };
-
-    startProgress(); // Start the animation when component mounts or loadingComplete changes to false
-
-    // Message cycling
-    messageIntervalRef.current = setInterval(() => {
-      if (!loadingComplete) {
-        setMessageIndex(prevIndex => (prevIndex + 1) % loadingMessages.length);
-      }
-    }, 1500); // Change message every 1.5 seconds
+        return nextProgress;
+      });
+    }, 500);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     };
-  }, [loadingComplete, progress]); // Re-run when loadingComplete changes
+  }, [loadingComplete]);
+
+  // Handle message cycling
+  useEffect(() => {
+    // Clear any existing message interval
+    if (messageIntervalRef.current) {
+      clearInterval(messageIntervalRef.current);
+    }
+
+    if (loadingComplete) {
+      // Set to the "complete" message
+      setMessageIndex(loadingMessages.length);
+      return;
+    }
+
+    // Cycle through messages every 1.5 seconds
+    messageIntervalRef.current = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % loadingMessages.length);
+    }, 1500);
+
+    return () => {
+      if (messageIntervalRef.current) {
+        clearInterval(messageIntervalRef.current);
+      }
+    };
+  }, [loadingComplete]);
 
   const currentMessage = loadingComplete
     ? "All set! Redirecting..."
@@ -101,8 +124,9 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
             transition={{
-              duration: loadingComplete ? 0.3 : (progress < 75 ? 0.8 : 0.1),
-              ease: loadingComplete ? "easeOut" : (progress < 75 ? "easeOut" : "linear")
+              type: "tween",
+              duration: loadingComplete ? 0.3 : 0.5,
+              ease: "easeOut"
             }}
           />
         </div>

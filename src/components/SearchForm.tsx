@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Users, ArrowRight, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Users, ArrowRight, Plus, Minus, AlertCircle } from 'lucide-react';
 import { throttle } from 'lodash-es';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { DatePicker } from './ui/date-picker';
@@ -11,6 +11,7 @@ import { useBooking } from '../contexts/BookingContext';
 import { useToast } from './ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
 import LoadingAnimation from './LoadingAnimation';
+import { initGoogleMaps } from '../utils/optimizeThirdParty';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -74,6 +75,13 @@ const SearchForm = () => {
   const { bookingState, setBookingState } = useBooking();
   const { toast } = useToast();
 
+  // Add isInitializedRef definition here
+  const isInitializedRef = useRef(false);
+  // Flag to track if initial state loading is complete
+  const initialStateLoadedRef = useRef(false);
+  // Flag to track user interaction
+  const userInteractedRef = useRef(false);
+
   // Store original values for comparison and restoration
   const originalValuesRef = useRef({
     isReturn: false,
@@ -106,12 +114,6 @@ const SearchForm = () => {
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
-  // Flag to track if initial state loading is complete
-  const initialStateLoadedRef = useRef(false);
-  
-  // Flag to track if user has interacted with the form
-  const userInteractedRef = useRef(false);
-  
   // Track validation state for addresses
   const [pickupIsValid, setPickupIsValid] = useState(false);
   const [dropoffIsValid, setDropoffIsValid] = useState(false);
@@ -126,70 +128,74 @@ const SearchForm = () => {
     pricingResponse: PricingResponse | null;
   } | null>(null);
 
-  // Ensure Google Maps API is initialized as soon as possible
+  // Ensure Google Maps is loaded
   useEffect(() => {
-    console.log('SearchForm: Ready for autocomplete');
+    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+      initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
+        .then(success => {
+          console.log('SearchForm: Google Maps API loaded:', success);
+        });
+    }
   }, []);
 
-  // First, check if we have display data from context (coming back from booking flow)
+  // Initialize component once
   useEffect(() => {
-    // Only apply this if we haven't loaded initial state yet
-    if (!initialStateLoadedRef.current && (bookingState.fromDisplay || bookingState.toDisplay)) {
-      console.log("Initializing form from context display values", {
-        fromDisplay: bookingState.fromDisplay,
-        toDisplay: bookingState.toDisplay,
-        from: bookingState.from,
-        to: bookingState.to
-      });
-      
+    // Removed the reference to setHasChanges
+    isInitializedRef.current = true;
+    // Use the display names from context if available
+    if (bookingState.fromDisplay) {
       setFormData(prev => ({
         ...prev,
-        pickup: bookingState.fromDisplay || bookingState.from || '',
-        dropoff: bookingState.toDisplay || bookingState.to || '',
-        pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
-        dropoffDisplay: bookingState.toDisplay || bookingState.to || ''
+        pickup: bookingState.fromDisplay || '',
+        pickupDisplay: bookingState.fromDisplay || ''
       }));
-      
-      if (bookingState.isReturn !== undefined) {
-        setIsReturn(bookingState.isReturn);
-      }
-      
-      if (bookingState.passengers) {
-        setPassengers(bookingState.passengers);
-      }
-      
-      if (bookingState.departureDate) {
-        const departureDate = parseDateFromUrl(bookingState.departureDate);
-        const returnDate = bookingState.returnDate ? parseDateFromUrl(bookingState.returnDate) : undefined;
-        
-        if (bookingState.isReturn && departureDate && returnDate) {
+    }
+    
+    if (bookingState.toDisplay) {
+      setFormData(prev => ({
+        ...prev,
+        dropoff: bookingState.toDisplay || '',
+        dropoffDisplay: bookingState.toDisplay || ''
+      }));
+    }
+    
+    // Use isReturn from context if available
+    if (bookingState.isReturn !== undefined) {
+      setIsReturn(bookingState.isReturn);
+    }
+    
+    // Use passengers from context if available
+    if (bookingState.passengers) {
+      setPassengers(bookingState.passengers);
+    }
+    
+    // Use dates from context if available
+    if (bookingState.departureDate) {
+      const departureDate = parseDateFromUrl(bookingState.departureDate);
+      if (departureDate) {
+        if (bookingState.isReturn && bookingState.returnDate) {
+          const returnDate = parseDateFromUrl(bookingState.returnDate);
           setFormData(prev => ({
             ...prev,
             dateRange: { from: departureDate, to: returnDate }
           }));
-        } else if (departureDate) {
+        } else {
           setFormData(prev => ({
             ...prev,
             departureDate
           }));
         }
       }
-      
-      // Store original values for comparison
-      originalValuesRef.current = {
-        isReturn: bookingState.isReturn || false,
-        pickup: bookingState.fromDisplay || bookingState.from || '',
-        dropoff: bookingState.toDisplay || bookingState.to || '',
-        pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
-        dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
-        departureDate: formData.departureDate,
-        dateRange: formData.dateRange,
-        passengers: bookingState.passengers || 1
-      };
-      
-      initialStateLoadedRef.current = true;
     }
-  }, [bookingState]);
+    
+    console.log("SearchForm initialized with:", {
+      isReturn: bookingState.isReturn,
+      from: bookingState.fromDisplay || bookingState.from,
+      to: bookingState.toDisplay || bookingState.to,
+      departureDate: bookingState.departureDate,
+      returnDate: bookingState.returnDate
+    });
+  }, [bookingState.fromDisplay, bookingState.toDisplay, bookingState.isReturn, bookingState.passengers, bookingState.departureDate, bookingState.returnDate, bookingState.from, bookingState.to]);
 
   // Then initialize from URL if coming from booking flow
   useEffect(() => {
@@ -255,15 +261,19 @@ const SearchForm = () => {
   // Handle navigation after loading is complete
   useEffect(() => {
     if (shouldNavigate && navigationData) {
-      // Hide the modal
-      setShowModal(false);
+      const timer = setTimeout(() => {
+        // Hide the modal
+        setShowModal(false);
+        
+        // Navigate to the booking flow path
+        navigate(navigationData.path);
+        
+        // Reset the state
+        setShouldNavigate(false);
+        setNavigationData(null);
+      }, 500); // Small delay to allow the "All set!" message to be visible
       
-      // Navigate to the booking flow path
-      navigate(navigationData.path);
-      
-      // Reset the state
-      setShouldNavigate(false);
-      setNavigationData(null);
+      return () => clearTimeout(timer);
     }
   }, [shouldNavigate, navigationData, navigate]);
 
@@ -297,23 +307,22 @@ const SearchForm = () => {
     
     setIsReturn(newIsReturn);
     
-    if (newIsReturn) {
+    if (oneWay) {
+      // If switching to one way
+      setFormData(prev => ({
+        ...prev,
+        departureDate: prev.dateRange?.from || prev.departureDate,
+        dateRange: undefined
+      }));
+    } else {
       // If switching to round trip
       setFormData(prev => ({
         ...prev,
         departureDate: undefined,
-        dateRange: prev.departureDate ? {
-          from: prev.departureDate,
-          to: undefined
-        } : undefined
-      }));
-    } else {
-      // If switching to one way
-      setFormData(prev => ({
-        ...prev,
-        // Use the departure date from the date range if it exists
-        departureDate: prev.dateRange?.from || prev.departureDate,
-        dateRange: undefined
+        dateRange: {
+          from: prev.departureDate || prev.dateRange?.from,
+          to: prev.dateRange?.to || undefined
+        }
       }));
     }
   };
@@ -380,7 +389,7 @@ const SearchForm = () => {
     // Format date to ISO8601
     const pickupTimeISO = pickupTime.toISOString();
     
-    // Prepare request payload
+    // Prepare request payload with trip_type parameter
     const payload = {
       pickup_lat: pickupCoords.lat,
       pickup_lng: pickupCoords.lng,
@@ -398,7 +407,7 @@ const SearchForm = () => {
       const apiEndpoint = getApiUrl('/check-price');
       console.log('API Endpoint:', apiEndpoint);
       
-      // Display the full request details for debugging
+      // Display the request details for debugging
       console.log('Request URL:', apiEndpoint);
       console.log('Request Method:', 'POST');
       console.log('Request Headers:', {
@@ -415,7 +424,7 @@ const SearchForm = () => {
         body: JSON.stringify(payload)
       });
       
-      // Log response details
+      // Log response status and headers for debugging
       console.log('Response Status:', response.status);
       console.log('Response Status Text:', response.statusText);
       console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
@@ -443,7 +452,6 @@ const SearchForm = () => {
         
         throw new Error(`Expected JSON response but got: ${contentType}`);
       }
-      
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
@@ -471,9 +479,10 @@ const SearchForm = () => {
         description: errorMessage,
         variant: "destructive"
       });
-      
+
       // Track error
       trackEvent('Search Form', 'Price Fetch Error', error.message, 0, true);
+      
       return null;
     }
   };
@@ -566,6 +575,13 @@ const SearchForm = () => {
 
     const pricingResponse = await fetchPrices();
     
+    // If the pricing fetch failed, stop here - the modal will still be visible showing the error
+    if (!pricingResponse) {
+      setIsLoadingPrices(false);
+      setShowModal(false);
+      return;
+    }
+    
     // Store URL-friendly versions of pickup and dropoff
     const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
     const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
@@ -619,9 +635,14 @@ const SearchForm = () => {
       pricingResponse
     });
     
-    // Mark loading as complete and navigate immediately when data is ready
+    // Mark loading as complete and set shouldNavigate to true after a short delay
+    // to allow the "All set!" message to be visible
     setIsLoadingPrices(false);
-    setShouldNavigate(true);
+    
+    // Use a small delay before navigation to ensure the "All set!" message is visible
+    setTimeout(() => {
+      setShouldNavigate(true);
+    }, 700);
   };
 
   return (
@@ -630,7 +651,7 @@ const SearchForm = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-            <LoadingAnimation loadingComplete={!isLoadingPrices} /> {/* Pass loadingComplete prop */}
+            <LoadingAnimation loadingComplete={!isLoadingPrices} />
           </div>
         </div>
       )}
