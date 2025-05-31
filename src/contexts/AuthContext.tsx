@@ -584,70 +584,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Password Reset Request Initiated', email);
       
-      // Following security best practices, we don't check if the user exists
-      // This prevents user enumeration attacks
+      // Get the base URL for the reset link
+      const baseUrl = window.location.origin;
       
-      // Generate a password reset token using Supabase Auth
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      // Generate reset link with origin
+      const resetLink = `${baseUrl}/reset-password`;
       
-      if (error) {
-        console.error('Error initiating password reset:', error);
-        trackEvent('Authentication', 'Password Reset Error', error.message);
-        throw new Error('Failed to send password reset email: ' + error.message);
-      }
-      
-      // Also send a more customized email using our webhook
-      try {
-        await sendPasswordResetEmail(email, email);
-      } catch (webhookError) {
-        // Log but don't fail if the webhook fails - the Supabase email will still be sent
-        console.warn('Failed to send custom reset email via webhook:', webhookError);
-      }
-      
-      trackEvent('Authentication', 'Password Reset Email Sent', email);
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error in password reset request:', err);
-      
-      // In development, provide a fallback
-      if (isDevEnvironment.current) {
-        console.log('DEVELOPMENT MODE: Simulating successful password reset request');
-        trackEvent('Authentication', 'Password Reset Dev Fallback');
-        return { success: true };
-      }
-      
-      return { 
-        success: false, 
-        error: err.message || 'Failed to process password reset request'
-      };
-    }
-  };
-
-  // Send password reset email via webhook
-  const sendPasswordResetEmail = async (name: string, email: string): Promise<boolean> => {
-    try {
-      // Get webhook secret from environment
+      // Get webhook secret
       const webhookSecret = import.meta.env.WEBHOOK_SECRET;
       
       if (!webhookSecret) {
         console.error('Missing WEBHOOK_SECRET environment variable');
-        
-        // In development, just log and continue
-        if (isDevEnvironment.current) {
-          console.log('DEVELOPMENT MODE: Skipping webhook call - missing secret');
-          return true;
-        }
-        
-        return false;
+        throw new Error('Server configuration error: Missing webhook authentication');
       }
       
-      // Generate reset link
-      // Use Supabase's native password reset link mechanism
-      const resetLink = `${window.location.origin}/reset-password`;
-      
-      // Call webhook
+      // Send password reset request via webhook
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
         {
@@ -657,7 +608,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             'X-Auth': webhookSecret
           },
           body: JSON.stringify({
-            name: name,
+            name: email.split('@')[0], // Use part before @ if no name provided
             email: email,
             reset_link: resetLink,
             email_type: 'PWReset'
@@ -666,15 +617,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       );
       
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Webhook error:', errorData);
-        return false;
+        const errorText = await response.text();
+        console.error('Webhook response error:', errorText);
+        throw new Error('Failed to send password reset email');
       }
       
-      return true;
-    } catch (err) {
-      console.error('Error sending password reset email via webhook:', err);
-      return false;
+      trackEvent('Authentication', 'Password Reset Email Sent', email);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error in password reset request:', err);
+      return { 
+        success: false, 
+        error: err.message || 'Failed to process password reset request'
+      };
     }
   };
 
@@ -701,14 +656,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       return { success: true };
     } catch (err: any) {
       console.error('Error in password reset:', err);
-      
-      // In development, provide a fallback
-      if (isDevEnvironment.current) {
-        console.log('DEVELOPMENT MODE: Simulating successful password reset');
-        trackEvent('Authentication', 'Password Reset Dev Success');
-        return { success: true };
-      }
-      
       return { 
         success: false, 
         error: err.message || 'Failed to reset password'
