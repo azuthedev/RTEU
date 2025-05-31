@@ -234,16 +234,19 @@ const BookingFlow = () => {
     // Skip if we don't have the required params
     if (!from || !to || !date) return;
 
-    // If we already have state that matches the URL parameters and has prices, we don't need to refetch
-    if (
+    // Check if we already have state that matches the URL parameters
+    // AND if we already have pricing data - skip the loading and fetching
+    const hasMatchingState = 
       bookingState.from === decodeURIComponent(from).replace(/-/g, ' ') &&
       bookingState.to === decodeURIComponent(to).replace(/-/g, ' ') &&
       bookingState.departureDate === date &&
-      bookingState.returnDate === returnDate &&
-      bookingState.passengers === Number(passengers) &&
-      bookingState.pricingResponse
-    ) {
-      console.log("Using existing state and prices");
+      bookingState.returnDate === (returnDate === '0' ? undefined : returnDate) &&
+      bookingState.passengers === Number(passengers);
+    
+    const hasPricingData = !!bookingState.pricingResponse;
+
+    if (hasMatchingState && hasPricingData) {
+      console.log("Using existing state and prices - no loading needed");
       setIsLoading(false);
       initialFetchDone.current = true;
       return;
