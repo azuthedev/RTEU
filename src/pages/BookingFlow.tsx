@@ -1,305 +1,383 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBooking } from '../contexts/BookingContext';
-import { vehicles } from '../data/vehicles';
-import BookingTopBar from '../components/booking/BookingTopBar';
 import VehicleSelection from '../components/booking/VehicleSelection';
 import PersonalDetails from '../components/booking/PersonalDetails';
 import PaymentDetails from '../components/booking/PaymentDetails';
-import { supabase } from '../lib/supabase';
-import { useAnalytics } from '../hooks/useAnalytics';
+import BookingTopBar from '../components/booking/BookingTopBar';
+import { useBooking } from '../contexts/BookingContext';
 import { getApiUrl, fetchWithCors } from '../utils/corsHelper';
-import { generateBookingReference } from '../utils/bookingHelper';
+import { useToast } from '../components/ui/use-toast';
+import { useAnalytics } from '../hooks/useAnalytics';
+import LoadingAnimation from '../components/LoadingAnimation';
+
+// Interface for API price response
+interface PricingResponse {
+  prices: {
+    category: string;
+    price: number;
+    currency: string;
+  }[];
+  selected_category: string | null;
+  details: {
+    pickup_time: string;
+    pickup_location: {
+      lat: number;
+      lng: number;
+    };
+    dropoff_location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+// Map API category names to our vehicle IDs
+const apiCategoryMap: Record<string, string> = {
+  'standard_sedan': 'economy-sedan',
+  'premium_sedan': 'premium-sedan',
+  'vip_sedan': 'vip-sedan',
+  'standard_minivan': 'standard-minivan',
+  'xl_minivan': 'xl-minivan',
+  'vip_minivan': 'vip-minivan',
+  'sprinter_8_pax': 'sprinter-8',
+  'sprinter_16_pax': 'sprinter-16',
+  'sprinter_21_pax': 'sprinter-21',
+  'coach_51_pax': 'bus-51'
+};
 
 const BookingFlow = () => {
-  const { bookingState, setBookingState } = useBooking();
-  const { from, to, type, date, returnDate, passengers } = useParams<{
-    from: string;
-    to: string;
-    type: string;
-    date: string;
-    returnDate: string;
-    passengers: string;
-  }>();
-  
-  const navigate = useNavigate();
-  const { trackEvent } = useAnalytics();
-  const [isLoading, setIsLoading] = useState(true);
+  const { from, to, type, date, returnDate, passengers } = useParams();
+  const [isLoading, setIsLoading] = useState(false); // Default to false and only set to true if we need to fetch
   const [isPriceLoading, setIsPriceLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const hasInitialized = useRef(false);
-
-  // Helper to properly capitalize and format location names
-  const formatLocationName = (name: string): string => {
-    if (!name) return '';
-    return name
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { trackEvent } = useAnalytics();
+  
+  const { bookingState, setBookingState } = useBooking();
+  
+  // Track if initial fetch has been done
+  const initialFetchDone = useRef(false);
+  
+  // Format date for API request (YYMMDD -> ISO)
+  const formatDateForApi = (dateStr: string): string | null => {
+    if (!dateStr || dateStr === '0' || dateStr.length !== 6) return null;
+    try {
+      const year = parseInt(`20${dateStr.slice(0, 2)}`);
+      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
+      const day = parseInt(dateStr.slice(4, 6));
+      
+      const date = new Date(year, month, day, 12, 0, 0, 0); // Noon on the requested day
+      if (isNaN(date.getTime())) return null;
+      
+      return date.toISOString();
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return null;
+    }
   };
-
-  // Initialize booking state from URL parameters
-  useEffect(() => {
-    // Skip if already initialized or if we're missing required params
-    if (hasInitialized.current || !from || !to || !date) {
-      setIsLoading(false);
-      return;
-    }
-    
-    console.log("Initializing booking state from URL params", { from, to, type, date, returnDate, passengers });
-
-    // If we already have data in state for these locations, preserve it
-    if (bookingState.from === from && bookingState.to === to && bookingState.fromDisplay && bookingState.toDisplay) {
-      console.log("Preserving existing location display names", { 
-        fromDisplay: bookingState.fromDisplay, 
-        toDisplay: bookingState.toDisplay 
+  
+  // Function to fetch prices from the API
+  const fetchPrices = async (): Promise<PricingResponse | null> => {
+    if (!from || !to || !date) {
+      toast({
+        title: "Missing Information",
+        description: "Required booking details are missing.",
+        variant: "destructive"
       });
-      hasInitialized.current = true;
-      setIsLoading(false);
-      return;
-    }
-
-    // Format location names from URL for display
-    const fromDisplay = bookingState.fromDisplay || formatLocationName(from);
-    const toDisplay = bookingState.toDisplay || formatLocationName(to);
-    
-    // Parse the isReturn parameter
-    const isReturn = type === 'return';
-    
-    // Calculate number of passengers
-    const numPassengers = parseInt(passengers || '1', 10);
-    
-    // Select appropriate vehicle based on passengers
-    let selectedVehicle = vehicles[0]; // Default to first vehicle
-    if (numPassengers > 4 && numPassengers <= 7) {
-      // For 5-7 passengers, select Standard Minivan (index 3)
-      selectedVehicle = vehicles[3] || vehicles[0];
-    } else if (numPassengers > 7) {
-      // For 8+ passengers, select XL Minivan (index 4) 
-      selectedVehicle = vehicles[4] || vehicles[0];
+      return null;
     }
     
-    // Update booking state with URL parameters
-    setBookingState(prev => ({
-      ...prev,
-      from,
-      to,
-      fromDisplay,
-      toDisplay,
-      isReturn,
-      departureDate: date,
-      returnDate: returnDate || undefined,
-      passengers: numPassengers,
-      selectedVehicle,
-      // Preserve existing personalDetails and paymentDetails
-    }));
-    
-    // Fetch prices unless we already have pricing data
-    if (!bookingState.pricingResponse) {
-      getPriceQuote(from, to, selectedVehicle.id);
-    }
-    
-    hasInitialized.current = true;
-    
-  }, [from, to, type, date, returnDate, passengers, setBookingState]);
-
-  // Update document title
-  useEffect(() => {
-    document.title = `Book Your Transfer | ${bookingState.fromDisplay || formatLocationName(from || '')} to ${bookingState.toDisplay || formatLocationName(to || '')}`;
-  }, [bookingState.fromDisplay, bookingState.toDisplay, from, to]);
-
-  // Function to fetch price quote from API
-  const getPriceQuote = async (fromLocation: string, toLocation: string, vehicleType: string) => {
     setIsPriceLoading(true);
-    setError(null);
     
     try {
-      trackEvent('Booking', 'Price Quote Request', `${fromLocation} to ${toLocation}`);
+      // We need to geocode the addresses first
+      const pickupAddress = decodeURIComponent(from).replace(/-/g, ' ');
+      const dropoffAddress = decodeURIComponent(to).replace(/-/g, ' ');
       
-      // Format the API request URL
-      const apiUrl = getApiUrl('/check-price');
+      // Use Google Maps Geocoding API
+      if (!window.google?.maps?.Geocoder) {
+        toast({
+          title: "Geocoding Not Available",
+          description: "Google Maps could not be loaded. Please try again later.",
+          variant: "destructive"
+        });
+        return null;
+      }
       
-      // Prepare the request body
-      const requestBody = {
-        pickup: fromLocation,
-        dropoff: toLocation,
-        vehicle_type: vehicleType || 'economy-sedan',
-        date: bookingState.departureDate || date,
-        return_date: bookingState.isReturn ? bookingState.returnDate || returnDate : null,
-        passengers: bookingState.passengers || parseInt(passengers || '1', 10)
+      const geocoder = new google.maps.Geocoder();
+      
+      // Geocode pickup location
+      let pickupCoords: { lat: number, lng: number } | null = null;
+      try {
+        const pickupResult = await new Promise<google.maps.GeocoderResult[] | null>((resolve, reject) => {
+          geocoder.geocode({ address: pickupAddress }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+              resolve(results);
+            } else {
+              reject(status);
+            }
+          });
+        });
+        
+        if (pickupResult && pickupResult[0].geometry?.location) {
+          pickupCoords = {
+            lat: pickupResult[0].geometry.location.lat(),
+            lng: pickupResult[0].geometry.location.lng()
+          };
+        }
+      } catch (error) {
+        console.error('Error geocoding pickup location:', error);
+      }
+      
+      // Geocode dropoff location
+      let dropoffCoords: { lat: number, lng: number } | null = null;
+      try {
+        const dropoffResult = await new Promise<google.maps.GeocoderResult[] | null>((resolve, reject) => {
+          geocoder.geocode({ address: dropoffAddress }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+              resolve(results);
+            } else {
+              reject(status);
+            }
+          });
+        });
+        
+        if (dropoffResult && dropoffResult[0].geometry?.location) {
+          dropoffCoords = {
+            lat: dropoffResult[0].geometry.location.lat(),
+            lng: dropoffResult[0].geometry.location.lng()
+          };
+        }
+      } catch (error) {
+        console.error('Error geocoding dropoff location:', error);
+      }
+      
+      if (!pickupCoords || !dropoffCoords) {
+        toast({
+          title: "Geocoding Failed",
+          description: "Could not determine location coordinates. Please try entering more specific addresses.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Format the pickup time
+      const pickupTimeISO = formatDateForApi(date);
+      if (!pickupTimeISO) {
+        toast({
+          title: "Invalid Date",
+          description: "The selected date is invalid. Please choose a different date.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Prepare payload for price API
+      const payload = {
+        pickup_lat: pickupCoords.lat,
+        pickup_lng: pickupCoords.lng,
+        dropoff_lat: dropoffCoords.lat,
+        dropoff_lng: dropoffCoords.lng,
+        pickup_time: pickupTimeISO,
+        trip_type: type || "1"
       };
       
-      console.log('Fetching prices with request:', requestBody);
+      console.log('Sending price request with payload:', payload);
       
-      // Make the API request
-      const response = await fetchWithCors(apiUrl, {
+      // Make request to price API
+      const apiEndpoint = getApiUrl('/check-price');
+      const response = await fetchWithCors(apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error fetching price quote:', errorText);
-        throw new Error(`Failed to get price quote: ${response.status} ${response.statusText}`);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = 'Could not read error details';
+        }
+        
+        throw new Error(`API Error: Status ${response.status}, Details: ${errorText}`);
       }
       
-      // Parse the response
-      const data = await response.json();
-      console.log('Price quote received:', data);
+      const data: PricingResponse = await response.json();
+      console.log('Pricing data received:', data);
       
-      // Update booking state with pricing data
-      setBookingState(prev => ({
-        ...prev,
-        pricingResponse: data
-      }));
+      // Track successful price fetch
+      trackEvent('Booking', 'Price Fetched', `${from} to ${to}`);
       
-      // Track success
-      trackEvent('Booking', 'Price Quote Success', `${data.prices?.length || 0} prices`);
-    } catch (error: any) {
-      console.error('Error fetching price quote:', error);
-      setError(`Failed to get price quote: ${error.message}`);
-      trackEvent('Booking', 'Price Quote Error', error.message);
+      return data;
       
-      // Set a fallback price if API fails
-      setBookingState(prev => ({
-        ...prev,
-        pricingResponse: {
-          prices: vehicles.map(v => ({
-            category: v.id,
-            price: v.price,
-            currency: 'EUR'
-          })),
-          selected_category: prev.selectedVehicle?.id || vehicles[0].id,
-          details: {
-            pickup_time: new Date().toISOString(),
-            pickup_location: { lat: 0, lng: 0 },
-            dropoff_location: { lat: 0, lng: 0 }
-          }
-        }
-      }));
+    } catch (error) {
+      console.error('Error fetching prices:', error);
+      
+      toast({
+        title: "Pricing Error",
+        description: error.message || "Failed to get pricing information. Please try again later.",
+        variant: "destructive"
+      });
+      
+      return null;
     } finally {
       setIsPriceLoading(false);
+    }
+  };
+  
+  // Initialize booking state from URL parameters
+  useEffect(() => {
+    // Skip if we don't have the required params
+    if (!from || !to || !date) return;
+
+    // If we already have state that matches the URL parameters and has prices, we don't need to refetch
+    if (
+      bookingState.from === decodeURIComponent(from).replace(/-/g, ' ') &&
+      bookingState.to === decodeURIComponent(to).replace(/-/g, ' ') &&
+      bookingState.departureDate === date &&
+      bookingState.returnDate === returnDate &&
+      bookingState.passengers === Number(passengers) &&
+      bookingState.pricingResponse
+    ) {
+      console.log("Using existing state and prices");
       setIsLoading(false);
+      initialFetchDone.current = true;
+      return;
     }
-  };
 
-  // Get content based on current step
-  const getCurrentStepContent = () => {
-    switch (bookingState.step) {
-      case 1:
-        return <VehicleSelection isLoading={isPriceLoading} />;
-      case 2:
-        return <PersonalDetails />;
-      case 3:
-        return <PaymentDetails />;
-      default:
-        return <VehicleSelection isLoading={isPriceLoading} />;
-    }
-  };
+    const initBooking = async () => {
+      console.log("Initializing booking state from URL params");
+      
+      // Set loading state since we need to fetch new data
+      setIsLoading(true);
+      
+      // Decode URL parameters (from URL-friendly format to display format)
+      const fromDecoded = decodeURIComponent(from).replace(/-/g, ' ');
+      const toDecoded = decodeURIComponent(to).replace(/-/g, ' ');
+      
+      // In case of a refresh, don't overwrite existing display names
+      const fromDisplay = bookingState.fromDisplay || fromDecoded;
+      const toDisplay = bookingState.toDisplay || toDecoded;
+      
+      // Set or update the booking state
+      setBookingState(prev => {
+        // Create a copy of the current state
+        const updatedState = { ...prev };
+        
+        // Always update these values
+        updatedState.from = fromDecoded;
+        updatedState.to = toDecoded;
+        updatedState.fromDisplay = fromDisplay;
+        updatedState.toDisplay = toDisplay;
+        updatedState.departureDate = date;
+        updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
+        updatedState.passengers = passengers ? parseInt(passengers, 10) : 1;
+        updatedState.isReturn = type === '2';
+        
+        return updatedState;
+      });
 
-  // Animation variants for page transitions
-  const pageVariants = {
-    initial: (direction: number) => ({
-      x: direction > 0 ? '100%' : '-100%',
-      opacity: 0
-    }),
-    animate: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 }
+      // Fetch prices if not already done
+      if (!initialFetchDone.current) {
+        console.log("Fetching initial prices");
+        setIsPriceLoading(true);
+        const pricingResponse = await fetchPrices();
+        
+        if (pricingResponse) {
+          // Update booking state with pricing data
+          setBookingState(prev => ({
+            ...prev,
+            pricingResponse
+          }));
+        }
+        
+        initialFetchDone.current = true;
+        setIsPriceLoading(false);
       }
-    },
-    exit: (direction: number) => ({
-      x: direction > 0 ? '-100%' : '100%',
-      opacity: 0,
-      transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 }
-      }
-    })
-  };
 
-  // Calculate animation direction based on previous step
-  const getAnimationDirection = () => {
-    const prevStep = bookingState.previousStep || 1;
-    return bookingState.step > prevStep ? 1 : -1;
-  };
+      // Done loading
+      setIsLoading(false);
+    };
 
-  if (isLoading) {
+    initBooking();
+  }, [from, to, type, date, returnDate, passengers, setBookingState, toast, trackEvent]);
+
+  // Handle step navigation based on context
+  const currentStep = bookingState.step;
+  
+  // Show loading state while initializing
+  if (isLoading || isPriceLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20 flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-t-4 border-b-4 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-lg font-medium text-gray-700">Loading your transfer...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !bookingState.pricingResponse) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-20 flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Error Loading Transfer</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => {
-                // Retry fetching prices
-                if (from && to) {
-                  getPriceQuote(from, to, bookingState.selectedVehicle.id);
-                }
-              }}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="mt-4 block w-full text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              Return to Home
-            </button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full p-8">
+          <LoadingAnimation loadingComplete={!isPriceLoading && !isLoading} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <BookingTopBar />
+    <div className="bg-gray-50 min-h-screen pt-20">
+      {/* TopBar with form for route modifications */}
+      <div className="bg-white shadow-md rounded-xl mb-6 mx-4 relative">
+        <BookingTopBar 
+          from={decodeURIComponent(from || '')} 
+          to={decodeURIComponent(to || '')} 
+          type={type || '1'} 
+          date={date || ''} 
+          returnDate={returnDate} 
+          passengers={passengers || '1'}
+          currentStep={currentStep}
+        />
+      </div>
       
-      <main className="flex-1 pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatePresence mode="wait" custom={getAnimationDirection()}>
+      {/* Main content area with step transitions */}
+      <div className="container mx-auto px-4 pb-16">
+        <AnimatePresence mode="wait">
+          {currentStep === 1 && (
             <motion.div
-              key={bookingState.step}
-              custom={getAnimationDirection()}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              variants={pageVariants}
-              className="py-6"
+              key="step1"
+              initial={{ opacity: 0, x: bookingState.previousStep && bookingState.previousStep > 1 ? -50 : 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="w-full"
             >
-              {getCurrentStepContent()}
+              <VehicleSelection />
             </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
+          )}
+          
+          {currentStep === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: bookingState.previousStep && bookingState.previousStep > 2 ? -50 : 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: bookingState.previousStep && bookingState.previousStep < 2 ? 50 : -50 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="w-full"
+            >
+              <PersonalDetails />
+            </motion.div>
+          )}
+          
+          {currentStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="w-full"
+            >
+              <PaymentDetails />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
