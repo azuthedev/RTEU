@@ -21,12 +21,10 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [invalidToken, setInvalidToken] = useState(false);
-  const [isDevEnvironment, setIsDevEnvironment] = useState(false);
   
   const { resetPassword } = useAuth();
   const { trackEvent } = useAnalytics();
   const navigate = useNavigate();
-  const location = useLocation();
   
   // Define validation rules
   const validationRules = {
@@ -53,17 +51,8 @@ const ResetPassword = () => {
     handleBlur
   } = useFormValidation(formData, validationRules);
   
-  // Check if in development environment and get token from URL
+  // Check for token in URL hash
   useEffect(() => {
-    const isDev = window.location.hostname === 'localhost' || 
-                  window.location.hostname.includes('local-credentialless') ||
-                  window.location.hostname.includes('webcontainer');
-    setIsDevEnvironment(isDev);
-    
-    // In a real application, the access token would be in the URL
-    // For Supabase auth, this is automatically handled by their SDK
-    // We just need to know we're on the reset page
-    
     // Check if we have a hash fragment with the token
     const hash = window.location.hash;
     if (hash && hash.includes('access_token=')) {
@@ -75,14 +64,8 @@ const ResetPassword = () => {
         setInvalidToken(true);
       }
     } else {
-      // In development mode, allow resets without token for testing
-      if (isDev) {
-        console.log('DEVELOPMENT MODE: Creating mock reset token');
-        setResetToken('dev-token-' + Date.now());
-      } else {
-        // In production, we need a real token
-        setInvalidToken(true);
-      }
+      // No token found in URL
+      setInvalidToken(true);
     }
   }, []);
   
@@ -99,24 +82,6 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      // In development, we can just pretend it worked
-      if (isDevEnvironment) {
-        console.log('DEVELOPMENT MODE: Simulating successful password reset');
-        // Simulate a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setSuccess(true);
-        trackEvent('Authentication', 'Password Reset Success (Dev)');
-        
-        // Redirect after a delay
-        setTimeout(() => {
-          navigate('/login', { 
-            state: { message: 'Your password has been reset successfully. Please sign in with your new password.' } 
-          });
-        }, 3000);
-        
-        return;
-      }
-      
       // In production, we need to verify the token is valid
       if (!resetToken) {
         throw new Error('Invalid or missing reset token. Please request a new password reset link.');
@@ -256,14 +221,6 @@ const ResetPassword = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-2xl font-semibold mb-4 text-center">Reset Your Password</h2>
-            
-            {isDevEnvironment && (
-              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-md p-3">
-                <p className="text-amber-800 text-sm">
-                  <strong>Development Mode:</strong> Password reset will be simulated without requiring a valid token.
-                </p>
-              </div>
-            )}
             
             <p className="text-gray-600 mb-6 text-center">
               Please enter a new password for your account.

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import EmailValidator from './EmailValidator';
+import { validateEmail } from '../utils/emailValidator';
 
 interface PasswordResetModalProps {
   isOpen: boolean;
@@ -21,18 +22,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [isDevEnvironment, setIsDevEnvironment] = useState(false);
   
   const { requestPasswordReset } = useAuth();
   const { trackEvent } = useAnalytics();
-  
-  // Check if in development environment
-  useEffect(() => {
-    const isDev = window.location.hostname === 'localhost' || 
-                  window.location.hostname.includes('local-credentialless') ||
-                  window.location.hostname.includes('webcontainer');
-    setIsDevEnvironment(isDev);
-  }, []);
   
   // Reset state when modal opens with new email
   useEffect(() => {
@@ -41,8 +33,31 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       setError(null);
       setSuccess(false);
       setIsSubmitting(false);
+      
+      // Auto-validate pre-filled email
+      if (email) {
+        validatePrefilledEmail(email);
+      }
     }
   }, [isOpen, email]);
+  
+  // Validate pre-filled email when the modal opens
+  const validatePrefilledEmail = async (emailToValidate: string) => {
+    if (emailToValidate) {
+      try {
+        // Basic format check first
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToValidate)) {
+          // Use the same validation function as EmailValidator component
+          const result = await validateEmail(emailToValidate);
+          setEmailValid(result.isValid);
+        }
+      } catch (error) {
+        console.error('Error validating prefilled email:', error);
+        // Default to valid in case of error to avoid blocking legitimate reset attempts
+        setEmailValid(true);
+      }
+    }
+  };
   
   const handleEmailChange = (value: string) => {
     setResetEmail(value);
@@ -56,7 +71,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!emailValid || !resetEmail) {
+    // If email is empty or explicitly invalid, show error
+    if (!resetEmail || (resetEmail && !emailValid)) {
       setError('Please enter a valid email address');
       return;
     }
@@ -79,13 +95,6 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       }, 5000);
     } catch (error: any) {
       console.error('Error requesting password reset:', error);
-      
-      // In development mode, show success anyway for testing
-      if (isDevEnvironment) {
-        console.log('DEVELOPMENT MODE: Showing success despite error:', error.message);
-        setSuccess(true);
-        return;
-      }
       
       setError('An unexpected error occurred. Please try again later.');
       trackEvent('Authentication', 'Password Reset Error', error.message);
@@ -127,14 +136,6 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
                   </button>
                 </div>
                 
-                {isDevEnvironment && (
-                  <div className="mb-4 bg-amber-50 border border-amber-200 rounded-md p-3">
-                    <p className="text-amber-800 text-sm">
-                      <strong>Development Mode:</strong> Password reset emails will be simulated.
-                    </p>
-                  </div>
-                )}
-                
                 {success ? (
                   <div className="text-center py-6">
                     <div className="mb-4 flex justify-center">
@@ -175,9 +176,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
                     
                     <button
                       type="submit"
-                      disabled={isSubmitting || !emailValid}
+                      disabled={isSubmitting || (!emailValid && resetEmail.length > 0)}
                       className={`w-full mt-6 py-3 rounded-md transition-all duration-300 flex items-center justify-center
-                        ${isSubmitting || !emailValid
+                        ${isSubmitting || (!emailValid && resetEmail.length > 0)
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                     >
