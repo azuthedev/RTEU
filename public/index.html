@@ -101,15 +101,6 @@
       }
     </script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
-    </script>
-
     <!-- Resource Hints -->
     <link rel="preconnect" href="https://general-runtime.voiceflow.com" crossorigin>
     <link rel="preconnect" href="https://files.royaltransfereu.com" crossorigin>
@@ -134,6 +125,8 @@
 
     <!-- Preload Critical Images - Only the logo which is used on every page -->
     <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp" type="image/webp">
+    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/newherotest.webp" type="image/webp" media="(min-width: 768px)">
+    <link rel="preload" as="image" href="https://files.royaltransfereu.com/assets/mobileherotest.webp" type="image/webp" media="(max-width: 767px)">
 
     <!-- Preload Critical JS -->
     <link rel="modulepreload" href="/src/main.tsx">
@@ -144,7 +137,7 @@
     <!-- Primary Meta Tags -->
     <meta name="title" content="Royal Transfer EU | Premium Airport Transfers & Taxi in Italy" />
     <meta name="description" content="Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers." />
-    <meta name="keywords" content="airport transfer, taxi service, Italy transportation, chauffeur service, Rome transfer, Milan taxi, luxury transport, professional driver, airport pickup, malpensa milan transfer, milan linate transfer" />
+    <meta name="keywords" content="airport transfer, taxi service, Italy transportation, chauffeur service, Rome transfer, Milan taxi, luxury transport, professional driver, airport pickup" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />

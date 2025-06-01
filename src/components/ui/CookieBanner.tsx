@@ -5,6 +5,7 @@ import { setCookie, getCookie } from "../../utils/cookieUtils"
 import { useAnalytics } from "../../hooks/useAnalytics"
 import { Link } from "react-router-dom"
 import { useFeatureFlags } from "../FeatureFlagProvider"
+import { updateConsent } from "../../utils/optimizeAnalytics"
 
 const CONSENT_COOKIE_NAME = "royal_transfer_cookie_consent"
 const CONSENT_COOKIE_EXPIRY_DAYS = 365
@@ -101,12 +102,7 @@ export default function CookieBanner() {
     );
     
     // Apply consent settings
-    if (typeof window !== 'undefined') {
-      // Set GA opt-out based on analytics preference
-      window['ga-disable-' + import.meta.env.VITE_GA_MEASUREMENT_ID] = !preferences.analytics;
-      
-      // Additional logic for other cookie types could be added here
-    }
+    updateConsent(preferences);
     
     setIsVisible(false);
     
@@ -156,7 +152,7 @@ export default function CookieBanner() {
       >
         {isMobile && (
           // Mobile layout - stacked with Learn more below buttons
-          <div className="w-full px-2 py-1 font-sans" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full px-2 py-1 font-sans\" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col gap-0.5">
               {/* Text first */}
               <p className="text-xs text-center mb-1">

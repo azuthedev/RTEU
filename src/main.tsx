@@ -4,8 +4,9 @@ import App from './App.tsx';
 import './index.css';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from 'react-error-boundary';
-import { initGoogleMaps, initGoogleAnalytics, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
+import { initGoogleMaps, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
 import { reportWebVitals } from './utils/webVitals.ts';
+import { initializeAnalytics } from './utils/optimizeAnalytics.ts';
 
 // Create a fallback component for the error boundary
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -30,6 +31,15 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 
 // Function to load third-party scripts when the browser is idle
 const loadThirdPartyScripts = () => {
+  // Initialize analytics with optimized loading
+  initializeAnalytics({
+    measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID,
+    delayLoad: true,
+    delayInitialize: true,
+    enableConsentMode: true,
+    debug: process.env.NODE_ENV === 'development',
+  });
+
   // Use requestIdleCallback to load scripts when the browser is idle
   const loadWithIdleCallback = () => {
     // Load Google Maps API when browser is idle
@@ -53,11 +63,6 @@ const loadThirdPartyScripts = () => {
             });
         }, 3000);
       }
-    }
-
-    // Initialize Google Analytics with idle callback or fallback
-    if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
-      initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
     }
 
     // Initialize Voiceflow chat with interaction detection

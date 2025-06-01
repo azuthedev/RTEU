@@ -1,11 +1,10 @@
 import { useCallback, useEffect } from 'react';
 import ReactGA from 'react-ga4';
 import { useLocation } from 'react-router-dom';
+import { trackEvent as trackGlobalEvent, trackPageview, setUserId as setGlobalUserId } from '../utils/optimizeAnalytics';
 
 // Initialize Google Analytics
-const initializeGA = () => {
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  
+const initializeGA = (measurementId: string) => {
   if (measurementId) {
     ReactGA.initialize(measurementId, {
       gaOptions: {
@@ -21,18 +20,18 @@ export const useAnalytics = () => {
 
   // Initialize analytics on first render
   useEffect(() => {
-    initializeGA();
+    const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (measurementId) {
+      initializeGA(measurementId);
+    }
   }, []);
 
   // Track page views when location changes
   useEffect(() => {
-    if (window.gtag) {
-      window.gtag('event', 'page_view', {
-        page_path: location.pathname + location.search,
-        page_title: document.title
-      });
-    }
+    // Track page view in global GA
+    trackPageview(location.pathname + location.search);
     
+    // Track in ReactGA4 as well for backward compatibility
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
@@ -48,10 +47,10 @@ export const useAnalytics = () => {
     value?: number,
     nonInteraction: boolean = false
   ) => {
-    // Log to console in development
-    console.log(`Analytics Event: ${category} - ${action}${label ? ` - ${label}` : ''}${value !== undefined ? ` - ${value}` : ''}${nonInteraction ? ' (Non-interaction)' : ''}`);
+    // Track with global GA
+    trackGlobalEvent(category, action, label, value, nonInteraction);
     
-    // Track with React GA4
+    // Track with React GA4 for backward compatibility
     ReactGA.event({
       category,
       action,
@@ -59,37 +58,17 @@ export const useAnalytics = () => {
       value,
       nonInteraction
     });
-    
-    // Also track with gtag if available
-    try {
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', action, {
-          'event_category': category,
-          'event_label': label,
-          'value': value,
-          'non_interaction': nonInteraction
-        });
-      }
-    } catch (error) {
-      console.error('Error tracking with gtag:', error);
-    }
   }, []);
 
   // Function to set user ID
   const setUserId = useCallback((id: string) => {
     if (!id) return;
     
+    // Set for global GA
+    setGlobalUserId(id);
+    
     // Set for React GA4
     ReactGA.set({ userId: id });
-    
-    // Set for gtag if available
-    try {
-      if (window.gtag) {
-        window.gtag('set', { 'user_id': id });
-      }
-    } catch (error) {
-      console.error('Error setting user ID with gtag:', error);
-    }
   }, []);
 
   return { 
@@ -97,4 +76,3 @@ export const useAnalytics = () => {
     setUserId
   };
 };
-
