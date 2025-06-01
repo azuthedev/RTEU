@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
+import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
 // CORS headers to allow cross-origin requests
 const corsHeaders = {
@@ -7,6 +8,140 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Max-Age": "86400"
 };
+
+// Configuration constants
+const RESET_TOKEN_EXPIRY_HOURS = 1;
+const RESET_RATE_LIMIT_PER_HOUR = 3;
+
+// Create a secure UUID token for password reset
+function generateResetToken(): string {
+  return uuidv4();
+}
+
+// Check if a host is a development environment
+function isDevEnvironment(host: string): boolean {
+  return host === 'localhost' || 
+         host.includes('local-credentialless') || 
+         host.includes('webcontainer') ||
+         host.endsWith('.supabase.co');
+}
+
+// Get a production domain regardless of request origin
+function getProductionDomain(req: Request): string {
+  // Always use the production domain for password reset links
+  return 'https://royaltransfereu.com';
+}
+
+// Check rate limiting for password reset requests
+async function checkRateLimits(email: string, ip: string, supabase: any): Promise<{ allowed: boolean, remaining: number, nextAllowedTime: string | null }> {
+  try {
+    // Get recent attempts for this email
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    
+    const { count, error } = await supabase
+      .from('password_reset_attempts')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+      .gt('attempted_at', oneHourAgo.toISOString());
+    
+    if (error) {
+      console.error('Error checking password reset rate limits:', error);
+      // Fail open - we don't want to block legitimate requests due to technical errors
+      return { allowed: true, remaining: RESET_RATE_LIMIT_PER_HOUR, nextAllowedTime: null };
+    }
+    
+    const attemptsUsed = count || 0;
+    const remaining = Math.max(0, RESET_RATE_LIMIT_PER_HOUR - attemptsUsed);
+    
+    // If they've hit the limit, calculate when they can try again
+    let nextAllowedTime = null;
+    if (remaining === 0) {
+      // Find the timestamp of the oldest attempt in the last hour
+      const { data: oldestAttempt, error: oldestError } = await supabase
+        .from('password_reset_attempts')
+        .select('attempted_at')
+        .eq('email', email)
+        .gt('attempted_at', oneHourAgo.toISOString())
+        .order('attempted_at', { ascending: true })
+        .limit(1)
+        .single();
+      
+      if (!oldestError && oldestAttempt) {
+        // Calculate when this attempt "expires" from the hour window
+        const oldestTimestamp = new Date(oldestAttempt.attempted_at);
+        const nextAllowed = new Date(oldestTimestamp);
+        nextAllowed.setHours(nextAllowed.getHours() + 1);
+        
+        // Format as ISO string
+        nextAllowedTime = nextAllowed.toISOString();
+      }
+    }
+    
+    return {
+      allowed: remaining > 0,
+      remaining,
+      nextAllowedTime
+    };
+  } catch (error) {
+    console.error('Error in rate limit check:', error);
+    // Fail open for technical errors
+    return { allowed: true, remaining: RESET_RATE_LIMIT_PER_HOUR, nextAllowedTime: null };
+  }
+}
+
+// Record a password reset attempt
+async function recordResetAttempt(email: string, ip: string, supabase: any, success: boolean = false, userAgent?: string, referrer?: string): Promise<void> {
+  try {
+    await supabase
+      .from('password_reset_attempts')
+      .insert([
+        {
+          email,
+          ip_address: ip,
+          success,
+          user_agent: userAgent || null,
+          referrer: referrer || null
+        }
+      ]);
+  } catch (error) {
+    console.error('Error recording password reset attempt:', error);
+    // Non-critical, so we just log the error and continue
+  }
+}
+
+// Create a new password reset token
+async function createPasswordResetToken(email: string, supabase: any): Promise<string | null> {
+  try {
+    // Generate token and expiry time
+    const token = generateResetToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + RESET_TOKEN_EXPIRY_HOURS);
+    
+    // Store in the database
+    const { data, error } = await supabase
+      .from('password_reset_tokens')
+      .insert([
+        {
+          token,
+          user_email: email,
+          expires_at: expiresAt.toISOString(),
+          used_at: null
+        }
+      ])
+      .select();
+    
+    if (error) {
+      console.error('Error creating password reset token:', error);
+      return null;
+    }
+    
+    return token;
+  } catch (error) {
+    console.error('Error generating password reset token:', error);
+    return null;
+  }
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,6 +160,11 @@ Deno.serve(async (req) => {
       .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
     );
     
+    // Get client IP address for rate limiting
+    const clientIp = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('cf-connecting-ip') || 
+                     'unknown';
+    
     // Verify the X-Auth header
     const authHeader = req.headers.get('X-Auth');
     console.log("X-Auth header present:", !!authHeader);
@@ -32,26 +172,12 @@ Deno.serve(async (req) => {
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     console.log("WEBHOOK_SECRET env var present:", !!webhookSecret);
     
-    // Print first few characters of both for comparison (safely)
-    if (authHeader && webhookSecret) {
-      const authPrefix = authHeader.substring(0, 3);
-      const secretPrefix = webhookSecret.substring(0, 3);
-      console.log(`Auth header starts with: ${authPrefix}...`);
-      console.log(`Secret starts with: ${secretPrefix}...`);
-      console.log("Do they match?", authHeader === webhookSecret);
-    }
-    
     if (!webhookSecret || authHeader !== webhookSecret) {
       console.error("Authentication failed: Header doesn't match expected secret");
       
       return new Response(
         JSON.stringify({ 
-          error: 'Unauthorized - Invalid authentication header',
-          debug: {
-            headerPresent: !!authHeader,
-            secretPresent: !!webhookSecret,
-            match: false
-          }
+          error: 'Unauthorized - Invalid authentication header'
         }),
         {
           status: 401,
@@ -99,25 +225,103 @@ Deno.serve(async (req) => {
         );
       }
       
-      if (email_type === 'PWReset' && !reset_link) {
-        return new Response(
-          JSON.stringify({ error: 'Reset link is required for password reset emails' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
       // Process email sending based on type
       if (email_type === 'PWReset') {
         // Send password reset email
         console.log("Processing password reset email request");
         
+        // Check if user exists (required for password reset)
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email')
+          .eq('email', email)
+          .maybeSingle();
+          
+        if (userError || !userData) {
+          console.warn('No user found with email:', email);
+          
+          // Record failed attempt
+          await recordResetAttempt(email, clientIp, supabase, false, 
+            req.headers.get('user-agent'),
+            req.headers.get('referer')
+          );
+          
+          // We don't want to reveal if a user exists or not for security reasons
+          // So we return a success response even though no email will be sent
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: 'If an account exists with this email, a password reset link has been sent.'
+            }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        // Check rate limits
+        const { allowed, remaining, nextAllowedTime } = await checkRateLimits(
+          email, 
+          clientIp, 
+          supabase
+        );
+        
+        if (!allowed) {
+          console.log(`Rate limit exceeded for ${email} from ${clientIp}`);
+          
+          // Record attempt but mark as failed
+          await recordResetAttempt(email, clientIp, supabase, false,
+            req.headers.get('user-agent'),
+            req.headers.get('referer')
+          );
+          
+          return new Response(
+            JSON.stringify({
+              error: 'Too many password reset attempts. Please try again later.',
+              rateLimitExceeded: true,
+              nextAllowedAttempt: nextAllowedTime,
+              retryAfter: '1 hour'
+            }),
+            {
+              status: 429,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json',
+                'Retry-After': '3600'
+              }
+            }
+          );
+        }
+        
+        // Create a secure reset token
+        const token = await createPasswordResetToken(email, supabase);
+        
+        if (!token) {
+          console.error('Failed to create password reset token');
+          
+          return new Response(
+            JSON.stringify({
+              error: 'Failed to process password reset request. Please try again later.'
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        // Get the production domain for the reset link
+        const productionDomain = getProductionDomain(req);
+        
+        // Create the reset link with token as query parameter
+        const resetUrl = `${productionDomain}/reset-password?token=${token}`;
+        console.log('Generated secure reset link:', resetUrl);
+        
         try {
           console.log("=== PASSWORD RESET EMAIL SENDING ATTEMPT ===");
           console.log('To:', email);
-          console.log('Reset Link:', reset_link);
+          console.log('Reset Link:', resetUrl);
           
           // Forward the request to our n8n webhook
           const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
@@ -129,7 +333,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               name: name || email.split('@')[0],
               email: email,
-              reset_link: reset_link,
+              reset_link: resetUrl,
               email_type: 'PWReset'
             })
           });
@@ -142,24 +346,11 @@ Deno.serve(async (req) => {
           
           console.log('Password reset email sent successfully');
           
-          // Check if user exists (for logging purposes only)
-          try {
-            const { data: userData, error: userError } = await supabase
-              .from('users')
-              .select('id, email')
-              .eq('email', email)
-              .maybeSingle();
-              
-            if (userError) {
-              console.warn('Error checking user existence:', userError);
-            } else if (userData) {
-              console.log('User found:', userData.id);
-            } else {
-              console.log('No user found with email:', email);
-            }
-          } catch (e) {
-            console.warn('Error checking user existence:', e);
-          }
+          // Record successful attempt
+          await recordResetAttempt(email, clientIp, supabase, true,
+            req.headers.get('user-agent'),
+            req.headers.get('referer')
+          );
           
           // Return success response
           return new Response(
@@ -174,6 +365,12 @@ Deno.serve(async (req) => {
           );
         } catch (emailError) {
           console.error('Error sending password reset email:', emailError);
+          
+          // Record failed attempt
+          await recordResetAttempt(email, clientIp, supabase, false,
+            req.headers.get('user-agent'),
+            req.headers.get('referer')
+          );
           
           return new Response(
             JSON.stringify({ 
