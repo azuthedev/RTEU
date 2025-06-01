@@ -989,6 +989,7 @@ const SearchForm = () => {
         <div className="space-y-6">
           {/* Pickup Location */}
           <GooglePlacesAutocomplete
+            id="pickup-field"
             value={formData.pickup}
             onChange={(value) => {
               userInteractedRef.current = true;
@@ -1007,6 +1008,7 @@ const SearchForm = () => {
 
           {/* Dropoff Location */}
           <GooglePlacesAutocomplete
+            id="dropoff-field"
             value={formData.dropoff}
             onChange={(value) => {
               userInteractedRef.current = true;

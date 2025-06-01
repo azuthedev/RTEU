@@ -10,6 +10,7 @@ import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
+import LoadingAnimation from '../LoadingAnimation';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -93,6 +94,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const isInitializedRef = useRef(false);
   // Flag to track user interaction
   const userInteractedRef = useRef(false);
+  // Flag to track component mount
+  const isMountedRef = useRef(true);
   
   // Determine if it's a one-way trip based on both context and URL params
   // Prioritize context value if available
@@ -161,6 +164,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : undefined,
     passengers: displayPassengers
   });
+
+  // Track component mount/unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Ensure Google Maps is loaded
   useEffect(() => {
@@ -261,39 +272,49 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   }, [formData, isOneWay, pickupValue, dropoffValue]);
 
   // Function to geocode addresses using Google Maps Geocoding API
-  const geocodeAddress = (address: string, field: 'pickup' | 'dropoff') => {
+  const geocodeAddress = async (address: string, field: 'pickup' | 'dropoff'): Promise<{lat: number, lng: number} | null> => {
     if (!address || !window.google?.maps?.Geocoder) return null;
     
-    return new Promise<{lat: number, lng: number} | null>((resolve) => {
-      const geocoder = new google.maps.Geocoder();
-      
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-          const location = {
-            lat: results[0].geometry.location.lat(),
-            lng: results[0].geometry.location.lng()
-          };
-          
-          if (field === 'pickup') {
-            setPickupCoords(location);
-            console.log('Geocoded pickup coordinates:', location);
-          } else {
-            setDropoffCoords(location);
-            console.log('Geocoded dropoff coordinates:', location);
+    const geocoder = new google.maps.Geocoder();
+    
+    try {
+      return new Promise<{lat: number, lng: number} | null>((resolve, reject) => {
+        geocoder.geocode({ address }, (results, status) => {
+          if (!isMountedRef.current) {
+            resolve(null);
+            return;
           }
           
-          resolve(location);
-        } else {
-          console.error('Geocoding failed:', status);
-          if (field === 'pickup') {
-            setPickupCoords(null);
+          if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+            const location = {
+              lat: results[0].geometry.location.lat(),
+              lng: results[0].geometry.location.lng()
+            };
+            
+            if (field === 'pickup') {
+              setPickupCoords(location);
+              console.log('Geocoded pickup coordinates:', location);
+            } else {
+              setDropoffCoords(location);
+              console.log('Geocoded dropoff coordinates:', location);
+            }
+            
+            resolve(location);
           } else {
-            setDropoffCoords(null);
+            console.error('Geocoding failed:', status);
+            if (field === 'pickup') {
+              setPickupCoords(null);
+            } else {
+              setDropoffCoords(null);
+            }
+            reject(status);
           }
-          resolve(null);
-        }
+        });
       });
-    });
+    } catch (error) {
+      console.error(`Error during ${field} geocoding:`, error);
+      return null;
+    }
   };
 
   // Function to fetch prices from the API
@@ -303,19 +324,31 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     let dropoff = dropoffCoords;
     
     if (!pickup) {
-      pickup = await geocodeAddress(pickupValue, 'pickup');
+      try {
+        pickup = await geocodeAddress(pickupValue, 'pickup');
+      } catch (error) {
+        // Handle geocoding error
+        return null;
+      }
     }
     
     if (!dropoff) {
-      dropoff = await geocodeAddress(dropoffValue, 'dropoff');
+      try {
+        dropoff = await geocodeAddress(dropoffValue, 'dropoff');
+      } catch (error) {
+        // Handle geocoding error
+        return null;
+      }
     }
     
     if (!pickup || !dropoff) {
-      toast({
-        title: "Location Error",
-        description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Location Error",
+          description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
+          variant: "destructive"
+        });
+      }
       return null;
     }
     
@@ -324,11 +357,13 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : formData.dateRange?.from;
       
     if (!pickupTime) {
-      toast({
-        title: "Time Error",
-        description: "Please select a pickup date and time.",
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Time Error",
+          description: "Please select a pickup date and time.",
+          variant: "destructive"
+        });
+      }
       return null;
     }
     
@@ -346,7 +381,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     };
     
     console.log('Sending price request with payload:', payload);
-    setIsLoadingPrices(true);
+    
+    if (!isMountedRef.current) {
+      return null;
+    }
+    
     setApiError(null);
     
     try {
@@ -371,6 +410,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         body: JSON.stringify(payload)
       });
       
+      // Check if component is still mounted
+      if (!isMountedRef.current) {
+        return null;
+      }
+      
       // Log response status and headers for debugging
       console.log('Response Status:', response.status);
       console.log('Response Status Text:', response.statusText);
@@ -394,42 +438,58 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('Response is not JSON:', contentType);
-        const text = await response.text();
-        console.log('Response Text:', text);
+        let text = '';
+        try {
+          text = await response.text();
+          console.log('Response Text:', text);
+        } catch (e) {
+          console.error('Error reading response text:', e);
+        }
         
         throw new Error(`Expected JSON response but got: ${contentType}`);
       }
+      
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
-      // Track successful price fetch
-      // trackEvent('Booking', 'Price Fetched', `${pickupValue} to ${dropoffValue}`);
-      
       return data;
-      
     } catch (error) {
+      // Check if component is unmounted
+      if (!isMountedRef.current) {
+        return null;
+      }
+      
       console.error('Error fetching prices:', error);
       
       // Create detailed error message
       let errorMessage = 'Failed to get pricing information. ';
       
       if (error.message) {
+        // Don't show "Component unmounted" errors
+        if (error.message.includes('unmounted') || error.message.includes('AbortError')) {
+          return null;
+        }
+        
         errorMessage += error.message;
       } else {
         errorMessage += 'Please try again later.';
       }
       
-      setApiError(errorMessage);
-      
-      toast({
-        title: "Pricing Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        setApiError(errorMessage);
+        
+        toast({
+          title: "Pricing Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
       
       return null;
     } finally {
-      setIsLoadingPrices(false);
+      if (isMountedRef.current) {
+        setIsLoadingPrices(false);
+      }
     }
   };
 
@@ -457,6 +517,19 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         setDropoffCoords(location);
         console.log('Dropoff coordinates:', location);
       }
+    }
+  };
+
+  // Handle clear input
+  const handleClearInput = (field: 'pickup' | 'dropoff') => {
+    userInteractedRef.current = true;
+    
+    if (field === 'pickup') {
+      setPickupValue('');
+      setPickupCoords(null);
+    } else {
+      setDropoffValue('');
+      setDropoffCoords(null);
     }
   };
 
@@ -565,7 +638,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // If price fetching failed, stop here
     if (!pricingResponse) {
-      setIsLoadingPrices(false);
+      if (isMountedRef.current) {
+        setIsLoadingPrices(false);
+      }
       return;
     }
     
@@ -601,7 +676,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     // Reset change detection before navigation
     setHasChanges(false);
     userInteractedRef.current = false;
-    setIsLoadingPrices(false);
+    
+    if (isMountedRef.current) {
+      setIsLoadingPrices(false);
+    }
     
     navigate(path);
   };
@@ -614,14 +692,21 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setDropoffIsValid(isValid);
   };
 
+  // Cancel loading handler
+  const handleCancelLoading = () => {
+    setIsLoadingPrices(false);
+  };
+
   return (
     <div className="relative">
       {/* Loading overlay */}
       {isLoadingPrices && (
-        <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 rounded-xl">
-          <div className="flex flex-col items-center">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
-            <p className="text-blue-800">Fetching prices...</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-6">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <LoadingAnimation 
+              onCancel={handleCancelLoading} 
+              loadingComplete={false}
+            />
           </div>
         </div>
       )}
@@ -678,8 +763,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           <div className="flex flex-col space-y-4 md:hidden">
             {/* Mobile Pickup Location */}
             <GooglePlacesAutocomplete
+              id="pickup-field-mobile"
               value={pickupValue}
-              onChange={(value) => handlePlaceSelect('pickup', value)}
+              onChange={(value) => {
+                userInteractedRef.current = true;
+                setPickupValue(value);
+              }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
               placeholder="From"
               className="w-full"
@@ -688,8 +777,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             />
             {/* Mobile Dropoff Location */}
             <GooglePlacesAutocomplete
+              id="dropoff-field-mobile"
               value={dropoffValue}
-              onChange={(value) => handlePlaceSelect('dropoff', value)}
+              onChange={(value) => {
+                userInteractedRef.current = true;
+                setDropoffValue(value);
+              }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
               placeholder="To"
               className="w-full"
@@ -778,8 +871,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             <div className="flex-1 grid grid-cols-[1fr_1fr_1.5fr_1fr] gap-4">
               {/* Desktop Pickup Location */}
               <GooglePlacesAutocomplete
+                id="pickup-field"
                 value={pickupValue}
-                onChange={(value) => handlePlaceSelect('pickup', value)}
+                onChange={(value) => {
+                  userInteractedRef.current = true;
+                  setPickupValue(value);
+                }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
                 placeholder="From"
                 className="w-full"
@@ -788,8 +885,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               />
               {/* Desktop Dropoff Location */}
               <GooglePlacesAutocomplete
+                id="dropoff-field"
                 value={dropoffValue}
-                onChange={(value) => handlePlaceSelect('dropoff', value)}
+                onChange={(value) => {
+                  userInteractedRef.current = true;
+                  setDropoffValue(value);
+                }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
                 placeholder="To"
                 className="w-full"
