@@ -34,11 +34,18 @@ interface AuthContextType {
   refreshSession: () => Promise<boolean>;
   requestPasswordReset: (email: string) => Promise<{ 
     success: boolean, 
-    error?: string 
+    error?: string,
+    rateLimitExceeded?: boolean,
+    nextAllowedAttempt?: string
   }>;
-  resetPassword: (password: string, token: string) => Promise<{ 
+  resetPassword: (password: string, token: string, email: string) => Promise<{ 
     success: boolean, 
     error?: string 
+  }>;
+  verifyPasswordResetToken: (token: string) => Promise<{
+    valid: boolean,
+    email?: string,
+    error?: string
   }>;
 }
 
@@ -577,18 +584,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   };
 
   // Request a password reset
-  const requestPasswordReset = async (email: string): Promise<{ 
-    success: boolean, 
-    error?: string 
+  const requestPasswordReset = async (email: string): Promise<{
+    success: boolean,
+    error?: string,
+    rateLimitExceeded?: boolean,
+    nextAllowedAttempt?: string
   }> => {
     try {
       trackEvent('Authentication', 'Password Reset Request Initiated', email);
       
-      // Get the base URL for the reset link
-      const baseUrl = window.location.origin;
-      
-      // Generate reset link with origin
-      const resetLink = `${baseUrl}/reset-password`;
+      // Set to production URL, not window.location.origin
+      const productionDomain = 'https://royaltransfereu.com';
       
       // Get webhook secret
       const webhookSecret = import.meta.env.WEBHOOK_SECRET;
@@ -610,11 +616,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           body: JSON.stringify({
             name: email.split('@')[0], // Use part before @ if no name provided
             email: email,
-            reset_link: resetLink,
+            reset_link: productionDomain, // Base URL only, the Edge Function will generate the token and complete link
             email_type: 'PWReset'
           })
         }
       );
+      
+      // Check for rate limiting response (status 429)
+      if (response.status === 429) {
+        const rateLimitData = await response.json();
+        
+        // Return rate limit information to the client
+        return { 
+          success: false,
+          error: 'Too many password reset attempts. Please try again later.',
+          rateLimitExceeded: true,
+          nextAllowedAttempt: rateLimitData.nextAllowedAttempt
+        };
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -633,29 +652,135 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
+  // Verify a password reset token
+  const verifyPasswordResetToken = async (token: string): Promise<{
+    valid: boolean,
+    email?: string,
+    error?: string
+  }> => {
+    try {
+      trackEvent('Authentication', 'Verify Password Reset Token');
+      
+      // Get webhook secret
+      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.error('Missing WEBHOOK_SECRET environment variable');
+        throw new Error('Server configuration error: Missing webhook authentication');
+      }
+      
+      // Verify the token via Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-reset-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify({
+            token: token,
+            action: 'verify'
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Invalid or expired token');
+      }
+      
+      const data = await response.json();
+      
+      // Return token verification result
+      return {
+        valid: data.valid,
+        email: data.email,
+        error: data.error
+      };
+    } catch (err: any) {
+      console.error('Error verifying password reset token:', err);
+      
+      // For development, provide a fallback
+      if (isDevEnvironment.current) {
+        console.log('DEVELOPMENT MODE: Simulating token verification');
+        
+        // In dev mode, accept a specific test token
+        if (token === 'test-token') {
+          return {
+            valid: true,
+            email: 'test@example.com'
+          };
+        }
+      }
+      
+      return { 
+        valid: false, 
+        error: err.message || 'Failed to verify token'
+      };
+    }
+  };
+
   // Reset password with token
-  const resetPassword = async (password: string, token: string): Promise<{ 
+  const resetPassword = async (password: string, token: string, email: string): Promise<{ 
     success: boolean, 
     error?: string 
   }> => {
     try {
       trackEvent('Authentication', 'Password Reset Attempt');
       
-      // Update user's password using Supabase Auth API
-      const { error } = await supabase.auth.updateUser({ 
-        password 
-      });
+      // Get webhook secret
+      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
       
-      if (error) {
-        console.error('Error resetting password:', error);
-        trackEvent('Authentication', 'Password Reset Error', error.message);
-        throw new Error('Failed to reset password: ' + error.message);
+      if (!webhookSecret) {
+        console.error('Missing WEBHOOK_SECRET environment variable');
+        throw new Error('Server configuration error: Missing webhook authentication');
       }
+      
+      // Reset password via Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            token: token
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reset password');
+      }
+      
+      // Consume the token to prevent reuse
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-reset-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify({
+            token: token,
+            action: 'consume'
+          })
+        }
+      );
       
       trackEvent('Authentication', 'Password Reset Success');
       return { success: true };
     } catch (err: any) {
       console.error('Error in password reset:', err);
+      trackEvent('Authentication', 'Password Reset Error', err.message);
+      
       return { 
         success: false, 
         error: err.message || 'Failed to reset password'
@@ -678,7 +803,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     checkEmailVerification: checkEmailVerificationStatus,
     refreshSession,
     requestPasswordReset,
-    resetPassword
+    resetPassword,
+    verifyPasswordResetToken
   };
 
   return (

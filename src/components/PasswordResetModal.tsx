@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, Loader2, Mail, CheckCircle } from 'lucide-react';
+import { X, Mail, Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import EmailValidator from './EmailValidator';
-import { validateEmail } from '../utils/emailValidator';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PasswordResetModalProps {
   isOpen: boolean;
@@ -22,6 +22,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [nextAllowedTime, setNextAllowedTime] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   
   const { requestPasswordReset } = useAuth();
   const { trackEvent } = useAnalytics();
@@ -32,7 +35,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       setResetEmail(email);
       setError(null);
       setSuccess(false);
-      setIsSubmitting(false);
+      setRateLimited(false);
+      setNextAllowedTime(null);
       
       // Auto-validate pre-filled email
       if (email) {
@@ -41,15 +45,57 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     }
   }, [isOpen, email]);
   
+  // Update time remaining display
+  useEffect(() => {
+    if (!rateLimited || !nextAllowedTime) {
+      return;
+    }
+    
+    // Initial calculation
+    updateTimeRemaining();
+    
+    // Update every minute
+    const interval = setInterval(() => {
+      updateTimeRemaining();
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [rateLimited, nextAllowedTime]);
+  
+  // Update the time remaining display
+  const updateTimeRemaining = () => {
+    if (!nextAllowedTime) {
+      setTimeRemaining(null);
+      return;
+    }
+    
+    const now = new Date();
+    
+    // If we've reached the time, clear rate limiting
+    if (nextAllowedTime <= now) {
+      setRateLimited(false);
+      setNextAllowedTime(null);
+      setTimeRemaining(null);
+      return;
+    }
+    
+    // Otherwise, format the time remaining
+    try {
+      const timeString = formatDistanceToNow(nextAllowedTime, { addSuffix: true });
+      setTimeRemaining(timeString);
+    } catch (e) {
+      console.error('Error formatting time:', e);
+      setTimeRemaining('soon');
+    }
+  };
+  
   // Validate pre-filled email when the modal opens
   const validatePrefilledEmail = async (emailToValidate: string) => {
     if (emailToValidate) {
       try {
         // Basic format check first
         if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToValidate)) {
-          // Use the same validation function as EmailValidator component
-          const result = await validateEmail(emailToValidate);
-          setEmailValid(result.isValid);
+          setEmailValid(true);
         }
       } catch (error) {
         console.error('Error validating prefilled email:', error);
@@ -62,6 +108,12 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const handleEmailChange = (value: string) => {
     setResetEmail(value);
     setError(null);
+    
+    // Clear rate limit if user changes email
+    if (value !== resetEmail) {
+      setRateLimited(false);
+      setNextAllowedTime(null);
+    }
   };
   
   const handleEmailValidationChange = (isValid: boolean) => {
@@ -77,6 +129,12 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       return;
     }
     
+    // Check if rate limited
+    if (rateLimited) {
+      setError(`Too many reset attempts. Please try again ${timeRemaining || 'later'}.`);
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
     
@@ -84,6 +142,24 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       trackEvent('Authentication', 'Password Reset Request', resetEmail);
       
       const result = await requestPasswordReset(resetEmail);
+      
+      // Check for rate limiting
+      if (result.rateLimitExceeded) {
+        setRateLimited(true);
+        
+        // Set next allowed time if provided
+        if (result.nextAllowedAttempt) {
+          setNextAllowedTime(new Date(result.nextAllowedAttempt));
+          updateTimeRemaining();
+        }
+        
+        setError('Too many password reset attempts. Please try again later.');
+        return;
+      }
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send password reset email.');
+      }
       
       // Always show success message to prevent user enumeration
       setSuccess(true);
@@ -145,16 +221,36 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
                     </div>
                     <h3 className="text-xl font-semibold mb-3">Check Your Email</h3>
                     <p className="text-gray-600 mb-6">
-                      If an account with that email exists, a password reset link has been sent to your inbox.
+                      If an account with that email exists, a password reset link has been sent to your inbox. 
+                      The link will expire in 1 hour.
                     </p>
                     <p className="text-sm text-gray-500">
                       This window will close automatically in a few seconds.
                     </p>
                   </div>
+                ) : rateLimited ? (
+                  <div className="text-center py-6">
+                    <div className="mb-4 flex justify-center">
+                      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+                        <Clock className="w-10 h-10 text-amber-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">Too Many Attempts</h3>
+                    <p className="text-gray-600 mb-6">
+                      You've made too many password reset requests. For security reasons, please wait 
+                      {timeRemaining ? ` until ${timeRemaining}` : ' and try again later'}.
+                    </p>
+                    <button
+                      onClick={onClose}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Close
+                    </button>
+                  </div>
                 ) : (
                   <form onSubmit={handleSubmit}>
                     <p className="text-gray-600 mb-6">
-                      Enter your email address below and we'll send you a link to reset your password.
+                      Enter your email address below and we'll send you a secure link to reset your password.
                     </p>
                     
                     <EmailValidator
