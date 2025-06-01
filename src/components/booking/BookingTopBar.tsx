@@ -10,7 +10,6 @@ import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
-import LoadingAnimation from '../LoadingAnimation';
 
 const formatDateForUrl = (date: Date) => {
   if (!date || isNaN(date.getTime())) {
@@ -94,84 +93,58 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const isInitializedRef = useRef(false);
   // Flag to track user interaction
   const userInteractedRef = useRef(false);
-  // Flag to track component mount
-  const isMountedRef = useRef(true);
-  
-  // Determine if it's a one-way trip based on both context and URL params
-  // Prioritize context value if available
-  const isOneWayFromContext = bookingState.isReturn !== undefined ? !bookingState.isReturn : undefined;
+  // Parse dates from URL strings
+  const departureDate = parseDateFromUrl(date);
+  const returnDateParsed = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
+  // Determine if it's a one-way trip based on both type and returnDate
   const isOneWayFromProps = type === '1' || !returnDate || returnDate === '0';
-  const [isOneWay, setIsOneWay] = useState(isOneWayFromContext !== undefined ? isOneWayFromContext : isOneWayFromProps);
-  
-  // Similarly for passengers, prioritize context
-  const passengersFromContext = bookingState.passengers !== undefined ? bookingState.passengers : undefined;
-  const passengersFromProps = parseInt(passengers, 10);
-  const [displayPassengers, setDisplayPassengers] = useState(passengersFromContext !== undefined ? passengersFromContext : passengersFromProps);
-  
+  const [isOneWay, setIsOneWay] = useState(isOneWayFromProps);
+  const [displayPassengers, setDisplayPassengers] = useState(parseInt(passengers, 10));
   const [hasChanges, setHasChanges] = useState(false);
   
-  // Parse dates from URL strings or use context dates if available
-  const departureDateFromContext = bookingState.departureDate ? parseDateFromUrl(bookingState.departureDate) : undefined;
-  const returnDateFromContext = bookingState.returnDate ? parseDateFromUrl(bookingState.returnDate) : undefined;
-  const departureDateFromUrl = parseDateFromUrl(date);
-  const returnDateFromUrl = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
-  
-  // Input field states - prioritize display names from context
-  const [pickupValue, setPickupValue] = useState(bookingState.fromDisplay || bookingState.from || from);
-  const [dropoffValue, setDropoffValue] = useState(bookingState.toDisplay || bookingState.to || to);
+  // Input field states
+  const [pickupValue, setPickupValue] = useState('');
+  const [dropoffValue, setDropoffValue] = useState('');
   
   // State for geocoded coordinates
   const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
   const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  
   // Track validation state for addresses
   const [pickupIsValid, setPickupIsValid] = useState(true); // Default to true for initial values
   const [dropoffIsValid, setDropoffIsValid] = useState(true); // Default to true for initial values
-  
-  // Store original values for comparison - prioritize context values
+  // Store original URL values for comparison
   const originalValuesRef = useRef({
-    from: bookingState.fromDisplay || bookingState.from || from,
-    to: bookingState.toDisplay || bookingState.to || to,
-    type: bookingState.isReturn !== undefined ? (bookingState.isReturn ? '2' : '1') : type,
-    date: bookingState.departureDate || date,
-    returnDate: bookingState.returnDate || (returnDate || '0'),
-    passengers: bookingState.passengers !== undefined ? bookingState.passengers : parseInt(passengers, 10),
-    isOneWay: isOneWayFromContext !== undefined ? isOneWayFromContext : isOneWayFromProps,
-    departureDate: departureDateFromContext || departureDateFromUrl,
-    dateRange: !isOneWay 
-      ? {
-          from: departureDateFromContext || departureDateFromUrl,
-          to: returnDateFromContext || returnDateFromUrl
-        } as DateRange | undefined 
-      : undefined
+    from,
+    to,
+    type,
+    date,
+    returnDate: returnDate || '0',
+    passengers: parseInt(passengers, 10),
+    isOneWay: isOneWayFromProps,
+    departureDate,
+    dateRange: isOneWayFromProps 
+      ? undefined 
+      : {
+          from: departureDate,
+          to: returnDateParsed
+        } as DateRange | undefined
   });
-  
-  // Form data state - prioritize context values
+  // Form data state
   const [formData, setFormData] = useState({
-    from: bookingState.from || from,
-    to: bookingState.to || to,
-    type: isOneWay ? '1' : '2',
-    departureDate: isOneWay 
-      ? (departureDateFromContext || departureDateFromUrl) 
-      : undefined,
-    dateRange: !isOneWay 
-      ? {
-          from: departureDateFromContext || departureDateFromUrl,
-          to: returnDateFromContext || returnDateFromUrl
-        } as DateRange | undefined 
-      : undefined,
-    passengers: displayPassengers
+    from,
+    to,
+    type: isOneWayFromProps ? '1' : '2',
+    departureDate: isOneWayFromProps ? departureDate : undefined,
+    dateRange: isOneWayFromProps 
+      ? undefined 
+      : {
+          from: departureDate,
+          to: returnDateParsed
+        } as DateRange | undefined,
+    passengers: parseInt(passengers, 10)
   });
-
-  // Track component mount/unmount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   // Ensure Google Maps is loaded
   useEffect(() => {
@@ -183,31 +156,36 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     }
   }, []);
 
-  // Initialize component once
+  // Initialize component once with values from props and context
   useEffect(() => {
-    // Force hasChanges to false initially
-    setHasChanges(false);
-    isInitializedRef.current = true;
-    // Use the display names from context if available
-    if (bookingState.fromDisplay) {
-      setPickupValue(bookingState.fromDisplay);
+    // Only run this effect once during initialization
+    if (isInitializedRef.current) {
+      return;
     }
     
-    if (bookingState.toDisplay) {
-      setDropoffValue(bookingState.toDisplay);
-    }
+    // Force hasChanges to false initially
+    setHasChanges(false);
+    
+    // Use the display names from context if available, otherwise use URL params
+    const initialPickupValue = bookingState.fromDisplay || from;
+    const initialDropoffValue = bookingState.toDisplay || to;
+    
+    // Set initial values only once
+    setPickupValue(initialPickupValue);
+    setDropoffValue(initialDropoffValue);
+    
     console.log("BookingTopBar initialized with:", {
       type,
       isOneWay: isOneWayFromProps,
-      from: pickupValue,
-      to: dropoffValue,
+      from: initialPickupValue,
+      to: initialDropoffValue,
       date,
-      returnDate,
-      bookingStateIsReturn: bookingState.isReturn,
-      bookingStateFrom: bookingState.from,
-      bookingStateTo: bookingState.to
+      returnDate
     });
-  }, [from, to, type, date, returnDate, passengers, isOneWayFromProps, bookingState.fromDisplay, bookingState.toDisplay, bookingState.isReturn, bookingState.from, bookingState.to, pickupValue, dropoffValue]);
+    
+    // Mark as initialized to prevent this effect from running again
+    isInitializedRef.current = true;
+  }, [from, to, type, date, returnDate, passengers, isOneWayFromProps, bookingState.fromDisplay, bookingState.toDisplay]);
 
   // Setup effect for user interaction tracking
   useEffect(() => {
@@ -272,49 +250,39 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   }, [formData, isOneWay, pickupValue, dropoffValue]);
 
   // Function to geocode addresses using Google Maps Geocoding API
-  const geocodeAddress = async (address: string, field: 'pickup' | 'dropoff'): Promise<{lat: number, lng: number} | null> => {
+  const geocodeAddress = (address: string, field: 'pickup' | 'dropoff') => {
     if (!address || !window.google?.maps?.Geocoder) return null;
     
-    const geocoder = new google.maps.Geocoder();
-    
-    try {
-      return new Promise<{lat: number, lng: number} | null>((resolve, reject) => {
-        geocoder.geocode({ address }, (results, status) => {
-          if (!isMountedRef.current) {
-            resolve(null);
-            return;
+    return new Promise<{lat: number, lng: number} | null>((resolve) => {
+      const geocoder = new google.maps.Geocoder();
+      
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+          const location = {
+            lat: results[0].geometry.location.lat(),
+            lng: results[0].geometry.location.lng()
+          };
+          
+          if (field === 'pickup') {
+            setPickupCoords(location);
+            console.log('Geocoded pickup coordinates:', location);
+          } else {
+            setDropoffCoords(location);
+            console.log('Geocoded dropoff coordinates:', location);
           }
           
-          if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-            const location = {
-              lat: results[0].geometry.location.lat(),
-              lng: results[0].geometry.location.lng()
-            };
-            
-            if (field === 'pickup') {
-              setPickupCoords(location);
-              console.log('Geocoded pickup coordinates:', location);
-            } else {
-              setDropoffCoords(location);
-              console.log('Geocoded dropoff coordinates:', location);
-            }
-            
-            resolve(location);
+          resolve(location);
+        } else {
+          console.error('Geocoding failed:', status);
+          if (field === 'pickup') {
+            setPickupCoords(null);
           } else {
-            console.error('Geocoding failed:', status);
-            if (field === 'pickup') {
-              setPickupCoords(null);
-            } else {
-              setDropoffCoords(null);
-            }
-            reject(status);
+            setDropoffCoords(null);
           }
-        });
+          resolve(null);
+        }
       });
-    } catch (error) {
-      console.error(`Error during ${field} geocoding:`, error);
-      return null;
-    }
+    });
   };
 
   // Function to fetch prices from the API
@@ -324,31 +292,19 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     let dropoff = dropoffCoords;
     
     if (!pickup) {
-      try {
-        pickup = await geocodeAddress(pickupValue, 'pickup');
-      } catch (error) {
-        // Handle geocoding error
-        return null;
-      }
+      pickup = await geocodeAddress(pickupValue, 'pickup');
     }
     
     if (!dropoff) {
-      try {
-        dropoff = await geocodeAddress(dropoffValue, 'dropoff');
-      } catch (error) {
-        // Handle geocoding error
-        return null;
-      }
+      dropoff = await geocodeAddress(dropoffValue, 'dropoff');
     }
     
     if (!pickup || !dropoff) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Location Error",
-          description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Location Error",
+        description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
+        variant: "destructive"
+      });
       return null;
     }
     
@@ -357,13 +313,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : formData.dateRange?.from;
       
     if (!pickupTime) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Time Error",
-          description: "Please select a pickup date and time.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Time Error",
+        description: "Please select a pickup date and time.",
+        variant: "destructive"
+      });
       return null;
     }
     
@@ -381,11 +335,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     };
     
     console.log('Sending price request with payload:', payload);
-    
-    if (!isMountedRef.current) {
-      return null;
-    }
-    
+    setIsLoadingPrices(true);
     setApiError(null);
     
     try {
@@ -410,11 +360,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         body: JSON.stringify(payload)
       });
       
-      // Check if component is still mounted
-      if (!isMountedRef.current) {
-        return null;
-      }
-      
       // Log response status and headers for debugging
       console.log('Response Status:', response.status);
       console.log('Response Status Text:', response.statusText);
@@ -438,68 +383,52 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('Response is not JSON:', contentType);
-        let text = '';
-        try {
-          text = await response.text();
-          console.log('Response Text:', text);
-        } catch (e) {
-          console.error('Error reading response text:', e);
-        }
+        const text = await response.text();
+        console.log('Response Text:', text);
         
         throw new Error(`Expected JSON response but got: ${contentType}`);
       }
-      
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
       return data;
-    } catch (error) {
-      // Check if component is unmounted
-      if (!isMountedRef.current) {
-        return null;
-      }
       
+    } catch (error) {
       console.error('Error fetching prices:', error);
       
       // Create detailed error message
       let errorMessage = 'Failed to get pricing information. ';
       
       if (error.message) {
-        // Don't show "Component unmounted" errors
-        if (error.message.includes('unmounted') || error.message.includes('AbortError')) {
-          return null;
-        }
-        
         errorMessage += error.message;
       } else {
         errorMessage += 'Please try again later.';
       }
       
-      if (isMountedRef.current) {
-        setApiError(errorMessage);
-        
-        toast({
-          title: "Pricing Error",
-          description: errorMessage,
-          variant: "destructive"
-        });
-      }
+      setApiError(errorMessage);
+      
+      toast({
+        title: "Pricing Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
       
       return null;
     } finally {
-      if (isMountedRef.current) {
-        setIsLoadingPrices(false);
-      }
+      setIsLoadingPrices(false);
     }
   };
 
   // Handle place selection from autocomplete
   const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
     userInteractedRef.current = true;
+    console.log(`Place selected for ${field}:`, displayName);
     
     if (field === 'pickup') {
+      console.log('Setting pickup value from place selection:', displayName);
       setPickupValue(displayName);
     } else {
+      console.log('Setting dropoff value from place selection:', displayName);
       setDropoffValue(displayName);
     }
     
@@ -517,19 +446,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         setDropoffCoords(location);
         console.log('Dropoff coordinates:', location);
       }
-    }
-  };
-
-  // Handle clear input
-  const handleClearInput = (field: 'pickup' | 'dropoff') => {
-    userInteractedRef.current = true;
-    
-    if (field === 'pickup') {
-      setPickupValue('');
-      setPickupCoords(null);
-    } else {
-      setDropoffValue('');
-      setDropoffCoords(null);
     }
   };
 
@@ -638,9 +554,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // If price fetching failed, stop here
     if (!pricingResponse) {
-      if (isMountedRef.current) {
-        setIsLoadingPrices(false);
-      }
+      setIsLoadingPrices(false);
       return;
     }
     
@@ -676,10 +590,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     // Reset change detection before navigation
     setHasChanges(false);
     userInteractedRef.current = false;
-    
-    if (isMountedRef.current) {
-      setIsLoadingPrices(false);
-    }
+    setIsLoadingPrices(false);
     
     navigate(path);
   };
@@ -692,21 +603,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setDropoffIsValid(isValid);
   };
 
-  // Cancel loading handler
-  const handleCancelLoading = () => {
-    setIsLoadingPrices(false);
-  };
-
   return (
     <div className="relative">
       {/* Loading overlay */}
       {isLoadingPrices && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-6">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <LoadingAnimation 
-              onCancel={handleCancelLoading} 
-              loadingComplete={false}
-            />
+        <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 rounded-xl">
+          <div className="flex flex-col items-center">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+            <p className="text-blue-800">Fetching prices...</p>
           </div>
         </div>
       )}
@@ -763,10 +667,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           <div className="flex flex-col space-y-4 md:hidden">
             {/* Mobile Pickup Location */}
             <GooglePlacesAutocomplete
-              id="pickup-field-mobile"
               value={pickupValue}
               onChange={(value) => {
                 userInteractedRef.current = true;
+                console.log('Pickup value changed to:', value);
                 setPickupValue(value);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
@@ -777,10 +681,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             />
             {/* Mobile Dropoff Location */}
             <GooglePlacesAutocomplete
-              id="dropoff-field-mobile"
               value={dropoffValue}
               onChange={(value) => {
                 userInteractedRef.current = true;
+                console.log('Dropoff value changed to:', value);
                 setDropoffValue(value);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
@@ -871,10 +775,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
             <div className="flex-1 grid grid-cols-[1fr_1fr_1.5fr_1fr] gap-4">
               {/* Desktop Pickup Location */}
               <GooglePlacesAutocomplete
-                id="pickup-field"
                 value={pickupValue}
                 onChange={(value) => {
                   userInteractedRef.current = true;
+                  console.log('Pickup value changed to:', value);
                   setPickupValue(value);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
@@ -885,10 +789,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               />
               {/* Desktop Dropoff Location */}
               <GooglePlacesAutocomplete
-                id="dropoff-field"
                 value={dropoffValue}
                 onChange={(value) => {
                   userInteractedRef.current = true;
+                  console.log('Dropoff value changed to:', value);
                   setDropoffValue(value);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}

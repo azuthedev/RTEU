@@ -12,7 +12,6 @@ interface GooglePlacesAutocompleteProps {
   disabled?: boolean;
   onValidation?: (isValid: boolean, message?: string) => void;
   required?: boolean;
-  id?: string;
 }
 
 export function GooglePlacesAutocomplete({
@@ -23,8 +22,7 @@ export function GooglePlacesAutocomplete({
   className = '',
   disabled = false,
   onValidation,
-  required = false,
-  id = 'google-places-input'
+  required = false
 }: GooglePlacesAutocompleteProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -410,36 +408,9 @@ export function GooglePlacesAutocomplete({
     [onChange, onValidation, required]
   );
 
-  // Handle the input change
+  // Actually handle the input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     throttledInputChange(e);
-  };
-
-  // Handle clear button click
-  const handleClearClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Clear the input value
-    if (inputRef.current) {
-      inputRef.current.value = '';
-    }
-    
-    // Update state
-    onChange('');
-    
-    // Reset validation
-    setIsValidAddress(null);
-    setValidationMessage(null);
-    
-    if (onValidation && required) {
-      onValidation(false, 'Address is required');
-    }
-    
-    // Focus back on the input
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
   };
   
   const handleFocus = async () => {
@@ -490,15 +461,34 @@ export function GooglePlacesAutocomplete({
     }
   };
 
-  // Determine if we should show the clear button
-  const showClearButton = value.length > 0;
+  // Handle clearing the input
+  const handleClearInput = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Clear the input value
+    onChange('');
+    
+    // Reset validation state
+    setIsValidAddress(null);
+    setValidationMessage(null);
+    
+    // Focus the input after clearing
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    
+    // Notify parent about validation change if needed
+    if (onValidation && required) {
+      onValidation(false, 'Address is required');
+    }
+  };
 
   return (
     <div className={`relative ${className}`}>
       <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
       <input
         ref={inputRef}
-        id={id}
         type="text"
         value={value}
         onChange={handleInputChange}
@@ -507,7 +497,7 @@ export function GooglePlacesAutocomplete({
         placeholder={placeholder}
         disabled={disabled}
         className={`
-          w-full pl-10 pr-${showClearButton || isLoading || error || validationMessage ? '10' : '4'} py-2 
+          w-full pl-10 pr-${isLoading || error || validationMessage ? '10' : '10'} py-2 
           border ${error || (validationMessage && !isValidAddress) ? 'border-red-300 bg-red-50' : isValidAddress ? 'border-green-300' : 'border-gray-200'} 
           rounded-md 
           focus:outline-none focus:ring-2 focus:${error || (validationMessage && !isValidAddress) ? 'ring-red-300' : isValidAddress ? 'ring-green-300' : 'ring-blue-600'}
@@ -522,50 +512,37 @@ export function GooglePlacesAutocomplete({
         aria-describedby={validationMessage ? 'address-validation-message' : undefined}
         required={required}
       />
-      <div className="absolute right-3 top-3">
-        {isLoading && (
+      
+      {/* Clear button - show whenever there's text in the input */}
+      {value && !isLoading && (
+        <button
+          type="button"
+          onClick={handleClearInput}
+          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 z-20"
+          aria-label="Clear input"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+      
+      {isLoading && (
+        <div className="absolute right-3 top-3">
           <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-        )}
-        {error && !isLoading && !showClearButton && (
-          <div title={error}>
-            <AlertCircle className="h-5 w-5 text-red-500" />
-          </div>
-        )}
-        {validationMessage && !isValidAddress && !error && !isLoading && !showClearButton && (
-          <div title={validationMessage}>
-            <AlertCircle className="h-5 w-5 text-amber-500" />
-          </div>
-        )}
-        {isValidAddress && !error && !isLoading && !showClearButton && (
-          <div title="Valid address" className="h-5 w-5 bg-green-500 rounded-full flex items-center justify-center">
-            <svg 
-              width="12" 
-              height="12" 
-              viewBox="0 0 12 12" 
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                d="M10 3L4.5 8.5L2 6" 
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-        )}
-        {showClearButton && (
-          <button
-            type="button"
-            onClick={handleClearClick}
-            className="h-5 w-5 flex items-center justify-center text-gray-400 hover:text-gray-600 focus:outline-none"
-            aria-label="Clear input"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
+        </div>
+      )}
+      
+      {error && !isLoading && !value && (
+        <div className="absolute right-3 top-3" title={error}>
+          <AlertCircle className="h-5 w-5 text-red-500" />
+        </div>
+      )}
+      
+      {validationMessage && !isValidAddress && !error && !isLoading && !value && (
+        <div className="absolute right-3 top-3" title={validationMessage}>
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+        </div>
+      )}
+      
       {validationMessage && (
         <div 
           id="address-validation-message" 
