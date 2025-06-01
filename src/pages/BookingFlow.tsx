@@ -4,11 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VehicleSelection from '../components/booking/VehicleSelection';
 import PersonalDetails from '../components/booking/PersonalDetails';
 import PaymentDetails from '../components/booking/PaymentDetails';
-import BookingTopBar from '../components/booking/BookingTopBar';
 import { useBooking } from '../contexts/BookingContext';
-import { getApiUrl, fetchWithCors } from '../utils/corsHelper';
 import { useToast } from '../components/ui/use-toast';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
 
 // Interface for API price response
 interface PricingResponse {
@@ -99,8 +98,8 @@ const BookingFlow = () => {
     
     try {
       // We need to geocode the addresses first
-      const pickupAddress = decodeURIComponent(from).replace(/-/g, ' ');
-      const dropoffAddress = decodeURIComponent(to).replace(/-/g, ' ');
+      const fromDecoded = decodeURIComponent(from).replace(/-/g, ' ');
+      const toDecoded = decodeURIComponent(to).replace(/-/g, ' ');
       
       // Use Google Maps Geocoding API
       if (!window.google?.maps?.Geocoder) {
@@ -120,8 +119,8 @@ const BookingFlow = () => {
       let pickupCoords: { lat: number, lng: number } | null = null;
       try {
         const pickupResult = await new Promise<google.maps.GeocoderResult[] | null>((resolve, reject) => {
-          geocoder.geocode({ address: pickupAddress }, (results, status) => {
-            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+          geocoder.geocode({ address: fromDecoded }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
               resolve(results);
             } else {
               reject(status);
@@ -150,8 +149,8 @@ const BookingFlow = () => {
       let dropoffCoords: { lat: number, lng: number } | null = null;
       try {
         const dropoffResult = await new Promise<google.maps.GeocoderResult[] | null>((resolve, reject) => {
-          geocoder.geocode({ address: dropoffAddress }, (results, status) => {
-            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+          geocoder.geocode({ address: toDecoded }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
               resolve(results);
             } else {
               reject(status);
@@ -236,7 +235,10 @@ const BookingFlow = () => {
           errorText = 'Could not read error details';
         }
         
-        throw new Error(`API Error: Status ${response.status}, Details: ${errorText}`);
+        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
+        console.error('API Error:', errorDetail);
+        
+        throw new Error(`API Error: ${errorDetail}`);
       }
       
       const data: PricingResponse = await response.json();
@@ -355,19 +357,6 @@ const BookingFlow = () => {
   
   return (
     <div className="bg-gray-50 min-h-screen pt-20">
-      {/* TopBar with form for route modifications */}
-      <div className="bg-white shadow-md rounded-xl mb-6 mx-4 relative">
-        <BookingTopBar 
-          from={decodeURIComponent(from || '')} 
-          to={decodeURIComponent(to || '')} 
-          type={type || '1'} 
-          date={date || ''} 
-          returnDate={returnDate} 
-          passengers={passengers || '1'}
-          currentStep={currentStep}
-        />
-      </div>
-      
       {/* Main content area with step transitions */}
       <div className="container mx-auto px-4 pb-16">
         <AnimatePresence mode="wait">
