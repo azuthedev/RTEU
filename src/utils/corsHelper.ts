@@ -60,6 +60,11 @@ export const fetchWithCors = async (
   } catch (error) {
     console.error('CORS-aware fetch error:', error);
     
+    // Properly handle AbortError or component unmount errors
+    if (error.name === 'AbortError' || error.message?.includes('unmounted')) {
+      throw new Error('Component unmounted');
+    }
+    
     // Provide additional debug information about the environment
     console.log('Environment info:', {
       origin: window.location.origin,
