@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VehicleSelection from '../components/booking/VehicleSelection';
 import PersonalDetails from '../components/booking/PersonalDetails';
 import PaymentDetails from '../components/booking/PaymentDetails';
-import BookingTopBar from '../components/booking/BookingTopBar';
 import { useBooking } from '../contexts/BookingContext';
 import { getApiUrl, fetchWithCors } from '../utils/corsHelper';
 import { useToast } from '../components/ui/use-toast';
@@ -325,19 +324,6 @@ const BookingFlow = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen pt-20">
-      {/* TopBar with form for route modifications */}
-      <div className="bg-white shadow-md rounded-xl mb-6 mx-4 relative">
-        <BookingTopBar 
-          from={decodeURIComponent(from || '')} 
-          to={decodeURIComponent(to || '')} 
-          type={type || '1'} 
-          date={date || ''} 
-          returnDate={returnDate} 
-          passengers={passengers || '1'}
-          currentStep={currentStep}
-        />
-      </div>
-      
       {/* Main content area with step transitions */}
       <div className="container mx-auto px-4 pb-16">
         <AnimatePresence mode="wait">
