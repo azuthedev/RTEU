@@ -1,19 +1,35 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
 
-// Updated CORS headers to be more permissive
+// CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", 
-  "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
   "Access-Control-Max-Age": "86400",
 };
 
 Deno.serve(async (req) => {
+  // Get the client's origin
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: headersWithOrigin
     });
   }
 
@@ -61,7 +77,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -85,7 +101,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Missing token parameter' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -103,7 +119,7 @@ Deno.serve(async (req) => {
         return new Response(null, {
           status: 302,
           headers: {
-            ...corsHeaders,
+            ...headersWithOrigin,
             'Location': `${url.origin}/verification-failed?reason=invalid`
           }
         });
@@ -116,7 +132,7 @@ Deno.serve(async (req) => {
         return new Response(null, {
           status: 302,
           headers: {
-            ...corsHeaders,
+            ...headersWithOrigin,
             'Location': `${url.origin}/verification-failed?reason=expired`
           }
         });
@@ -151,7 +167,7 @@ Deno.serve(async (req) => {
       return new Response(null, {
         status: 302,
         headers: {
-          ...corsHeaders,
+          ...headersWithOrigin,
           'Location': `${url.origin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
         }
       });
@@ -176,7 +192,7 @@ Deno.serve(async (req) => {
           }),
           { 
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -191,7 +207,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -213,7 +229,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -228,7 +244,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -271,7 +287,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -281,7 +297,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
       }
     );
   } catch (error) {
@@ -294,7 +310,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': origin }
       }
     );
   }

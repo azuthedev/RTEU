@@ -5,9 +5,8 @@ import { serve } from "https://deno.land/std@0.180.0/http/server.ts";
 
 const apiUrl = "https://get-price-941325580206.europe-southwest1.run.app";
 
-// Set up CORS headers for the client
+// CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400",
@@ -15,11 +14,28 @@ const corsHeaders = {
 
 // Main function to handle requests
 serve(async (req) => {
+  // Get the client's origin
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders,
+      headers: headersWithOrigin,
     });
   }
 
@@ -67,7 +83,7 @@ serve(async (req) => {
       {
         status: targetResponse.status,
         headers: {
-          ...corsHeaders,
+          ...headersWithOrigin,
           "Content-Type": contentType,
         },
       }
@@ -85,6 +101,7 @@ serve(async (req) => {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin
         },
       }
     );

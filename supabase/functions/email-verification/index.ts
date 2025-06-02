@@ -1,11 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
-// Updated CORS headers to be more permissive
+// Updated CORS headers that dynamically handle origin
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
   "Access-Control-Max-Age": "86400"
 };
 
@@ -88,7 +87,7 @@ function getBaseUrl(req: Request): string {
   }
   
   // Use either the Origin header, referer, or fall back to production URL
-  const baseUrl = origin || refOrigin || 'https://www.royaltransfereu.com';
+  const baseUrl = origin || refOrigin || 'https://royaltransfereu.com';
   console.log("Using base URL for redirects:", baseUrl);
   
   return baseUrl;
@@ -235,11 +234,28 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
 }
 
 Deno.serve(async (req) => {
+  // Get the client's origin
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+
   // Handle CORS preflight request - critical for browser security
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: headersWithOrigin
     });
   }
 
@@ -268,7 +284,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Missing token parameter' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -296,7 +312,7 @@ Deno.serve(async (req) => {
         return new Response(null, {
           status: 302,
           headers: {
-            ...corsHeaders,
+            ...headersWithOrigin,
             'Location': `${clientOrigin}/verification-failed?reason=invalid&redirect=${encodeURIComponent(redirectUrl)}`
           }
         });
@@ -313,7 +329,7 @@ Deno.serve(async (req) => {
         return new Response(null, {
           status: 302,
           headers: {
-            ...corsHeaders,
+            ...headersWithOrigin,
             'Location': `${clientOrigin}/verification-failed?reason=expired&redirect=${encodeURIComponent(redirectUrl)}`
           }
         });
@@ -356,7 +372,7 @@ Deno.serve(async (req) => {
       return new Response(null, {
         status: 302,
         headers: {
-          ...corsHeaders,
+          ...headersWithOrigin,
           'Location': `${clientOrigin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`
         }
       });
@@ -396,7 +412,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -418,7 +434,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Invalid request body - could not parse JSON' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -431,7 +447,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Email is required' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -448,7 +464,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       } 
@@ -469,7 +485,7 @@ Deno.serve(async (req) => {
             {
               status: 429,
               headers: { 
-                ...corsHeaders, 
+                ...headersWithOrigin, 
                 'Content-Type': 'application/json',
                 'Retry-After': '3600' // 1 hour in seconds
               }
@@ -573,7 +589,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         } catch (emailError) {
@@ -594,7 +610,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -618,7 +634,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -633,7 +649,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -676,7 +692,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -706,7 +722,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -748,7 +764,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -758,7 +774,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'Invalid action' }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -768,11 +784,14 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Allow': 'GET, POST, OPTIONS' }
+        headers: { ...headersWithOrigin, 'Content-Type': 'application/json', 'Allow': 'GET, POST, OPTIONS' }
       }
     );
   } catch (error) {
     console.error('Error:', error);
+    
+    // Get the client's origin
+    const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
     
     return new Response(
       JSON.stringify({ 
@@ -781,18 +800,12 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Access-Control-Allow-Origin': origin,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
 });
-
-// Helper function to check if we're in a development environment
-function isDevEnvironment(req: Request): boolean {
-  const url = new URL(req.url);
-  const host = url.hostname;
-  return host === 'localhost' || 
-         host.includes('local-credentialless') || 
-         host.includes('webcontainer') ||
-         host.endsWith('.supabase.co');
-}

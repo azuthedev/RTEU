@@ -1,11 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
-// CORS headers to allow cross-origin requests
+// CORS headers - must dynamically set based on request origin
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
   "Access-Control-Max-Age": "86400"
 };
 
@@ -144,11 +143,28 @@ async function createPasswordResetToken(email: string, supabase: any): Promise<s
 }
 
 Deno.serve(async (req) => {
+  // Get the client's origin
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: headersWithOrigin
     });
   }
 
@@ -181,7 +197,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -207,7 +223,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Invalid request body - could not parse JSON' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -220,7 +236,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Email is required' }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -230,15 +246,19 @@ Deno.serve(async (req) => {
         // Send password reset email
         console.log("Processing password reset email request");
         
-        // Check if user exists (required for password reset)
-        const { data: userData, error: userError } = await supabase
+        // First, try to find the user's full name from the users table
+        const { data: userData, error: userLookupError } = await supabase
           .from('users')
-          .select('id, email')
+          .select('id, name, email')
           .eq('email', email)
           .maybeSingle();
-          
-        if (userError || !userData) {
-          console.warn('No user found with email:', email);
+        
+        console.log("User lookup result:", userData || "Not found");
+        
+        // If user doesn't exist, don't reveal this information
+        // but also don't proceed with reset token generation
+        if (!userData) {
+          console.log(`No user found with email ${email} - skipping password reset`);
           
           // Record failed attempt
           await recordResetAttempt(email, clientIp, supabase, false, 
@@ -255,10 +275,14 @@ Deno.serve(async (req) => {
             }),
             {
               status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
+        
+        // Use the user's real name from the database, or fall back to email prefix
+        const userRealName = userData.name || email.split('@')[0];
+        console.log(`Using name "${userRealName}" for reset email`);
         
         // Check rate limits
         const { allowed, remaining, nextAllowedTime } = await checkRateLimits(
@@ -286,7 +310,7 @@ Deno.serve(async (req) => {
             {
               status: 429,
               headers: {
-                ...corsHeaders,
+                ...headersWithOrigin,
                 'Content-Type': 'application/json',
                 'Retry-After': '3600'
               }
@@ -306,7 +330,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -321,6 +345,7 @@ Deno.serve(async (req) => {
         try {
           console.log("=== PASSWORD RESET EMAIL SENDING ATTEMPT ===");
           console.log('To:', email);
+          console.log('Using name:', userRealName);
           console.log('Reset Link:', resetUrl);
           
           // Forward the request to our n8n webhook
@@ -331,9 +356,9 @@ Deno.serve(async (req) => {
               'X-Auth': webhookSecret
             },
             body: JSON.stringify({
-              name: name || email.split('@')[0],
+              name: userRealName, // Use the user's real name from the database
               email: email,
-              reset_link: resetUrl,
+              reset_link: resetUrl, // Use the FULL reset URL with token
               email_type: 'PWReset'
             })
           });
@@ -360,7 +385,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         } catch (emailError) {
@@ -379,7 +404,7 @@ Deno.serve(async (req) => {
             }),
             {
               status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -390,7 +415,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: `Unsupported email type: ${email_type}` }),
           {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -401,7 +426,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Allow': 'POST, OPTIONS' }
+        headers: { ...headersWithOrigin, 'Content-Type': 'application/json', 'Allow': 'POST, OPTIONS' }
       }
     );
   } catch (error) {
@@ -413,7 +438,11 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': origin
+        }
       }
     );
   }

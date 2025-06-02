@@ -1,8 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
 import Stripe from 'npm:stripe@latest';
 
+// CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
@@ -25,11 +25,28 @@ interface BookingData {
 }
 
 Deno.serve(async (req: Request) => {
+  // Get the client's origin
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
-      headers: corsHeaders,
+      headers: headersWithOrigin,
     });
   }
   
@@ -56,7 +73,7 @@ Deno.serve(async (req: Request) => {
           status: 400,
           headers: { 
             'Content-Type': 'application/json',
-            ...corsHeaders
+            ...headersWithOrigin
           }
         }
       );
@@ -92,7 +109,7 @@ Deno.serve(async (req: Request) => {
         status: 200,
         headers: { 
           'Content-Type': 'application/json',
-          ...corsHeaders
+          ...headersWithOrigin
         }
       }
     );
@@ -105,7 +122,7 @@ Deno.serve(async (req: Request) => {
         status: 500,
         headers: { 
           'Content-Type': 'application/json',
-          ...corsHeaders
+          ...headersWithOrigin
         }
       }
     );

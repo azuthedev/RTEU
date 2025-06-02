@@ -1,18 +1,36 @@
 import Stripe from "npm:stripe@12.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 
+// CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
 Deno.serve(async (req) => {
+  // Get the client's origin - even though webhooks don't typically need CORS,
+  // we'll handle it properly for consistency and potential browser testing
+  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
+  
+  // Check if the origin is allowed
+  const allowedOrigins = [
+    'https://royaltransfereu.com',
+    'https://www.royaltransfereu.com', 
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ];
+  
+  // Set the correct CORS origin header based on the request's origin
+  const headersWithOrigin = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  };
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders,
+      headers: headersWithOrigin,
     });
   }
 
@@ -20,7 +38,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
-      headers: corsHeaders,
+      headers: headersWithOrigin,
     });
   }
 
@@ -65,7 +83,7 @@ Deno.serve(async (req) => {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return new Response(`Webhook Error: ${err.message}`, { 
           status: 400,
-          headers: corsHeaders
+          headers: headersWithOrigin
         });
       }
     } else {
@@ -77,7 +95,7 @@ Deno.serve(async (req) => {
         console.error(`Failed to parse webhook payload: ${err.message}`);
         return new Response(`Webhook Error: ${err.message}`, { 
           status: 400,
-          headers: corsHeaders
+          headers: headersWithOrigin
         });
       }
       console.warn('Webhook signature verification skipped: No webhook secret available');
@@ -148,7 +166,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
       headers: {
-        ...corsHeaders,
+        ...headersWithOrigin,
         "Content-Type": "application/json",
       },
     });
@@ -162,6 +180,7 @@ Deno.serve(async (req) => {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin
         },
       }
     );
