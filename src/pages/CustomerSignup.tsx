@@ -11,6 +11,7 @@ import OTPVerificationModal from '../components/OTPVerificationModal';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { sendOtpEmail } from '../utils/emailValidator';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../components/ui/use-toast';
 
 // Simple debounce function to prevent excessive API calls
 const debounce = (fn: Function, ms = 300) => {
@@ -23,26 +24,33 @@ const debounce = (fn: Function, ms = 300) => {
 
 const CustomerSignup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signUp, user, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const { trackEvent } = useAnalytics();
+  const { toast } = useToast();
   const inviteCode = searchParams.get('invite');
   
+  // Get prefilled data from location state
+  const locationState = location.state as any;
+  
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: locationState?.prefillName || '',
+    email: locationState?.prefillEmail || '',
+    phone: locationState?.prefillPhone || '',
     password: '',
     confirmPassword: ''
   });
+  
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [inviteDetails, setInviteDetails] = useState<any>(null);
   const [inviteLoading, setInviteLoading] = useState(!!inviteCode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formTouched, setFormTouched] = useState(false);
-  const [bookingReference, setBookingReference] = useState<string>('');
+  const [bookingReference, setBookingReference] = useState<string>(locationState?.bookingReference || '');
   const [bookingData, setBookingData] = useState<any>(null);
   const [userHasAccount, setUserHasAccount] = useState(false);
   const [emailValid, setEmailValid] = useState(false);
@@ -66,6 +74,22 @@ const CustomerSignup = () => {
                   window.location.hostname.includes('webcontainer');
     setIsDevEnvironment(isDev);
   }, []);
+
+  // Clean up navigation state to prevent issues on refresh
+  useEffect(() => {
+    if (locationState) {
+      // Store extracted data in a variable for future reference if needed
+      console.log('Processed navigation state:', {
+        prefillName: locationState.prefillName,
+        prefillEmail: locationState.prefillEmail,
+        prefillPhone: locationState.prefillPhone,
+        bookingReference: locationState.bookingReference
+      });
+      
+      // Clear the location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState]);
 
   // Define validation rules
   const validationRules = {
@@ -352,20 +376,25 @@ const CustomerSignup = () => {
     }
   };
 
-  const handleOtpVerified = () => {
+  const handleOtpVerified = async () => {
     setShowOtpModal(false);
     trackEvent('Authentication', 'Email Verified');
     
     // Update user's verification status if we have a created user ID
     if (createdUserId) {
-      updateUserVerificationStatus(createdUserId);
+      await updateUserVerificationStatus(createdUserId);
+      
+      // Link booking if provided
+      if (bookingReference) {
+        await linkBookingToUser(bookingReference, createdUserId);
+      }
     }
     
     // Navigate to login with success message
     navigate('/login', { 
       state: { 
         message: 'Registration successful! Your email has been verified. Please sign in to continue.',
-        ...(bookingReference ? { bookingReference } : {})
+        prefillEmail: formData.email
       } 
     });
   };
@@ -395,6 +424,51 @@ const CustomerSignup = () => {
       }
     } catch (error) {
       console.error('Error updating verification status:', error);
+    }
+  };
+
+  // Link booking to user after successful account creation with retry logic
+  const linkBookingToUser = async (reference: string, userId: string, retries = 2) => {
+    if (!reference || !userId) {
+      return;
+    }
+    
+    try {
+      console.log(`Linking booking ${reference} to newly created user ${userId}`);
+      
+      const { error } = await supabase
+        .from('trips')
+        .update({ user_id: userId })
+        .eq('booking_reference', reference);
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Booking linked successfully');
+      trackEvent('Booking', 'Booking Linked On Signup', reference);
+      
+      toast({
+        title: "Booking Linked",
+        description: "Your booking has been linked to your new account.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error('Error linking booking:', error);
+      
+      if (retries > 0) {
+        console.log(`Retrying booking link... (${retries} attempts left)`);
+        // Wait for a short delay before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return linkBookingToUser(reference, userId, retries - 1);
+      }
+      
+      // Show user-friendly error but don't fail the flow
+      toast({
+        title: "Booking Link Failed",
+        description: "You can link this manually in your bookings page.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -437,7 +511,7 @@ const CustomerSignup = () => {
     navigate('/login', { 
       state: { 
         bookingReference: bookingReference || undefined,
-        email: formData.email 
+        prefillEmail: formData.email 
       } 
     });
   };
@@ -446,77 +520,79 @@ const CustomerSignup = () => {
     e.preventDefault();
     setError(null);
     
-    // Reset check counter for final submission check
-    checkCountRef.current = 0;
+    // Prevent double submission
+    if (isProcessing || isSubmitting) return;
     
-    // Validate all fields before submitting
-    const isFormValid = validateAllFields();
+    setIsProcessing(true);
     
-    if (!isFormValid) {
-      return;
-    }
-
-    // If email is not valid, show error
-    if (!emailValid) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    // Do a final check if user has an account 
-    if (!userHasAccount && formData.email) {
-      // Final check before submission (using the synchronous version)
-      await checkUserExists(formData.email);
-    }
-
-    // If user has existing account, prompt them to sign in
-    if (userHasAccount) {
-      setError('An account with this email already exists. Please sign in instead.');
-      return;
-    }
-
-    // Step 1: Create the user account first (marked as unverified)
-    const createUserResult = await createUserWithoutVerification();
-    
-    if (!createUserResult.success) {
-      setError(createUserResult.error || 'Failed to create user account');
-      return;
-    }
-    
-    // Step 2: Send verification email with the user ID
-    const userId = createUserResult.userId;
-    if (!userId) {
-      setError('Failed to get user ID after account creation');
-      return;
-    }
-    
-    // Link booking if available
-    if (bookingReference && userId) {
-      try {
-        const { error: linkError } = await supabase
-          .from('trips')
-          .update({ user_id: userId })
-          .eq('booking_reference', bookingReference);
-        
-        if (linkError) {
-          console.error('Error linking booking to user:', linkError);
-        } else {
-          console.log(`Successfully linked booking ${bookingReference} to user ${userId}`);
-          trackEvent('Authentication', 'Booking Linked at Signup', bookingReference);
-        }
-      } catch (linkError) {
-        console.error('Error linking booking:', linkError);
-        // Don't fail signup just because linking failed
+    try {
+      // Reset check counter for final submission check
+      checkCountRef.current = 0;
+      
+      // Validate all fields before submitting
+      const isFormValid = validateAllFields();
+      
+      if (!isFormValid) {
+        return;
       }
+
+      // If email is not valid, show error
+      if (!emailValid) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      // Do a final check if user has an account 
+      if (!userHasAccount && formData.email) {
+        // Final check before submission (using the synchronous version)
+        await checkUserExists(formData.email);
+      }
+
+      // If user has existing account, prompt them to sign in
+      if (userHasAccount) {
+        setError('An account with this email already exists. Please sign in instead.');
+        return;
+      }
+
+      // Step 1: Create the user account first (marked as unverified)
+      const createUserResult = await createUserWithoutVerification();
+      
+      if (!createUserResult.success) {
+        setError(createUserResult.error || 'Failed to create user account');
+        return;
+      }
+      
+      // Step 2: Send verification email with the user ID
+      const userId = createUserResult.userId;
+      if (!userId) {
+        setError('Failed to get user ID after account creation');
+        return;
+      }
+      
+      // Link booking if available
+      if (bookingReference && userId) {
+        try {
+          await linkBookingToUser(bookingReference, userId);
+        } catch (linkError) {
+          console.error('Error linking booking:', linkError);
+          // Don't fail signup just because linking failed - handled in the linkBookingToUser function
+        }
+      }
+      
+      // Send verification code with the user ID
+      const otpSent = await sendVerificationCode(userId);
+      if (!otpSent) {
+        // Error already set by sendVerificationCode
+        return;
+      }
+      
+      // Show OTP modal - the rest of the signup process will continue after verification
+    } catch (error: any) {
+      console.error('Error during signup:', error);
+      setError(error.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
-    
-    // Send verification code with the user ID
-    const otpSent = await sendVerificationCode(userId);
-    if (!otpSent) {
-      // Error already set by sendVerificationCode
-      return;
-    }
-    
-    // Show OTP modal - the rest of the signup process will continue after verification
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -538,7 +614,7 @@ const CustomerSignup = () => {
   // Helper function to determine if the button should be disabled
   const isButtonDisabled = () => {
     // Only disable if the form has been touched and is invalid, or if submission is in progress
-    return (formTouched && !isValid) || isSubmitting || userHasAccount;
+    return (formTouched && !isValid) || isSubmitting || isProcessing || userHasAccount;
   };
 
   if (loading || inviteLoading) {
@@ -588,6 +664,13 @@ const CustomerSignup = () => {
                 ) : (
                   <p>Using invite code: {inviteCode}</p>
                 )}
+              </div>
+            )}
+            
+            {bookingReference && bookingData && (
+              <div className="bg-blue-50 text-blue-700 p-3 rounded-md mb-6 text-sm">
+                <p className="font-medium">Linking booking reference: {bookingReference}</p>
+                <p className="mt-1">Your booking will be automatically linked to your new account.</p>
               </div>
             )}
             
@@ -701,19 +784,23 @@ const CustomerSignup = () => {
               <button
                 type="submit"
                 disabled={isButtonDisabled()}
-                aria-busy={isSubmitting}
+                aria-busy={isSubmitting || isProcessing}
                 className={`w-full py-3 rounded-md transition-all duration-300 flex justify-center items-center mt-6
                   ${isButtonDisabled() 
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
               >
-                {isSubmitting ? (
+                {isSubmitting || isProcessing ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Creating Account...
                   </>
-                ) : 'Create Account'}
+                ) : bookingReference ? (
+                  'Create Account & Link Booking'
+                ) : (
+                  'Create Account'
+                )}
               </button>
               
               {/* Error message moved below the button for better visibility */}

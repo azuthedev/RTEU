@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
@@ -25,6 +25,7 @@ const BookingSuccess = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const { toast } = useToast();
+  const [checkingUserAccount, setCheckingUserAccount] = useState(true);
   
   useEffect(() => {
     // Get the booking reference from the URL query parameters
@@ -68,27 +69,39 @@ const BookingSuccess = () => {
         console.error('Error fetching booking details:', error);
         
         // Fall back to a more permissive query if the exact match fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('trips')
-          .select('*')
-          .ilike('booking_reference', `%${reference}%`)
-          .limit(1);
-        
-        if (fallbackError || !fallbackData || fallbackData.length === 0) {
-          throw new Error('No matching booking found with reference: ' + reference);
-        }
-        
-        setBookingDetails(fallbackData[0]);
-        console.log('Booking data found with fallback query:', fallbackData[0]);
-        
-        // Check for existing user with this email
-        checkForExistingUser(fallbackData[0]);
+        try {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('trips')
+            .select('*')
+            .ilike('booking_reference', `%${reference}%`)
+            .limit(1);
+          
+          if (fallbackError) {
+            throw fallbackError;
+          }
+          
+          if (!fallbackData || fallbackData.length === 0) {
+            throw new Error('No matching booking found with reference: ' + reference);
+          }
+          
+          setBookingDetails(fallbackData[0]);
+          console.log('Booking data found with fallback query:', fallbackData[0]);
+          
+          // Check for existing user with this email
+          checkForExistingUser(fallbackData[0]);
 
-        // Send booking confirmation email
-        if (!emailSent) {
-          sendBookingConfirmationEmail(fallbackData[0]);
+          // Send booking confirmation email
+          if (!emailSent) {
+            sendBookingConfirmationEmail(fallbackData[0]);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback query error:', fallbackError);
+          toast({
+            title: "Error",
+            description: "Could not find your booking. Please contact support.",
+            variant: "destructive"
+          });
         }
-        
         return;
       }
       
@@ -106,6 +119,11 @@ const BookingSuccess = () => {
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
+      toast({
+        title: "Error",
+        description: "There was an issue retrieving your booking details.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -123,8 +141,9 @@ const BookingSuccess = () => {
       const webhookSecret = import.meta.env.WEBHOOK_SECRET;
       
       if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET environment variable');
-        throw new Error('Server configuration error: Missing webhook authentication');
+        console.error('Missing WEBHOOK_SECRET - email sending disabled');
+        // Don't fail the page, just skip email
+        return;
       }
 
       // Format datetime for email
@@ -151,6 +170,12 @@ const BookingSuccess = () => {
         }).format(price);
       };
 
+      // Validate booking data to ensure we have required fields
+      if (!bookingData.customer_email) {
+        console.error('Missing required email field in booking data');
+        return;
+      }
+
       // Prepare email data with flat structure
       const emailData = {
         name: bookingData.customer_name || 'Valued Customer',
@@ -160,46 +185,60 @@ const BookingSuccess = () => {
         pickup_location: bookingData.pickup_address,
         dropoff_location: bookingData.dropoff_address,
         pickup_datetime: formatDate(bookingData.datetime),
-        vehicle_type: bookingData.vehicle_type,
-        passengers: bookingData.passengers,
-        total_price: formatPrice(bookingData.estimated_price)
+        vehicle_type: bookingData.vehicle_type || 'Standard Vehicle',
+        passengers: bookingData.passengers || 1,
+        total_price: formatPrice(bookingData.estimated_price || 0)
       };
 
       console.log('Sending booking confirmation email with data:', emailData);
 
-      // Make request to email webhook
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Auth': webhookSecret
-          },
-          body: JSON.stringify(emailData)
+      // Make request to email webhook with timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth': webhookSecret
+            },
+            body: JSON.stringify(emailData),
+            signal: controller.signal
+          }
+        );
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Email webhook failed:', response.status, errorText);
+          // Continue gracefully - don't block user experience
+          return;
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response from email webhook:', errorData);
-        throw new Error('Failed to send booking confirmation email');
+        const data = await response.json();
+        console.log('Email webhook response:', data);
+
+        // Mark email as sent
+        setEmailSent(true);
+        trackEvent('Email', 'Booking Confirmation Sent', bookingData.booking_reference);
+
+        // Show success toast
+        toast({
+          title: "Booking Confirmation Sent",
+          description: "A confirmation email has been sent to your email address.",
+          variant: "success"
+        });
+      } catch (fetchError: any) {
+        console.error('Fetch error:', fetchError);
+        if (fetchError.name === 'AbortError') {
+          console.error('Email webhook request timed out');
+        }
+        // Continue without interrupting user flow
       }
-
-      const data = await response.json();
-      console.log('Email webhook response:', data);
-
-      // Mark email as sent
-      setEmailSent(true);
-      trackEvent('Email', 'Booking Confirmation Sent', bookingData.booking_reference);
-
-      // Show success toast
-      toast({
-        title: "Booking Confirmation Sent",
-        description: "A confirmation email has been sent to your email address.",
-        variant: "success"
-      });
-
     } catch (error) {
       console.error('Error sending booking confirmation email:', error);
       trackEvent('Email', 'Booking Confirmation Error', error.message);
@@ -212,20 +251,34 @@ const BookingSuccess = () => {
   
   const checkForExistingUser = async (bookingData: any) => {
     if (!user && bookingData?.customer_email) {
-      const { data: existingUserData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', bookingData.customer_email)
-        .limit(1);
+      setCheckingUserAccount(true);
+      try {
+        const { data: existingUserData, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', bookingData.customer_email)
+          .limit(1);
+          
+        if (error) {
+          throw error;
+        }
+          
+        const hasExistingAccount = existingUserData && existingUserData.length > 0;
+        setExistingUserWithSameEmail(hasExistingAccount);
         
-      const hasExistingAccount = existingUserData && existingUserData.length > 0;
-      setExistingUserWithSameEmail(hasExistingAccount);
-      
-      // Only show the sign-up modal if there's no existing account with this email
-      if (!hasExistingAccount && !bookingData.user_id) {
-        // Small delay to let the success screen be visible first
-        setTimeout(() => setShowSignUpModal(true), 3000);
+        // Only show the sign-up modal if there's no existing account with this email
+        if (!hasExistingAccount && !bookingData.user_id) {
+          // Small delay to let the success screen be visible first
+          setTimeout(() => setShowSignUpModal(true), 3000);
+        }
+      } catch (error) {
+        console.error('Error checking user existence:', error);
+        setExistingUserWithSameEmail(false);
+      } finally {
+        setCheckingUserAccount(false);
       }
+    } else {
+      setCheckingUserAccount(false);
     }
   };
   
@@ -315,6 +368,34 @@ const BookingSuccess = () => {
     } catch (e) {
       return 'Invalid date';
     }
+  };
+
+  // Navigate to login with prefilled email
+  const handleLoginClick = () => {
+    if (!bookingDetails?.customer_email) return;
+    
+    trackEvent('Navigation', 'Login From Booking Success', bookingReference || '');
+    navigate('/login', { 
+      state: { 
+        prefillEmail: bookingDetails.customer_email,
+        bookingReference: bookingReference
+      }
+    });
+  };
+
+  // Navigate to signup with prefilled details
+  const handleSignupClick = () => {
+    if (!bookingDetails) return;
+    
+    trackEvent('Navigation', 'Signup From Booking Success', bookingReference || '');
+    navigate('/customer-signup', { 
+      state: { 
+        prefillEmail: bookingDetails.customer_email,
+        prefillName: bookingDetails.customer_name,
+        prefillPhone: bookingDetails.customer_phone,
+        bookingReference: bookingReference
+      }
+    });
   };
 
   return (
@@ -443,23 +524,28 @@ const BookingSuccess = () => {
                 >
                   View My Bookings
                 </button>
+              ) : checkingUserAccount ? (
+                <button 
+                  disabled
+                  className="bg-gray-300 text-gray-600 px-6 py-3 rounded-md flex items-center justify-center"
+                >
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Checking Account...
+                </button>
               ) : existingUserWithSameEmail ? (
                 <button
-                  onClick={() => {
-                    trackEvent('Navigation', 'Post-Booking Click', 'Sign In To Manage Booking');
-                    navigate('/login', {
-                      state: { bookingReference }
-                    });
-                  }}
-                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300"
+                  onClick={handleLoginClick}
+                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300 flex items-center justify-center"
                 >
+                  <User className="w-5 h-5 mr-2" />
                   Sign In To Manage Booking
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowSignUpModal(true)}
-                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300"
+                  onClick={handleSignupClick}
+                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300 flex items-center justify-center"
                 >
+                  <User className="w-5 h-5 mr-2" />
                   Create Account to Manage Booking
                 </button>
               )}

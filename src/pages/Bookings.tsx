@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../components/ui/use-toast';
 
 interface Trip {
   id: string;
@@ -19,6 +20,7 @@ interface Trip {
   dropoff_address: string;
   customer_email: string;
   booking_reference: string;
+  user_id?: string;
 }
 
 // Simplified BookingDetails to only include trip fields
@@ -26,7 +28,7 @@ type BookingDetails = Trip;
 
 const Bookings = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, userData } = useAuth();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,7 @@ const Bookings = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -56,24 +59,35 @@ const Bookings = () => {
         setError(null);
 
         // First get the user's email
-        const { data: userData } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('email')
           .eq('id', user.id)
           .single();
 
+        if (userError) {
+          console.error('Error fetching user email:', userError);
+          throw new Error('Could not retrieve your user information. Please try again.');
+        }
+
         if (!userData?.email) {
           throw new Error('User email not found');
         }
 
-        // Fetch trips by user_id and customer_email (for non-logged-in bookings)
-        const { data, error } = await supabase
+        console.log('Fetching trips for user:', user.id, 'with email:', userData.email);
+
+        // Build query to fetch both user_id-linked AND email-matched bookings
+        const query = supabase
           .from('trips')
           .select('*')
           .or(`user_id.eq.${user.id},customer_email.eq.${userData.email}`)
           .order('datetime', { ascending: activeTab === 'upcoming' });
 
+        const { data, error } = await query;
+
         if (error) throw error;
+
+        console.log(`Found ${data?.length || 0} trips for user`);
 
         // Filter by date based on the active tab
         let filteredTrips = [];
@@ -88,9 +102,27 @@ const Bookings = () => {
         }
 
         setTrips(filteredTrips);
+        console.log(`Filtered to ${filteredTrips.length} ${activeTab} trips`);
+
+        // If no trips found, show toast
+        if (filteredTrips.length === 0) {
+          toast({
+            title: `No ${activeTab} bookings`,
+            description: activeTab === 'upcoming' 
+              ? "You don't have any upcoming bookings." 
+              : "You don't have any past bookings.",
+            variant: "default"
+          });
+        }
       } catch (error: any) {
         console.error('Error fetching trips:', error);
         setError(error.message || 'Failed to load bookings');
+        
+        toast({
+          title: "Error Loading Bookings",
+          description: error.message || "Could not load your bookings. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -99,7 +131,7 @@ const Bookings = () => {
     if (user) {
       fetchTrips();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, toast]);
 
   const fetchBookingDetails = async (tripId: string) => {
     setLoadingDetails(true);
@@ -139,6 +171,49 @@ const Bookings = () => {
         return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Link an unlinked booking to the current user
+  const handleLinkUnlinkedBooking = async (trip: Trip) => {
+    if (!user || trip.user_id) return; // Skip if already linked
+    
+    try {
+      setLoadingDetails(true);
+      
+      const { error } = await supabase
+        .from('trips')
+        .update({ user_id: user.id })
+        .eq('id', trip.id)
+        .eq('customer_email', userData?.email || '');
+      
+      if (error) throw error;
+      
+      // Update the trip in the UI
+      const updatedTrips = trips.map(t => 
+        t.id === trip.id ? { ...t, user_id: user.id } : t
+      );
+      setTrips(updatedTrips);
+      
+      // Update selected booking if currently viewing
+      if (selectedBooking && selectedBooking.id === trip.id) {
+        setSelectedBooking({ ...selectedBooking, user_id: user.id });
+      }
+      
+      toast({
+        title: "Booking Linked",
+        description: "This booking has been linked to your account.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error('Error linking booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to link booking to your account.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -231,6 +306,21 @@ const Bookings = () => {
                             {trip.booking_reference}
                           </span>
                         )}
+                        
+                        {/* Show indicator if booking is not linked to user account */}
+                        {!trip.user_id && userData?.email === trip.customer_email && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent opening details
+                              handleLinkUnlinkedBooking(trip);
+                            }}
+                            className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200"
+                            title="Link to my account"
+                          >
+                            Link
+                          </button>
+                        )}
+                        
                         <ChevronRight className="w-5 h-5 text-gray-400" />
                       </div>
                     </div>
@@ -379,6 +469,30 @@ const Bookings = () => {
                         <div>
                           <h3 className="text-lg font-semibold mb-2">Additional Notes</h3>
                           <p className="text-gray-600">{selectedBooking.notes}</p>
+                        </div>
+                      )}
+                      
+                      {/* Account linking status */}
+                      {!selectedBooking.user_id && userData?.email === selectedBooking.customer_email && (
+                        <div className="bg-blue-50 p-4 rounded-md">
+                          <h3 className="text-blue-700 font-medium mb-2">Link This Booking</h3>
+                          <p className="text-sm text-blue-600 mb-3">
+                            This booking matches your email but isn't linked to your account yet.
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLinkUnlinkedBooking(selectedBooking);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            disabled={loadingDetails}
+                          >
+                            {loadingDetails ? (
+                              <><Loader2 className="w-4 h-4 mr-2 inline animate-spin" /> Linking...</>
+                            ) : (
+                              'Link to My Account'
+                            )}
+                          </button>
                         </div>
                       )}
                     </div>

@@ -9,12 +9,13 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import OTPVerificationModal from '../components/OTPVerificationModal';
 import PasswordResetModal from '../components/PasswordResetModal';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../components/ui/use-toast';
 
 interface LocationState {
   message?: string;
   from?: Location;
   bookingReference?: string;
-  email?: string;
+  prefillEmail?: string;
   requireVerification?: boolean;
 }
 
@@ -29,7 +30,9 @@ const Login = () => {
   const [bookingReference, setBookingReference] = useState<string>('');
   const [bookingData, setBookingData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLinkingBooking, setIsLinkingBooking] = useState(false);
   const { trackEvent } = useAnalytics();
+  const { toast } = useToast();
 
   // For verification handling
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -57,39 +60,111 @@ const Login = () => {
   useEffect(() => {
     if (user) {
       const state = location.state as LocationState;
-      navigate(state?.from?.pathname || '/', { replace: true });
+      
+      // If there's a booking reference, try to link it to the user
+      if (state?.bookingReference && user.id) {
+        linkBookingToUser(state.bookingReference, user.id)
+          .then(() => {
+            navigate(state?.from?.pathname || '/bookings', { replace: true });
+          });
+      } else {
+        navigate(state?.from?.pathname || '/', { replace: true });
+      }
     }
   }, [user, navigate, location]);
 
-  // Check for any message passed from CustomerSignup page
+  // Check for any message or prefilled data passed from previous page
   useEffect(() => {
     const state = location.state as LocationState;
+    
+    // Extract any state data before clearing
+    const extractedState: Partial<LocationState> = {};
+    
     if (state?.message) {
       setSuccessMessage(state.message);
+      extractedState.message = state.message;
     }
+    
     if (state?.bookingReference) {
       setBookingReference(state.bookingReference);
+      extractedState.bookingReference = state.bookingReference;
     }
-    if (state?.email) {
+    
+    if (state?.prefillEmail) {
       setFormData(prev => ({
         ...prev,
-        email: state.email || ''
+        email: state.prefillEmail || ''
       }));
+      extractedState.prefillEmail = state.prefillEmail;
+    }
 
-      // If this login was redirected due to verification requirement
-      if (state?.requireVerification) {
-        setIsUnverifiedUser(true);
-        setError('Your email address needs to be verified before you can continue.');
-        // Auto-trigger verification email
-        handleSendVerification(state.email);
+    // If this login was redirected due to verification requirement
+    if (state?.requireVerification) {
+      setIsUnverifiedUser(true);
+      setError('Your email address needs to be verified before you can continue.');
+      extractedState.requireVerification = state.requireVerification;
+      
+      // Auto-trigger verification email if we have an email
+      if (state.prefillEmail) {
+        handleSendVerification(state.prefillEmail);
       }
     }
     
-    // Clear state after reading it
-    if (state?.message || state?.bookingReference || state?.email) {
-      navigate(location.pathname, { replace: true, state: {} });
+    // Clear state after reading it to prevent issues on refresh
+    if (Object.keys(extractedState).length > 0) {
+      // Replace current history state with empty state
+      window.history.replaceState({}, document.title);
+      
+      // Store extracted data in a variable for future reference if needed
+      console.log('Processed navigation state:', extractedState);
     }
-  }, [location, navigate]);
+  }, []);
+
+  // Function to link a booking to a user account with retry logic
+  const linkBookingToUser = async (reference: string, userId: string, retries = 2) => {
+    if (!reference || !userId) return;
+    
+    setIsLinkingBooking(true);
+    
+    try {
+      console.log(`Linking booking ${reference} to user ${userId}`);
+      
+      const { error } = await supabase
+        .from('trips')
+        .update({ user_id: userId })
+        .eq('booking_reference', reference);
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Booking linked successfully');
+      toast({
+        title: "Success",
+        description: "Booking has been linked to your account.",
+        variant: "success"
+      });
+      trackEvent('Booking', 'Booking Linked To Account', reference);
+    } catch (error) {
+      console.error('Error linking booking to user:', error);
+      
+      if (retries > 0) {
+        console.log(`Retrying booking link... (${retries} attempts left)`);
+        // Wait for a short delay before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return linkBookingToUser(reference, userId, retries - 1);
+      }
+      
+      // Show user-friendly error but don't fail the flow
+      toast({
+        title: "Booking Link Failed",
+        description: "You can link this manually in your bookings page.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLinkingBooking(false);
+    }
+  };
 
   const handleValidBookingFound = (data: any) => {
     setBookingData(data);
@@ -140,7 +215,7 @@ const Login = () => {
       const result = await sendVerificationEmail(email);
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to send verification email');
+        throw new Error(result.error || 'Failed to send verification code');
       }
       
       setVerificationId(result.verificationId || '');
@@ -192,17 +267,7 @@ const Login = () => {
       // If we have a session and a booking reference, link the booking to the user
       if (session && bookingReference && bookingData) {
         try {
-          const { error: linkError } = await supabase
-            .from('trips')
-            .update({ user_id: session.user.id })
-            .eq('booking_reference', bookingReference);
-          
-          if (linkError) {
-            console.error('Error linking booking to user:', linkError);
-          } else {
-            console.log(`Successfully linked booking ${bookingReference} to user ${session.user.id}`);
-            trackEvent('Authentication', 'Booking Linked at Login', bookingReference);
-          }
+          await linkBookingToUser(bookingReference, session.user.id);
         } catch (linkError) {
           console.error('Error linking booking:', linkError);
           // Don't fail login just because linking failed
@@ -211,11 +276,15 @@ const Login = () => {
       
       // Check if user's email is verified
       try {
-        const { data: userData } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('email_verified')
           .eq('id', session.user.id)
           .single();
+          
+        if (userError) {
+          throw userError;
+        }
           
         if (!userData?.email_verified && !isDevEnvironment) {
           // User needs to verify their email
@@ -227,6 +296,8 @@ const Login = () => {
           
           // Force JWT refresh to ensure email_verified claim is current
           await refreshSession();
+          
+          setIsSubmitting(false);
           return;
         }
       } catch (verifyError) {
@@ -457,15 +528,17 @@ const Login = () => {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLinkingBooking}
                   className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-all duration-300 flex items-center justify-center"
                 >
-                  {isSubmitting ? (
+                  {isSubmitting || isLinkingBooking ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Signing in...
+                      {isLinkingBooking ? 'Linking Booking...' : 'Signing in...'}
                     </>
-                  ) : 'Sign In'}
+                  ) : (
+                    bookingReference ? 'Sign In & Link Booking' : 'Sign In'
+                  )}
                 </button>
 
                 <div className="text-center mt-3">

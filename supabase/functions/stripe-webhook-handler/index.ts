@@ -118,10 +118,10 @@ Deno.serve(async (req: Request) => {
         throw new Error("No booking reference found in session metadata");
       }
       
+      console.log(`Payment for booking ${bookingReference} was successful`);
+      
       // Check if the payment was successful
       if (session.payment_status === 'paid') {
-        console.log(`Payment for booking ${bookingReference} was successful`);
-        
         // Update the trip record to show payment is completed
         const { error } = await supabase
           .from('trips')
