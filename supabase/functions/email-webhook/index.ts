@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
-// CORS headers - must dynamically set based on request origin
+// CORS headers that handle origin dynamically
 const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
@@ -216,6 +216,7 @@ Deno.serve(async (req) => {
           emailType: requestData.email_type,
           hasName: !!requestData.name,
           hasEmail: !!requestData.email,
+          hasBookingId: !!requestData.booking_id
         });
       } catch (e) {
         console.error("Failed to parse request body:", e);
@@ -228,7 +229,19 @@ Deno.serve(async (req) => {
         );
       }
       
-      const { name, email, reset_link, email_type } = requestData;
+      const { 
+        name, 
+        email, 
+        reset_link, 
+        email_type, 
+        booking_id, 
+        pickup_location, 
+        dropoff_location, 
+        pickup_datetime, 
+        vehicle_type, 
+        passengers, 
+        total_price 
+      } = requestData;
       
       // Validate required fields
       if (!email) {
@@ -401,6 +414,89 @@ Deno.serve(async (req) => {
             JSON.stringify({ 
               success: false, 
               error: emailError.message || 'Failed to send password reset email'
+            }),
+            {
+              status: 500,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+      } 
+      else if (email_type === 'BookingReference') {
+        // Handle booking confirmation emails with flat structure
+        console.log("Processing booking confirmation email for reference:", booking_id);
+        
+        // Validate required booking fields
+        if (!booking_id || !pickup_location || !dropoff_location) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'Booking ID, pickup location, and dropoff location are required for confirmation emails'
+            }),
+            {
+              status: 400,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        try {
+          console.log("=== BOOKING CONFIRMATION EMAIL SENDING ATTEMPT ===");
+          console.log('To:', email);
+          console.log('Booking ID:', booking_id);
+          console.log('Pickup Location:', pickup_location);
+          console.log('Dropoff Location:', dropoff_location);
+          console.log('Pickup Datetime:', pickup_datetime);
+          console.log('Vehicle Type:', vehicle_type);
+          console.log('Passengers:', passengers);
+          console.log('Total Price:', total_price);
+          
+          // Forward the request to our n8n webhook with flat structure
+          const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth': webhookSecret
+            },
+            body: JSON.stringify({
+              name: name || email.split('@')[0],
+              email: email,
+              booking_id: booking_id,
+              pickup_location: pickup_location,
+              dropoff_location: dropoff_location,
+              pickup_datetime: pickup_datetime,
+              vehicle_type: vehicle_type,
+              passengers: passengers,
+              total_price: total_price,
+              email_type: 'BookingReference'
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error from n8n webhook:', errorText);
+            throw new Error('Failed to send booking confirmation email');
+          }
+          
+          console.log('Booking confirmation email sent successfully');
+          
+          // Return success response
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: 'Booking confirmation email sent successfully'
+            }),
+            {
+              status: 200,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        } catch (emailError) {
+          console.error('Error sending booking confirmation email:', emailError);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: emailError.message || 'Failed to send booking confirmation email'
             }),
             {
               status: 500,

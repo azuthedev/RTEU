@@ -190,6 +190,68 @@ Deno.serve(async (req) => {
         
         console.log('Trip record created successfully with ID:', data[0]?.id);
         tripId = data[0]?.id;
+        
+        // Send a booking confirmation email for cash payments
+        if (payment_method === 'cash') {
+          try {
+            // Get webhook secret
+            const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+            
+            if (webhookSecret) {
+              // Format datetime for email
+              const formatDate = (dateStr: string) => {
+                try {
+                  const date = new Date(dateStr);
+                  return date.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+                } catch (e) {
+                  return dateStr || 'Not specified';
+                }
+              };
+
+              // Format price for email
+              const formatPrice = (price: number) => {
+                return new Intl.NumberFormat('en-US', { 
+                  style: 'currency', 
+                  currency: 'EUR',
+                }).format(price);
+              };
+
+              console.log("Sending booking confirmation email for cash payment");
+              
+              // Send booking confirmation email with flat structure
+              await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Auth': webhookSecret
+                },
+                body: JSON.stringify({
+                  name: tripData.customer_name || 'Valued Customer',
+                  email: tripData.customer_email,
+                  booking_id: booking_reference,
+                  email_type: "BookingReference",
+                  pickup_location: tripData.pickup_address,
+                  dropoff_location: tripData.dropoff_address,
+                  pickup_datetime: formatDate(tripData.datetime),
+                  vehicle_type: tripData.vehicle_type,
+                  passengers: tripData.passengers,
+                  total_price: formatPrice(tripData.estimated_price)
+                })
+              });
+              
+              console.log("Booking confirmation email sent successfully");
+            }
+          } catch (emailError) {
+            console.error('Error sending booking confirmation email:', emailError);
+            // Continue even if email sending fails - it's not critical for booking creation
+          }
+        }
       } catch (error) {
         console.error('Failed to create trip record:', error);
         throw new Error(`Failed to create booking: ${error.message}`);

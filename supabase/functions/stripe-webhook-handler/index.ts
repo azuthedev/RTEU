@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Get the client's origin - even though webhooks don't typically need CORS,
   // we'll handle it properly for consistency and potential browser testing
   const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
@@ -51,6 +51,12 @@ Deno.serve(async (req) => {
     
     if (!stripeSecretKey) {
       throw new Error("Stripe secret key is missing from environment variables");
+    }
+    
+    // Get webhook secret for email sending
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      console.error("Missing WEBHOOK_SECRET environment variable");
     }
 
     // Initialize Stripe
@@ -114,6 +120,8 @@ Deno.serve(async (req) => {
       
       // Check if the payment was successful
       if (session.payment_status === 'paid') {
+        console.log(`Payment for booking ${bookingReference} was successful`);
+        
         // Update the trip record to show payment is completed
         const { error } = await supabase
           .from('trips')
@@ -139,16 +147,18 @@ Deno.serve(async (req) => {
           created_at: new Date().toISOString()
         };
         
-        // First get the trip ID using the booking reference
+        // First get the trip ID and details using the booking reference
         const { data: tripData, error: tripError } = await supabase
           .from('trips')
-          .select('id')
+          .select('*')
           .eq('booking_reference', bookingReference)
           .single();
         
         if (tripError) {
-          console.error('Error fetching trip ID:', tripError);
+          console.error('Error fetching trip details:', tripError);
         } else if (tripData) {
+          console.log('Trip data found:', tripData);
+          
           // Now create the payment record with the trip ID
           paymentData.trip_id = tripData.id;
           
@@ -158,6 +168,63 @@ Deno.serve(async (req) => {
           
           if (paymentError) {
             console.error('Error creating payment record:', paymentError);
+          }
+          
+          // Send booking confirmation email
+          if (webhookSecret && tripData) {
+            try {
+              // Format datetime for email
+              const formatDate = (dateStr: string) => {
+                try {
+                  const date = new Date(dateStr);
+                  return date.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+                } catch (e) {
+                  return dateStr || 'Not specified';
+                }
+              };
+              
+              // Format price for email
+              const formatPrice = (price: number) => {
+                return new Intl.NumberFormat('en-US', { 
+                  style: 'currency', 
+                  currency: 'EUR',
+                }).format(price);
+              };
+              
+              console.log('Sending booking confirmation email for Stripe payment');
+              
+              // Send booking confirmation email with flat structure
+              await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Auth': webhookSecret
+                },
+                body: JSON.stringify({
+                  name: tripData.customer_name || 'Valued Customer',
+                  email: tripData.customer_email,
+                  booking_id: bookingReference,
+                  email_type: "BookingReference",
+                  pickup_location: tripData.pickup_address,
+                  dropoff_location: tripData.dropoff_address,
+                  pickup_datetime: formatDate(tripData.datetime),
+                  vehicle_type: tripData.vehicle_type,
+                  passengers: tripData.passengers,
+                  total_price: formatPrice(tripData.estimated_price)
+                })
+              });
+              
+              console.log('Booking confirmation email sent successfully for Stripe payment');
+            } catch (emailError) {
+              console.error('Error sending booking confirmation email:', emailError);
+              // Continue even if email sending fails - it's not critical for webhook processing
+            }
           }
         }
       }

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { CheckCircle, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
-import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import SignUpModal from '../components/SignUpModal';
 import { Helmet } from 'react-helmet-async';
+import { useToast } from '../components/ui/use-toast';
 
 const BookingSuccess = () => {
   const location = useLocation();
@@ -20,6 +22,9 @@ const BookingSuccess = () => {
   const [loading, setLoading] = useState(true);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [existingUserWithSameEmail, setExistingUserWithSameEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Get the booking reference from the URL query parameters
@@ -78,6 +83,11 @@ const BookingSuccess = () => {
         
         // Check for existing user with this email
         checkForExistingUser(fallbackData[0]);
+
+        // Send booking confirmation email
+        if (!emailSent) {
+          sendBookingConfirmationEmail(fallbackData[0]);
+        }
         
         return;
       }
@@ -88,11 +98,115 @@ const BookingSuccess = () => {
         setBookingDetails(data);
         // Check for existing user with this email
         checkForExistingUser(data);
+
+        // Send booking confirmation email
+        if (!emailSent) {
+          sendBookingConfirmationEmail(data);
+        }
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendBookingConfirmationEmail = async (bookingData: any) => {
+    // Prevent duplicate emails
+    if (emailSent || emailSending) {
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      // Get webhook secret
+      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.error('Missing WEBHOOK_SECRET environment variable');
+        throw new Error('Server configuration error: Missing webhook authentication');
+      }
+
+      // Format datetime for email
+      const formatDate = (dateStr: string) => {
+        try {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return dateStr || 'Not specified';
+        }
+      };
+
+      // Format price for email
+      const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('en-US', { 
+          style: 'currency', 
+          currency: 'EUR',
+        }).format(price);
+      };
+
+      // Prepare email data with flat structure
+      const emailData = {
+        name: bookingData.customer_name || 'Valued Customer',
+        email: bookingData.customer_email,
+        booking_id: bookingData.booking_reference,
+        email_type: "BookingReference",
+        pickup_location: bookingData.pickup_address,
+        dropoff_location: bookingData.dropoff_address,
+        pickup_datetime: formatDate(bookingData.datetime),
+        vehicle_type: bookingData.vehicle_type,
+        passengers: bookingData.passengers,
+        total_price: formatPrice(bookingData.estimated_price)
+      };
+
+      console.log('Sending booking confirmation email with data:', emailData);
+
+      // Make request to email webhook
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify(emailData)
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error response from email webhook:', errorData);
+        throw new Error('Failed to send booking confirmation email');
+      }
+
+      const data = await response.json();
+      console.log('Email webhook response:', data);
+
+      // Mark email as sent
+      setEmailSent(true);
+      trackEvent('Email', 'Booking Confirmation Sent', bookingData.booking_reference);
+
+      // Show success toast
+      toast({
+        title: "Booking Confirmation Sent",
+        description: "A confirmation email has been sent to your email address.",
+        variant: "success"
+      });
+
+    } catch (error) {
+      console.error('Error sending booking confirmation email:', error);
+      trackEvent('Email', 'Booking Confirmation Error', error.message);
+      
+      // Don't show error to user for non-critical operation
+    } finally {
+      setEmailSending(false);
     }
   };
   
