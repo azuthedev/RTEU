@@ -7,15 +7,30 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 // Verify and consume a password reset token
 async function verifyAndConsumeToken(token: string, supabase: any): Promise<{ valid: boolean; email?: string; error?: string }> {
   try {
     // Find the token
-    const { data: tokenData, error: findError } = await supabase
-      .from('password_reset_tokens')
-      .select('id, token, user_email, expires_at, used_at')
-      .eq('token', token)
-      .single();
+    const { data: tokenData, error: findError } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_tokens')
+        .select('id, token, user_email, expires_at, used_at')
+        .eq('token', token)
+        .single();
+    });
     
     if (findError) {
       console.error('Token find error:', findError);
@@ -54,10 +69,12 @@ async function verifyAndConsumeToken(token: string, supabase: any): Promise<{ va
 // Mark a token as used
 async function markTokenAsUsed(token: string, supabase: any): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('password_reset_tokens')
-      .update({ used_at: new Date().toISOString() })
-      .eq('token', token);
+    const { error } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_tokens')
+        .update({ used_at: new Date().toISOString() })
+        .eq('token', token);
+    });
     
     if (error) {
       console.error('Error marking token as used:', error);

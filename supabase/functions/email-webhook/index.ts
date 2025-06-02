@@ -31,6 +31,19 @@ function getProductionDomain(req: Request): string {
   return 'https://royaltransfereu.com';
 }
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 // Check rate limiting for password reset requests
 async function checkRateLimits(email: string, ip: string, supabase: any): Promise<{ allowed: boolean, remaining: number, nextAllowedTime: string | null }> {
   try {
@@ -38,11 +51,13 @@ async function checkRateLimits(email: string, ip: string, supabase: any): Promis
     const oneHourAgo = new Date();
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
     
-    const { count, error } = await supabase
-      .from('password_reset_attempts')
-      .select('*', { count: 'exact', head: true })
-      .eq('email', email)
-      .gt('attempted_at', oneHourAgo.toISOString());
+    const { count, error } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_attempts')
+        .select('*', { count: 'exact', head: true })
+        .eq('email', email)
+        .gt('attempted_at', oneHourAgo.toISOString());
+    });
     
     if (error) {
       console.error('Error checking password reset rate limits:', error);
@@ -57,14 +72,16 @@ async function checkRateLimits(email: string, ip: string, supabase: any): Promis
     let nextAllowedTime = null;
     if (remaining === 0) {
       // Find the timestamp of the oldest attempt in the last hour
-      const { data: oldestAttempt, error: oldestError } = await supabase
-        .from('password_reset_attempts')
-        .select('attempted_at')
-        .eq('email', email)
-        .gt('attempted_at', oneHourAgo.toISOString())
-        .order('attempted_at', { ascending: true })
-        .limit(1)
-        .single();
+      const { data: oldestAttempt, error: oldestError } = await retryDatabaseOperation(async () => {
+        return await supabase
+          .from('password_reset_attempts')
+          .select('attempted_at')
+          .eq('email', email)
+          .gt('attempted_at', oneHourAgo.toISOString())
+          .order('attempted_at', { ascending: true })
+          .limit(1)
+          .single();
+      });
       
       if (!oldestError && oldestAttempt) {
         // Calculate when this attempt "expires" from the hour window
@@ -92,17 +109,19 @@ async function checkRateLimits(email: string, ip: string, supabase: any): Promis
 // Record a password reset attempt
 async function recordResetAttempt(email: string, ip: string, supabase: any, success: boolean = false, userAgent?: string, referrer?: string): Promise<void> {
   try {
-    await supabase
-      .from('password_reset_attempts')
-      .insert([
-        {
-          email,
-          ip_address: ip,
-          success,
-          user_agent: userAgent || null,
-          referrer: referrer || null
-        }
-      ]);
+    await retryDatabaseOperation(async () => {
+      await supabase
+        .from('password_reset_attempts')
+        .insert([
+          {
+            email,
+            ip_address: ip,
+            success,
+            user_agent: userAgent || null,
+            referrer: referrer || null
+          }
+        ]);
+    });
   } catch (error) {
     console.error('Error recording password reset attempt:', error);
     // Non-critical, so we just log the error and continue
@@ -118,17 +137,19 @@ async function createPasswordResetToken(email: string, supabase: any): Promise<s
     expiresAt.setHours(expiresAt.getHours() + RESET_TOKEN_EXPIRY_HOURS);
     
     // Store in the database
-    const { data, error } = await supabase
-      .from('password_reset_tokens')
-      .insert([
-        {
-          token,
-          user_email: email,
-          expires_at: expiresAt.toISOString(),
-          used_at: null
-        }
-      ])
-      .select();
+    const { data, error } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_tokens')
+        .insert([
+          {
+            token,
+            user_email: email,
+            expires_at: expiresAt.toISOString(),
+            used_at: null
+          }
+        ])
+        .select();
+    });
     
     if (error) {
       console.error('Error creating password reset token:', error);
@@ -260,16 +281,17 @@ Deno.serve(async (req) => {
         console.log("Processing password reset email request");
         
         // First, try to find the user's full name from the users table
-        const { data: userData, error: userLookupError } = await supabase
-          .from('users')
-          .select('id, name, email')
-          .eq('email', email)
-          .maybeSingle();
+        const { data: userData, error: userLookupError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('users')
+            .select('id, name, email')
+            .eq('email', email)
+            .maybeSingle();
+        });
         
         console.log("User lookup result:", userData || "Not found");
         
-        // If user doesn't exist, don't reveal this information
-        // but also don't proceed with reset token generation
+        // If user doesn't exist or is already verified
         if (!userData) {
           console.log(`No user found with email ${email} - skipping password reset`);
           

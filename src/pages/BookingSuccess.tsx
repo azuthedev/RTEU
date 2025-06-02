@@ -5,29 +5,63 @@ import { CheckCircle, ArrowRight, Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
-import { supabase } from '../lib/supabase';
+import { supabase, createServiceRoleClient } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import SignUpModal from '../components/SignUpModal';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '../components/ui/use-toast';
 
+// Create a service role client for admin-level access
+const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+let supabaseServiceRole;
+if (!serviceRoleKey) {
+  console.error('Missing VITE_SUPABASE_SERVICE_ROLE_KEY - using regular client');
+  supabaseServiceRole = supabase; // Fallback to regular client
+} else {
+  supabaseServiceRole = createServiceRoleClient();
+}
+
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 const BookingSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { trackEvent } = useAnalytics();
+  const { toast } = useToast();
+
+  // States for booking data
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // States for account management
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [existingUserWithSameEmail, setExistingUserWithSameEmail] = useState(false);
+  const [userExists, setUserExists] = useState(false);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
+
+  // States for email sending
   const [emailSent, setEmailSent] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
-  const { toast } = useToast();
-  const [checkingUserAccount, setCheckingUserAccount] = useState(true);
   
   useEffect(() => {
+    // Check if we have cached booking data from state
+    const state = location.state as any;
+    
     // Get the booking reference from the URL query parameters
     const params = new URLSearchParams(location.search);
     
@@ -41,16 +75,32 @@ const BookingSuccess = () => {
     const bookingRef = reference || sessionId;
     setBookingReference(bookingRef);
     
-    if (bookingRef) {
-      // Small delay to ensure data is inserted in DB
-      setTimeout(() => {
-        fetchBookingDetails(bookingRef);
-      }, 1000);
+    // If we have state data, use it immediately (avoid extra database call)
+    if (state?.bookingData) {
+      console.log('Using cached booking data from navigation state');
+      setBookingDetails(state.bookingData);
+      setLoading(false);
+      
+      // Check if user exists with this email
+      checkUserStatus(state.bookingData);
+      
+      // Send confirmation email
+      if (!emailSent) {
+        sendBookingConfirmationEmail(state.bookingData);
+      }
+      
+      // Clear navigation state to prevent issues on page refresh
+      window.history.replaceState({}, document.title);
+    } else if (bookingRef) {
+      // Fetch data from database if no cached state
+      fetchBookingDetails(bookingRef);
+    } else {
+      setLoading(false);
+      setError('No booking reference found');
     }
     
     // Track booking success
     trackEvent('Booking', 'Booking Success', bookingRef || 'Unknown');
-    
   }, [location, trackEvent]);
   
   const fetchBookingDetails = async (reference: string) => {
@@ -58,64 +108,74 @@ const BookingSuccess = () => {
     try {
       console.log('Fetching booking details for reference:', reference);
       
-      // Try to find booking using reference
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('booking_reference', reference)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching booking details:', error);
+      // Retry database operation with backoff
+      const data = await retryDatabaseOperation(async () => {
+        // Use service role client to bypass RLS policies
+        const { data, error } = await supabaseServiceRole
+          .from('trips')
+          .select('*')
+          .eq('booking_reference', reference)
+          .single();
         
-        // Fall back to a more permissive query if the exact match fails
-        try {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('trips')
-            .select('*')
-            .ilike('booking_reference', `%${reference}%`)
-            .limit(1);
-          
-          if (fallbackError) {
-            throw fallbackError;
-          }
-          
-          if (!fallbackData || fallbackData.length === 0) {
-            throw new Error('No matching booking found with reference: ' + reference);
-          }
-          
-          setBookingDetails(fallbackData[0]);
-          console.log('Booking data found with fallback query:', fallbackData[0]);
-          
-          // Check for existing user with this email
-          checkForExistingUser(fallbackData[0]);
-
-          // Send booking confirmation email
-          if (!emailSent) {
-            sendBookingConfirmationEmail(fallbackData[0]);
-          }
-        } catch (fallbackError) {
-          console.error('Fallback query error:', fallbackError);
-          toast({
-            title: "Error",
-            description: "Could not find your booking. Please contact support.",
-            variant: "destructive"
-          });
+        if (error) {
+          throw error;
         }
-        return;
-      }
-      
-      console.log('Booking data result:', data);
+        
+        return data;
+      });
       
       if (data) {
+        console.log('Booking data retrieved successfully:', data);
         setBookingDetails(data);
-        // Check for existing user with this email
-        checkForExistingUser(data);
+        
+        // Check user status
+        checkUserStatus(data);
 
         // Send booking confirmation email
         if (!emailSent) {
           sendBookingConfirmationEmail(data);
         }
+        return;
+      }
+      
+      // If we get here without data, try fallback
+      console.log('No data found with exact match, trying fallback query');
+      
+      // Try a more permissive query as fallback
+      try {
+        const fallbackData = await retryDatabaseOperation(async () => {
+          const { data, error } = await supabaseServiceRole
+            .from('trips')
+            .select('*')
+            .ilike('booking_reference', `%${reference}%`)
+            .limit(1);
+          
+          if (error) throw error;
+          if (!data || data.length === 0) {
+            throw new Error('No matching booking found with reference: ' + reference);
+          }
+          
+          return data[0];
+        });
+        
+        setBookingDetails(fallbackData);
+        console.log('Booking data found with fallback query:', fallbackData);
+        
+        // Check user status
+        checkUserStatus(fallbackData);
+
+        // Send booking confirmation email
+        if (!emailSent) {
+          sendBookingConfirmationEmail(fallbackData);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback query error:', fallbackError);
+        toast({
+          title: "Error",
+          description: "Could not find your booking. Please contact support.",
+          variant: "destructive"
+        });
+        setError('Could not find your booking');
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
@@ -124,8 +184,52 @@ const BookingSuccess = () => {
         description: "There was an issue retrieving your booking details.",
         variant: "destructive"
       });
+      setError('Could not load booking details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkUserStatus = async (bookingData: any) => {
+    setIsCheckingUser(true);
+    
+    try {
+      if (!user && bookingData?.customer_email) {
+        console.log('Checking if user exists for email:', bookingData.customer_email);
+        
+        // Use service role client to bypass RLS
+        const userData = await retryDatabaseOperation(async () => {
+          const { data, error } = await supabaseServiceRole
+            .from('users')
+            .select('id')
+            .eq('email', bookingData.customer_email)
+            .limit(1);
+          
+          if (error) throw error;
+          return data;
+        });
+        
+        const hasExistingAccount = userData && userData.length > 0;
+        console.log('User exists:', hasExistingAccount);
+        
+        setUserExists(hasExistingAccount);
+        setExistingUserWithSameEmail(hasExistingAccount);
+        
+        // Only show the sign-up modal if there's no existing account with this email
+        if (!hasExistingAccount && !bookingData.user_id) {
+          // Small delay to let the success screen be visible first
+          setTimeout(() => setShowSignUpModal(true), 3000);
+        }
+      } else {
+        setUserExists(!!user);
+      }
+    } catch (error) {
+      console.error('Error checking user status:', error);
+      // Default to showing "create account" option
+      setUserExists(false);
+      setExistingUserWithSameEmail(false);
+    } finally {
+      setIsCheckingUser(false);
     }
   };
 
@@ -194,7 +298,10 @@ const BookingSuccess = () => {
 
       // Make request to email webhook with timeout
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeout = setTimeout(() => {
+        controller.abort();
+        console.log('Email request timed out after 10 seconds');
+      }, 10000); // 10 second timeout
 
       try {
         const response = await fetch(
@@ -215,8 +322,7 @@ const BookingSuccess = () => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Email webhook failed:', response.status, errorText);
-          // Continue gracefully - don't block user experience
-          return;
+          throw new Error(`Email webhook returned ${response.status}`);
         }
 
         const data = await response.json();
@@ -233,9 +339,10 @@ const BookingSuccess = () => {
           variant: "success"
         });
       } catch (fetchError: any) {
+        clearTimeout(timeout);
         console.error('Fetch error:', fetchError);
         if (fetchError.name === 'AbortError') {
-          console.error('Email webhook request timed out');
+          console.log('Email sending timed out - continuing without blocking user');
         }
         // Continue without interrupting user flow
       }
@@ -248,40 +355,7 @@ const BookingSuccess = () => {
       setEmailSending(false);
     }
   };
-  
-  const checkForExistingUser = async (bookingData: any) => {
-    if (!user && bookingData?.customer_email) {
-      setCheckingUserAccount(true);
-      try {
-        const { data: existingUserData, error } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', bookingData.customer_email)
-          .limit(1);
-          
-        if (error) {
-          throw error;
-        }
-          
-        const hasExistingAccount = existingUserData && existingUserData.length > 0;
-        setExistingUserWithSameEmail(hasExistingAccount);
-        
-        // Only show the sign-up modal if there's no existing account with this email
-        if (!hasExistingAccount && !bookingData.user_id) {
-          // Small delay to let the success screen be visible first
-          setTimeout(() => setShowSignUpModal(true), 3000);
-        }
-      } catch (error) {
-        console.error('Error checking user existence:', error);
-        setExistingUserWithSameEmail(false);
-      } finally {
-        setCheckingUserAccount(false);
-      }
-    } else {
-      setCheckingUserAccount(false);
-    }
-  };
-  
+
   // Create confetti effect
   useEffect(() => {
     const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5'];
@@ -398,6 +472,26 @@ const BookingSuccess = () => {
     });
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        
+        <main className="pt-32 pb-16">
+          <div className="max-w-md mx-auto px-4">
+            <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <p className="text-lg">Loading booking details...</p>
+            </div>
+          </div>
+        </main>
+
+        <Sitemap />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
@@ -436,11 +530,9 @@ const BookingSuccess = () => {
             
             <div className="bg-gray-50 p-6 rounded-lg mb-8 text-left">
               <h2 className="text-xl font-semibold mb-4">Booking Details</h2>
-              {loading ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
+              {error ? (
+                <div className="text-red-600 p-4 bg-red-50 rounded-md">
+                  <p>{error}</p>
                 </div>
               ) : bookingDetails ? (
                 <div className="space-y-2">
@@ -524,7 +616,7 @@ const BookingSuccess = () => {
                 >
                   View My Bookings
                 </button>
-              ) : checkingUserAccount ? (
+              ) : isCheckingUser ? (
                 <button 
                   disabled
                   className="bg-gray-300 text-gray-600 px-6 py-3 rounded-md flex items-center justify-center"

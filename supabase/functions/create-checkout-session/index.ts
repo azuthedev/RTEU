@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 Deno.serve(async (req) => {
   // Get the client's origin
   const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
@@ -137,11 +150,13 @@ Deno.serve(async (req) => {
     // If there's no user_id provided but we have an email, try to find a matching user
     if (!tripData.user_id && tripData.customer_email) {
       try {
-        const { data: existingUsers, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', tripData.customer_email)
-          .limit(1);
+        const { data: existingUsers, error: userError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('users')
+            .select('id')
+            .eq('email', tripData.customer_email)
+            .limit(1);
+        });
         
         if (userError) {
           console.error('Error finding user by email:', userError);
@@ -158,11 +173,13 @@ Deno.serve(async (req) => {
     // Check if this booking reference already exists in the database
     let existingBooking;
     try {
-      const { data, error } = await supabase
-        .from('trips')
-        .select('id')
-        .eq('booking_reference', booking_reference)
-        .maybeSingle();
+      const { data, error } = await retryDatabaseOperation(async () => {
+        return await supabase
+          .from('trips')
+          .select('id')
+          .eq('booking_reference', booking_reference)
+          .maybeSingle();
+      });
       
       if (error) {
         console.error('Error checking for existing booking:', error);
@@ -178,10 +195,12 @@ Deno.serve(async (req) => {
     
     if (!existingBooking) {
       try {
-        const { data, error } = await supabase
-          .from('trips')
-          .insert([tripData])
-          .select();
+        const { data, error } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('trips')
+            .insert([tripData])
+            .select();
+        });
 
         if (error) {
           console.error('Error creating trip record:', error);

@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 Deno.serve(async (req: Request) => {
   // Get the client's origin - even though webhooks don't typically need CORS,
   // we'll handle it properly for consistency and potential browser testing
@@ -27,9 +40,9 @@ Deno.serve(async (req: Request) => {
   };
 
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, {
-      status: 204,
+      status: 200,
       headers: headersWithOrigin,
     });
   }
@@ -52,12 +65,6 @@ Deno.serve(async (req: Request) => {
     if (!stripeSecretKey) {
       throw new Error("Stripe secret key is missing from environment variables");
     }
-    
-    // Get webhook secret for email sending
-    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
-    if (!webhookSecret) {
-      console.error("Missing WEBHOOK_SECRET environment variable");
-    }
 
     // Initialize Stripe
     const stripe = new Stripe(stripeSecretKey, {
@@ -73,6 +80,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get webhook secret for email sending
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      console.error("Missing WEBHOOK_SECRET environment variable");
+    }
 
     // Get the request body as text
     const payload = await req.text();
@@ -123,13 +136,15 @@ Deno.serve(async (req: Request) => {
       // Check if the payment was successful
       if (session.payment_status === 'paid') {
         // Update the trip record to show payment is completed
-        const { error } = await supabase
-          .from('trips')
-          .update({ 
-            status: 'accepted', // Mark as accepted since payment is confirmed
-            // Add any other fields that need to be updated
-          })
-          .eq('booking_reference', bookingReference);
+        const { error } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('trips')
+            .update({ 
+              status: 'accepted', // Mark as accepted since payment is confirmed
+              // Add any other fields that need to be updated
+            })
+            .eq('booking_reference', bookingReference);
+        });
         
         if (error) {
           console.error('Error updating trip record:', error);
@@ -148,11 +163,13 @@ Deno.serve(async (req: Request) => {
         };
         
         // First get the trip ID and details using the booking reference
-        const { data: tripData, error: tripError } = await supabase
-          .from('trips')
-          .select('*')
-          .eq('booking_reference', bookingReference)
-          .single();
+        const { data: tripData, error: tripError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('trips')
+            .select('*')
+            .eq('booking_reference', bookingReference)
+            .single();
+        });
         
         if (tripError) {
           console.error('Error fetching trip details:', tripError);
@@ -162,9 +179,11 @@ Deno.serve(async (req: Request) => {
           // Now create the payment record with the trip ID
           paymentData.trip_id = tripData.id;
           
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .insert([paymentData]);
+          const { error: paymentError } = await retryDatabaseOperation(async () => {
+            return await supabase
+              .from('payments')
+              .insert([paymentData]);
+          });
           
           if (paymentError) {
             console.error('Error creating payment record:', paymentError);

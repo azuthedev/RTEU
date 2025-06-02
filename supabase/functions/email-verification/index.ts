@@ -13,6 +13,19 @@ const OTP_EXPIRY_MINUTES = 15;
 const OTP_FORMAT = '00a000'; // 2 digits, 1 letter, 3 digits
 const RESEND_LIMIT_PER_HOUR = 5;
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 // OTP generation function with configurable format
 function generateOTP() {
   // Generate 2 random digits (00)
@@ -109,11 +122,13 @@ async function checkRateLimits(email: string, supabase: any): Promise<{ allowed:
   oneHourAgo.setHours(oneHourAgo.getHours() - 1);
   
   // Count verification attempts in the last hour
-  const { count, error } = await supabase
-    .from('email_verifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('email', email)
-    .gt('created_at', oneHourAgo.toISOString());
+  const { count, error } = await retryDatabaseOperation(async () => {
+    return await supabase
+      .from('email_verifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+      .gt('created_at', oneHourAgo.toISOString());
+  });
   
   if (error) {
     console.error('Error checking rate limits:', error);
@@ -173,42 +188,68 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
       console.log('Sending webhook request...');
       const startTime = Date.now();
 
-      const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Auth': webhookSecret
-        },
-        body: JSON.stringify(requestBody)
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const duration = Date.now() - startTime;
-      console.log('Webhook response time:', duration, 'ms');
-      console.log('Webhook response status:', response.status);
-      console.log('Webhook response status text:', response.statusText);
-      
-      // Log response headers
-      console.log('Webhook response headers:');
-      for (const [key, value] of response.headers.entries()) {
-        console.log(`  ${key}: ${value}`);
-      }
-
-      // Get the response text
-      let responseText;
       try {
-        responseText = await response.text();
-        console.log('Webhook response body:', responseText);
-      } catch (textError) {
-        console.error('Error reading response text:', textError);
-        responseText = '[Failed to read response body]';
-      }
+        const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send verification email: ${response.status} ${responseText}`);
-      }
+        clearTimeout(timeout);
 
-      console.log('Webhook request successful!');
-      return true;
+        const duration = Date.now() - startTime;
+        console.log('Webhook response time:', duration, 'ms');
+        console.log('Webhook response status:', response.status);
+        console.log('Webhook response status text:', response.statusText);
+        
+        // Log response headers
+        console.log('Webhook response headers:');
+        for (const [key, value] of response.headers.entries()) {
+          console.log(`  ${key}: ${value}`);
+        }
+
+        // Get the response text
+        let responseText;
+        try {
+          responseText = await response.text();
+          console.log('Webhook response body:', responseText);
+        } catch (textError) {
+          console.error('Error reading response text:', textError);
+          responseText = '[Failed to read response body]';
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to send verification email: ${response.status} ${responseText}`);
+        }
+
+        console.log('Webhook request successful!');
+        return true;
+      } catch (fetchError) {
+        clearTimeout(timeout);
+        console.error('=== WEBHOOK REQUEST FAILED ===');
+        console.error('Error type:', fetchError.constructor.name);
+        console.error('Error message:', fetchError.message);
+        console.error('Error stack:', fetchError.stack);
+        
+        if (fetchError.name === 'AbortError') {
+          console.log('Request was aborted due to timeout');
+          throw new Error('Verification email request timed out after 10 seconds');
+        }
+        
+        if (fetchError.cause) {
+          console.error('Error cause:', fetchError.cause);
+        }
+        
+        // Always throw the error to ensure it's reported properly
+        throw fetchError;
+      }
     } catch (fetchError) {
       console.error('=== WEBHOOK REQUEST FAILED ===');
       console.error('Error type:', fetchError.constructor.name);
@@ -296,11 +337,13 @@ Deno.serve(async (req) => {
       
       // Find verification record with this magic_token
       console.log("Looking up verification record with token");
-      const { data: verification, error: verificationError } = await supabase
-        .from('email_verifications')
-        .select('*')
-        .eq('magic_token', token)
-        .single();
+      const { data: verification, error: verificationError } = await retryDatabaseOperation(async () => {
+        return await supabase
+          .from('email_verifications')
+          .select('*')
+          .eq('magic_token', token)
+          .single();
+      });
       
       if (verificationError || !verification) {
         console.error('Invalid verification token:', verificationError);
@@ -338,19 +381,23 @@ Deno.serve(async (req) => {
       console.log("Valid verification token, marking as verified");
       
       // Mark verification as complete
-      await supabase
-        .from('email_verifications')
-        .update({ verified: true })
-        .eq('id', verification.id);
+      await retryDatabaseOperation(async () => {
+        return await supabase
+          .from('email_verifications')
+          .update({ verified: true })
+          .eq('id', verification.id);
+      });
       
       // Update user's email_verified status if we have a user_id
       if (verification.user_id) {
         console.log("Updating user email_verified status for user:", verification.user_id);
         
-        await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('id', verification.user_id);
+        await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('id', verification.user_id);
+        });
           
         // Also try to update auth.users metadata
         try {
@@ -509,11 +556,13 @@ Deno.serve(async (req) => {
         
         if (!userId) {
           // Try to find user by email
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id')
-            .eq('email', email)
-            .maybeSingle();
+          const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
+            return await supabase
+              .from('users')
+              .select('id')
+              .eq('email', email)
+              .maybeSingle();
+          });
           
           if (userError && userError.code !== 'PGRST116') {
             console.error('Error checking user:', userError);
@@ -524,12 +573,14 @@ Deno.serve(async (req) => {
         }
         
         // Check for existing verification records for this email
-        const { data: existingVerifications, error: verificationError } = await supabase
-          .from('email_verifications')
-          .select('id')
-          .eq('email', email)
-          .eq('verified', false)
-          .order('created_at', { ascending: false });
+        const { data: existingVerifications, error: verificationError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('email_verifications')
+            .select('id')
+            .eq('email', email)
+            .eq('verified', false)
+            .order('created_at', { ascending: false });
+        });
         
         // Delete existing unverified verifications for this email to prevent DB clutter
         if (existingVerifications && existingVerifications.length > 0) {
@@ -538,10 +589,12 @@ Deno.serve(async (req) => {
           console.log(`Cleaning up ${idsToDelete.length} old verification records`);
           
           if (idsToDelete.length > 0) {
-            await supabase
-              .from('email_verifications')
-              .delete()
-              .in('id', idsToDelete);
+            await retryDatabaseOperation(async () => {
+              return await supabase
+                .from('email_verifications')
+                .delete()
+                .in('id', idsToDelete);
+            });
           }
         }
         
@@ -551,19 +604,21 @@ Deno.serve(async (req) => {
         
         // Insert new verification with created_at timestamp
         console.log("Creating new verification record");
-        const { data: newVerification, error: insertError } = await supabase
-          .from('email_verifications')
-          .insert([{
-            user_id: userId || null,
-            token: otpCode, // Store OTP as token
-            magic_token: magicLinkToken, // Store magic link token
-            email: email, // Store email to track who this verification is for
-            expires_at: expiresAt,
-            verified: false,
-            created_at: new Date().toISOString() // Explicitly set created_at
-          }])
-          .select()
-          .single();
+        const { data: newVerification, error: insertError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('email_verifications')
+            .insert([{
+              user_id: userId || null,
+              token: otpCode, // Store OTP as token
+              magic_token: magicLinkToken, // Store magic link token
+              email: email, // Store email to track who this verification is for
+              expires_at: expiresAt,
+              verified: false,
+              created_at: new Date().toISOString() // Explicitly set created_at
+            }])
+            .select()
+            .single();
+        });
         
         if (insertError) {
           console.error("Error inserting verification record:", insertError);
@@ -618,12 +673,14 @@ Deno.serve(async (req) => {
         console.log(`Verifying OTP: ${token} for ID: ${verificationId}`);
         
         // Find the verification record
-        const { data: verification, error: verificationError } = await supabase
-          .from('email_verifications')
-          .select('*')
-          .eq('id', verificationId)
-          .eq('token', token)
-          .single();
+        const { data: verification, error: verificationError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('email_verifications')
+            .select('*')
+            .eq('id', verificationId)
+            .eq('token', token)
+            .single();
+        });
         
         if (verificationError) {
           console.error("Verification query error:", verificationError);
@@ -657,18 +714,22 @@ Deno.serve(async (req) => {
         console.log("Verification is valid, marking as verified");
         
         // Mark as verified
-        await supabase
-          .from('email_verifications')
-          .update({ verified: true })
-          .eq('id', verificationId);
+        await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('email_verifications')
+            .update({ verified: true })
+            .eq('id', verificationId);
+        });
         
         // If we have a user_id, update the user's email_verified status
         if (verification.user_id) {
           console.log("Updating user email_verified status for user:", verification.user_id);
-          await supabase
-            .from('users')
-            .update({ email_verified: true })
-            .eq('id', verification.user_id);
+          await retryDatabaseOperation(async () => {
+            return await supabase
+              .from('users')
+              .update({ email_verified: true })
+              .eq('id', verification.user_id);
+          });
             
           // Also try to update auth.users metadata
           try {
@@ -700,11 +761,13 @@ Deno.serve(async (req) => {
         console.log("Checking verification status for email:", email);
         
         // Check if user exists and is verified
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, email_verified')
-          .eq('email', email)
-          .maybeSingle();
+        const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('users')
+            .select('id, email_verified')
+            .eq('email', email)
+            .maybeSingle();
+        });
         
         if (userError) {
           console.error("Error checking user:", userError);
@@ -730,13 +793,15 @@ Deno.serve(async (req) => {
         console.log("User found, email_verified status:", userData.email_verified);
         
         // Check if there are any pending verifications
-        const { data: verifications, error: verificationError } = await supabase
-          .from('email_verifications')
-          .select('id, created_at, expires_at')
-          .eq('user_id', userData.id)
-          .eq('verified', false)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        const { data: verifications, error: verificationError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('email_verifications')
+            .select('id, created_at, expires_at')
+            .eq('user_id', userData.id)
+            .eq('verified', false)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        });
         
         // Has a recent verification (within the last 5 minutes)?
         let hasPendingVerification = false;

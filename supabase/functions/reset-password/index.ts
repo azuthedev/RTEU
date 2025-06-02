@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 
+// Helper function to retry database operations
+const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 // Reset password using a verified token
 async function resetPassword(
   email: string, 
@@ -16,11 +29,13 @@ async function resetPassword(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // First verify the token is valid
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('password_reset_tokens')
-      .select('id, token, user_email, expires_at, used_at')
-      .eq('token', token)
-      .single();
+    const { data: tokenData, error: tokenError } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_tokens')
+        .select('id, token, user_email, expires_at, used_at')
+        .eq('token', token)
+        .single();
+    });
     
     if (tokenError || !tokenData) {
       return { 
@@ -57,10 +72,12 @@ async function resetPassword(
     }
     
     // Mark token as used immediately to prevent race conditions
-    const { error: updateError } = await supabase
-      .from('password_reset_tokens')
-      .update({ used_at: now.toISOString() })
-      .eq('token', token);
+    const { error: updateError } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('password_reset_tokens')
+        .update({ used_at: now.toISOString() })
+        .eq('token', token);
+    });
     
     if (updateError) {
       console.error('Error marking token as used:', updateError);
@@ -71,11 +88,13 @@ async function resetPassword(
     }
     
     // Find the user by email
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
+    const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+    });
     
     if (userError || !userData) {
       return { 
@@ -85,10 +104,12 @@ async function resetPassword(
     }
     
     // Reset the user's password using admin API
-    const { error: passwordError } = await supabase.auth.admin.updateUserById(
-      userData.id,
-      { password: newPassword }
-    );
+    const { error: passwordError } = await retryDatabaseOperation(async () => {
+      return await supabase.auth.admin.updateUserById(
+        userData.id,
+        { password: newPassword }
+      );
+    });
     
     if (passwordError) {
       console.error('Error resetting password:', passwordError);
@@ -100,12 +121,14 @@ async function resetPassword(
     
     // Record successful password reset
     try {
-      await supabase.from('password_reset_attempts')
-        .insert([{
-          email,
-          success: true,
-          user_agent: 'Supabase Edge Function'
-        }]);
+      await retryDatabaseOperation(async () => {
+        return await supabase.from('password_reset_attempts')
+          .insert([{
+            email,
+            success: true,
+            user_agent: 'Supabase Edge Function'
+          }]);
+      });
     } catch (recordError) {
       // Non-critical error, just log it
       console.error('Error recording successful reset:', recordError);
