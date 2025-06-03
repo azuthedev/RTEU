@@ -53,10 +53,6 @@ const BookingSuccess = () => {
   const [existingUserWithSameEmail, setExistingUserWithSameEmail] = useState(false);
   const [userExists, setUserExists] = useState(false);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
-
-  // States for email sending
-  const [emailSent, setEmailSent] = useState(false);
-  const [emailSending, setEmailSending] = useState(false);
   
   useEffect(() => {
     // Check if we have cached booking data from state
@@ -83,11 +79,6 @@ const BookingSuccess = () => {
       
       // Check if user exists with this email
       checkUserStatus(state.bookingData);
-      
-      // Send confirmation email
-      if (!emailSent) {
-        sendBookingConfirmationEmail(state.bookingData);
-      }
       
       // Clear navigation state to prevent issues on page refresh
       window.history.replaceState({}, document.title);
@@ -130,11 +121,6 @@ const BookingSuccess = () => {
         
         // Check user status
         checkUserStatus(data);
-
-        // Send booking confirmation email
-        if (!emailSent) {
-          sendBookingConfirmationEmail(data);
-        }
         return;
       }
       
@@ -163,11 +149,6 @@ const BookingSuccess = () => {
         
         // Check user status
         checkUserStatus(fallbackData);
-
-        // Send booking confirmation email
-        if (!emailSent) {
-          sendBookingConfirmationEmail(fallbackData);
-        }
       } catch (fallbackError) {
         console.error('Fallback query error:', fallbackError);
         toast({
@@ -230,129 +211,6 @@ const BookingSuccess = () => {
       setExistingUserWithSameEmail(false);
     } finally {
       setIsCheckingUser(false);
-    }
-  };
-
-  const sendBookingConfirmationEmail = async (bookingData: any) => {
-    // Prevent duplicate emails
-    if (emailSent || emailSending) {
-      return;
-    }
-
-    setEmailSending(true);
-    try {
-      // Get webhook secret
-      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
-      
-      if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET - email sending disabled');
-        // Don't fail the page, just skip email
-        return;
-      }
-
-      // Format datetime for email
-      const formatDate = (dateStr: string) => {
-        try {
-          const date = new Date(dateStr);
-          return date.toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } catch (e) {
-          return dateStr || 'Not specified';
-        }
-      };
-
-      // Format price for email
-      const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('en-US', { 
-          style: 'currency', 
-          currency: 'EUR',
-        }).format(price);
-      };
-
-      // Validate booking data to ensure we have required fields
-      if (!bookingData.customer_email) {
-        console.error('Missing required email field in booking data');
-        return;
-      }
-
-      // Prepare email data with flat structure
-      const emailData = {
-        name: bookingData.customer_name || 'Valued Customer',
-        email: bookingData.customer_email,
-        booking_id: bookingData.booking_reference,
-        email_type: "BookingReference",
-        pickup_location: bookingData.pickup_address,
-        dropoff_location: bookingData.dropoff_address,
-        pickup_datetime: formatDate(bookingData.datetime),
-        vehicle_type: bookingData.vehicle_type || 'Standard Vehicle',
-        passengers: bookingData.passengers || 1,
-        total_price: formatPrice(bookingData.estimated_price || 0)
-      };
-
-      console.log('Sending booking confirmation email with data:', emailData);
-
-      // Make request to email webhook with timeout
-      const controller = new AbortController();
-      const timeout = setTimeout(() => {
-        controller.abort();
-        console.log('Email request timed out after 10 seconds');
-      }, 10000); // 10 second timeout
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Auth': webhookSecret
-            },
-            body: JSON.stringify(emailData),
-            signal: controller.signal
-          }
-        );
-
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Email webhook failed:', response.status, errorText);
-          throw new Error(`Email webhook returned ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Email webhook response:', data);
-
-        // Mark email as sent
-        setEmailSent(true);
-        trackEvent('Email', 'Booking Confirmation Sent', bookingData.booking_reference);
-
-        // Show success toast
-        toast({
-          title: "Booking Confirmation Sent",
-          description: "A confirmation email has been sent to your email address.",
-          variant: "success"
-        });
-      } catch (fetchError: any) {
-        clearTimeout(timeout);
-        console.error('Fetch error:', fetchError);
-        if (fetchError.name === 'AbortError') {
-          console.log('Email sending timed out - continuing without blocking user');
-        }
-        // Continue without interrupting user flow
-      }
-    } catch (error) {
-      console.error('Error sending booking confirmation email:', error);
-      trackEvent('Email', 'Booking Confirmation Error', error.message);
-      
-      // Don't show error to user for non-critical operation
-    } finally {
-      setEmailSending(false);
     }
   };
 
