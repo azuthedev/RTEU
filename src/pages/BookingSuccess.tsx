@@ -53,6 +53,10 @@ const BookingSuccess = () => {
   const [existingUserWithSameEmail, setExistingUserWithSameEmail] = useState(false);
   const [userExists, setUserExists] = useState(false);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
+
+  // Email sending states
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
   
   useEffect(() => {
     // Check if we have cached booking data from state
@@ -94,6 +98,122 @@ const BookingSuccess = () => {
     trackEvent('Booking', 'Booking Success', bookingRef || 'Unknown');
   }, [location, trackEvent]);
   
+  // Function to send booking confirmation email
+  const sendBookingConfirmationEmail = async (bookingData: any) => {
+    // Check if email was already sent to prevent duplicates
+    if (emailSent || emailSending || !bookingData) return;
+    
+    setEmailSending(true);
+    
+    // Check for recently sent emails to this booking reference
+    try {
+      // Use service role client to bypass RLS
+      const { data: existingEmails } = await retryDatabaseOperation(async () => {
+        return await supabaseServiceRole
+          .from('booking_activity_logs')
+          .select('id, created_at')
+          .eq('booking_id', bookingData.id)
+          .eq('action', 'email_sent')
+          .order('created_at', { ascending: false })
+          .limit(1);
+      });
+      
+      // If we already sent an email in the last 30 minutes, don't send again
+      if (existingEmails && existingEmails.length > 0) {
+        const lastEmailTime = new Date(existingEmails[0].created_at);
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        
+        if (lastEmailTime > thirtyMinutesAgo) {
+          console.log('Email already sent in the last 30 minutes, skipping');
+          setEmailSent(true);
+          setEmailSending(false);
+          return;
+        }
+      }
+      
+      console.log('Sending booking confirmation for:', bookingData.booking_reference);
+      
+      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.error('Missing WEBHOOK_SECRET - cannot send confirmation email');
+        setEmailSending(false);
+        return;
+      }
+      
+      // Create email data with flat structure for the webhook
+      const emailData = {
+        name: bookingData.customer_name || 'Valued Customer',
+        email: bookingData.customer_email,
+        booking_id: bookingData.booking_reference,
+        email_type: "BookingReference",
+        pickup_location: bookingData.pickup_address,
+        dropoff_location: bookingData.dropoff_address,
+        pickup_datetime: formatDateTime(bookingData.datetime),
+        vehicle_type: bookingData.vehicle_type,
+        passengers: bookingData.passengers,
+        total_price: `€${(bookingData.estimated_price || 0).toFixed(2)}`
+      };
+      
+      // Add timeout protection
+      const controller = new AbortController();
+      const timeout = setTimeout(() => {
+        controller.abort();
+        console.log('Email request timed out after 10 seconds');
+      }, 10000);
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'X-Auth': webhookSecret
+          },
+          body: JSON.stringify(emailData),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          throw new Error(`Email webhook returned ${response.status}`);
+        }
+        
+        // Log the email sending in the database
+        await retryDatabaseOperation(async () => {
+          return await supabaseServiceRole
+            .from('booking_activity_logs')
+            .insert([{
+              booking_id: bookingData.id,
+              user_id: user?.id,
+              action: 'email_sent',
+              details: {
+                email_type: 'booking_confirmation',
+                recipient: bookingData.customer_email,
+                sent_at: new Date().toISOString()
+              }
+            }]);
+        });
+        
+        setEmailSent(true);
+        console.log('Booking confirmation email sent successfully');
+      } catch (error) {
+        clearTimeout(timeout);
+        
+        if (error.name === 'AbortError') {
+          console.log('Email sending timed out - continuing without blocking user');
+        } else {
+          console.error('Failed to send confirmation email:', error);
+          // Don't show error to user for non-critical email failures
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for existing emails:', error);
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
   const fetchBookingDetails = async (reference: string) => {
     setLoading(true);
     try {
@@ -213,6 +333,13 @@ const BookingSuccess = () => {
       setIsCheckingUser(false);
     }
   };
+
+  // Effect to send email when booking details are available
+  useEffect(() => {
+    if (bookingDetails && !emailSent) {
+      sendBookingConfirmationEmail(bookingDetails);
+    }
+  }, [bookingDetails, emailSent]);
 
   // Create confetti effect
   useEffect(() => {
