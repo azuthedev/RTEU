@@ -272,11 +272,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
                     
                     <button
                       type="submit"
-                      disabled={isSubmitting || (!emailValid && resetEmail.length > 0)}
-                      className={`w-full mt-6 py-3 rounded-md transition-all duration-300 flex items-center justify-center
-                        ${isSubmitting || (!emailValid && resetEmail.length > 0)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                      className="w-full mt-6 py-3 rounded-md transition-all duration-300 flex items-center justify-center
+                        bg-blue-600 text-white hover:bg-blue-700"
                     >
                       {isSubmitting ? (
                         <>
