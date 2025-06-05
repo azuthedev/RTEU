@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Include all environment variables in the client build
-      'import.meta.env.WEBHOOK_SECRET': JSON.stringify(env.WEBHOOK_SECRET || ''),
+      'import.meta.env.VITE_WEBHOOK_SECRET': JSON.stringify(env.VITE_WEBHOOK_SECRET || ''),
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
       'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(env.VITE_GOOGLE_MAPS_API_KEY),

@@ -172,7 +172,8 @@ Deno.serve(async (req) => {
     'https://royaltransfereu.com',
     'https://www.royaltransfereu.com', 
     'http://localhost:3000', 
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://local-credentialless.webcontainer.io'
   ];
   
   // Set the correct CORS origin header based on the request's origin
@@ -202,25 +203,34 @@ Deno.serve(async (req) => {
                      req.headers.get('cf-connecting-ip') || 
                      'unknown';
     
-    // Verify the X-Auth header
-    const authHeader = req.headers.get('X-Auth');
-    console.log("X-Auth header present:", !!authHeader);
+    // Verify authorization
+    const authHeader = req.headers.get('Authorization');
+    console.log("Authorization header present:", !!authHeader);
     
-    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-    console.log("WEBHOOK_SECRET env var present:", !!webhookSecret);
-    
-    if (!webhookSecret || authHeader !== webhookSecret) {
-      console.error("Authentication failed: Header doesn't match expected secret");
+    // Check for JWT token authentication
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // We'll continue with JWT auth (from anon key)
+      console.log("Using JWT authentication");
+    } else {
+      // Check for webhook secret in X-Auth header as fallback
+      const xAuthHeader = req.headers.get('X-Auth');
+      const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
       
-      return new Response(
-        JSON.stringify({ 
-          error: 'Unauthorized - Invalid authentication header'
-        }),
-        {
-          status: 401,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-        }
-      );
+      if (!webhookSecret || xAuthHeader !== webhookSecret) {
+        console.error("Authentication failed: Invalid or missing auth credentials");
+        
+        return new Response(
+          JSON.stringify({ 
+            error: 'Unauthorized - Invalid authentication'
+          }),
+          {
+            status: 401,
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      console.log("Using X-Auth webhook secret authentication");
     }
 
     // Initialize Supabase client
@@ -383,7 +393,30 @@ Deno.serve(async (req) => {
           console.log('Using name:', userRealName);
           console.log('Reset Link:', resetUrl);
           
+          // For development/testing in WebContainer, just return success
+          if (isDevEnvironment(req.headers.get('host') || '')) {
+            console.log('DEVELOPMENT MODE: Simulating email sending success');
+            
+            // Record successful attempt
+            await recordResetAttempt(email, clientIp, supabase, true,
+              req.headers.get('user-agent'),
+              req.headers.get('referer')
+            );
+            
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                message: 'Password reset email sent successfully (DEV MODE)'
+              }),
+              {
+                status: 200,
+                headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+          
           // Forward the request to our n8n webhook
+          const webhookSecret = Deno.env.get('WEBHOOK_SECRET') || '';
           const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
             method: 'POST',
             headers: {
@@ -472,7 +505,24 @@ Deno.serve(async (req) => {
           console.log('Passengers:', passengers);
           console.log('Total Price:', total_price);
           
+          // For development/testing in WebContainer, just return success
+          if (isDevEnvironment(req.headers.get('host') || '')) {
+            console.log('DEVELOPMENT MODE: Simulating email sending success');
+            
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                message: 'Booking confirmation email sent successfully (DEV MODE)'
+              }),
+              {
+                status: 200,
+                headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+          
           // Forward the request to our n8n webhook with flat structure
+          const webhookSecret = Deno.env.get('WEBHOOK_SECRET') || '';
           const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
             method: 'POST',
             headers: {
