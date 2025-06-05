@@ -133,9 +133,9 @@ const BookingSuccess = () => {
       
       console.log('Sending booking confirmation for:', bookingData.booking_reference);
       
-      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
       if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET - cannot send confirmation email');
+        console.error('Missing VITE_WEBHOOK_SECRET - cannot send confirmation email');
         setEmailSending(false);
         return;
       }
