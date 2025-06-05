@@ -127,14 +127,14 @@ export const sendOtpEmail = async (
     }
     
     // Get webhook secret from environment variables
-    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+    const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
     console.log('Webhook secret available:', !!webhookSecret);
     
     if (!webhookSecret) {
-      console.error('Missing WEBHOOK_SECRET environment variable');
+      console.error('Missing VITE_WEBHOOK_SECRET environment variable');
       console.log('Available env variables:', Object.keys(import.meta.env)
-        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
       
       // Fallback for development
@@ -261,13 +261,13 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     }
     
     // Get webhook secret from environment variables
-    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+    const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
     console.log('Webhook secret available:', !!webhookSecret);
     if (!webhookSecret) {
-      console.error('Missing WEBHOOK_SECRET environment variable');
+      console.error('Missing VITE_WEBHOOK_SECRET environment variable');
       console.log('Available env variables:', Object.keys(import.meta.env)
-        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
       
       // Fallback for development
@@ -397,13 +397,13 @@ export const checkEmailVerification = async (email: string): Promise<{
     }
     
     // Get webhook secret from environment variables
-    const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+    const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
     console.log('Webhook secret available:', !!webhookSecret);
     if (!webhookSecret) {
-      console.error('Missing WEBHOOK_SECRET environment variable');
+      console.error('Missing VITE_WEBHOOK_SECRET environment variable');
       console.log('Available env variables:', Object.keys(import.meta.env)
-        .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+        .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
       
       // Fallback for development
