@@ -593,15 +593,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Password Reset Request Initiated', email);
       
+      // First, try to find the user's actual name from the users table
+      let userName = email.split('@')[0]; // Default fallback
+      
+      try {
+        const { data: userData, error: userLookupError } = await supabase
+          .from('users')
+          .select('name')
+          .eq('email', email)
+          .single();
+        
+        if (!userLookupError && userData?.name) {
+          userName = userData.name;
+        }
+      } catch (dbError) {
+        console.log('Could not fetch user name, using email prefix fallback');
+        // Continue with email prefix fallback
+      }
+      
       // Set to production URL, not window.location.origin
       const productionDomain = 'https://royaltransfereu.com';
       
       // Debug logging to help identify issues
       console.log('Environment variables check:');
       console.log('VITE_SUPABASE_URL exists:', !!import.meta.env.VITE_SUPABASE_URL);
-      console.log('VITE_WEBHOOK_SECRET exists:', !!import.meta.env.VITE_WEBHOOK_SECRET);
+      console.log('VITE_SUPABASE_ANON_KEY exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
       
-      // Using anon key instead of webhook secret for auth - more secure approach
+      // Using anon key for auth - more secure approach
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
@@ -620,7 +638,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
-            name: email.split('@')[0], // Use part before @ if no name provided
+            name: userName, // Use actual name or fallback
             email: email,
             reset_link: productionDomain, // Base URL only, the Edge Function will generate the token and complete link
             email_type: 'PWReset'
