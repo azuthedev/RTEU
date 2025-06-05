@@ -596,22 +596,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       // Set to production URL, not window.location.origin
       const productionDomain = 'https://royaltransfereu.com';
       
-      // Get webhook secret
-      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      // Debug logging to help identify issues
+      console.log('Environment variables check:');
+      console.log('VITE_SUPABASE_URL exists:', !!import.meta.env.VITE_SUPABASE_URL);
+      console.log('VITE_WEBHOOK_SECRET exists:', !!import.meta.env.VITE_WEBHOOK_SECRET);
       
-      if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET environment variable');
-        throw new Error('Server configuration error: Missing webhook authentication');
+      // Using anon key instead of webhook secret for auth - more secure approach
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !anonKey) {
+        console.error('Missing required environment variables');
+        throw new Error('Server configuration error: Missing required configuration');
       }
       
-      // Send password reset request via webhook
+      // Send password reset request via edge function with anon key auth
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook`,
+        `${supabaseUrl}/functions/v1/email-webhook`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Auth': webhookSecret
+            'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
             name: email.split('@')[0], // Use part before @ if no name provided
@@ -637,7 +643,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Webhook response error:', errorText);
+        console.error('Edge function response error:', errorText);
         throw new Error('Failed to send password reset email');
       }
       
@@ -661,22 +667,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Verify Password Reset Token');
       
-      // Get webhook secret
-      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      // Using anon key for auth - more secure approach
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET environment variable');
-        throw new Error('Server configuration error: Missing webhook authentication');
+      if (!supabaseUrl || !anonKey) {
+        console.error('Missing required environment variables');
+        throw new Error('Server configuration error: Missing required configuration');
       }
       
       // Verify the token via Edge Function
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-reset-token`,
+        `${supabaseUrl}/functions/v1/verify-reset-token`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Auth': webhookSecret
+            'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
             token: token,
@@ -729,22 +736,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Password Reset Attempt');
       
-      // Get webhook secret
-      const webhookSecret = import.meta.env.WEBHOOK_SECRET;
+      // Using anon key for auth - more secure approach
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (!webhookSecret) {
-        console.error('Missing WEBHOOK_SECRET environment variable');
-        throw new Error('Server configuration error: Missing webhook authentication');
+      if (!supabaseUrl || !anonKey) {
+        console.error('Missing required environment variables');
+        throw new Error('Server configuration error: Missing required configuration');
       }
       
       // Reset password via Edge Function
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password`,
+        `${supabaseUrl}/functions/v1/reset-password`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Auth': webhookSecret
+            'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
             email: email,
@@ -761,12 +769,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       // Consume the token to prevent reuse
       await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-reset-token`,
+        `${supabaseUrl}/functions/v1/verify-reset-token`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Auth': webhookSecret
+            'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
             token: token,
