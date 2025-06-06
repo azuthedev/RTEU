@@ -377,7 +377,7 @@ const PaymentDetails = () => {
   };
 
   const calculateTotal = () => {
-    // Use API price if available
+    // Get the API price for the selected vehicle if available
     const basePrice = getApiVehiclePrice(bookingState.selectedVehicle?.id) || bookingState.selectedVehicle?.price || 0;
     
     // Calculate extras total with child seat quantities

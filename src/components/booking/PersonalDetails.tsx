@@ -163,6 +163,7 @@ const PersonalDetails = () => {
     });
   };
 
+  // Handle extra toggle (including child seats)
   const handleExtraToggle = (extraId: string) => {
     const isChildSeat = ['child-seat', 'infant-seat', 'booster-seat'].includes(extraId);
     const newExtras = new Set(formData.selectedExtras);
@@ -560,20 +561,24 @@ const PersonalDetails = () => {
                       <button 
                         type="button"
                         onClick={() => handleChildSeatQuantity(extra.id, false)}
-                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
+                        className={`w-7 h-7 flex items-center justify-center ${
+                          quantity <= 1 
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                            : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
                         disabled={quantity <= 1}
                         aria-label={`Decrease ${extra.name} count`}
                         id={`${extra.id}-decrease`}
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center text-sm">
+                      <span className="w-6 text-center text-sm font-medium">
                         {quantity}
                       </span>
                       <button 
                         type="button"
                         onClick={() => handleChildSeatQuantity(extra.id, true)}
-                        className={`w-7 h-7 flex items-center justify-center rounded-full ${
+                        className={`w-7 h-7 flex items-center justify-center ${
                           quantity < 4 
                             ? 'bg-gray-100 hover:bg-gray-200'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
