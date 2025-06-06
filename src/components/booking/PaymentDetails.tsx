@@ -21,7 +21,7 @@ const PaymentDetails = () => {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [showDiscount, setShowDiscount] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
-  const [showPriceDetails, setShowPriceDetails] = useState(true); // Changed to true for open by default
+  const [showPriceDetails, setShowPriceDetails] = useState(true); // Open by default
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -91,10 +91,14 @@ const PaymentDetails = () => {
           user_id: user?.id || null
         },
         extras: Array.from(bookingState.personalDetails?.selectedExtras || []),
+        // Add the new fields
+        extraStops: bookingState.personalDetails?.extraStops || [],
+        childSeats: bookingState.personalDetails?.childSeats || {},
+        luggageCount: bookingState.personalDetails?.luggageCount || 0,
+        flight_number: bookingState.personalDetails?.flightNumber || null,
         amount: calculateTotal(), 
         discountCode: discountCode || null,
-        payment_method: paymentMethod,
-        flight_number: bookingState.personalDetails?.flightNumber || null
+        payment_method: paymentMethod
       };
 
       console.log("Sending booking data:", bookingData);
@@ -284,10 +288,14 @@ const PaymentDetails = () => {
             user_id: user?.id || null
           },
           extras: Array.from(bookingState.personalDetails?.selectedExtras || []),
+          // Add the new fields
+          extraStops: bookingState.personalDetails?.extraStops || [],
+          childSeats: bookingState.personalDetails?.childSeats || {},
+          luggageCount: bookingState.personalDetails?.luggageCount || 0,
+          flight_number: bookingState.personalDetails?.flightNumber || null,
           amount: calculateTotal(),
           discountCode: discountCode || null,
-          payment_method: 'cash',
-          flight_number: bookingState.personalDetails?.flightNumber || null
+          payment_method: 'cash'
         };
         
         // Call the Edge Function to create the booking
@@ -355,10 +363,10 @@ const PaymentDetails = () => {
       'standard-minivan': 'standard_minivan',
       'xl-minivan': 'xl_minivan',
       'vip-minivan': 'vip_minivan',
-      'sprinter-8': 'sprinter_8_pax', // Updated to match API
-      'sprinter-16': 'sprinter_16_pax', // Updated to match API
-      'sprinter-21': 'sprinter_21_pax', // Updated to match API
-      'bus-51': 'coach_51_pax' // Updated to match API
+      'sprinter-8': 'sprinter_8_pax',
+      'sprinter-16': 'sprinter_16_pax',
+      'sprinter-21': 'sprinter_21_pax',
+      'bus-51': 'coach_51_pax'
     };
     
     const apiCategory = apiCategoryMap[vehicleId];
@@ -372,15 +380,31 @@ const PaymentDetails = () => {
     // Use API price if available
     const basePrice = getApiVehiclePrice(bookingState.selectedVehicle?.id) || bookingState.selectedVehicle?.price || 0;
     
+    // Calculate extras total with child seat quantities
     const extrasTotal = Array.from(bookingState.personalDetails?.selectedExtras || [])
       .reduce((total, extraId) => {
         const extra = extras.find(e => e.id === extraId);
-        return total + (extra?.price || 0);
+        if (!extra) return total;
+        
+        // If it's a child seat, multiply by quantity
+        if (['child-seat', 'infant-seat', 'booster-seat'].includes(extraId)) {
+          const quantity = bookingState.personalDetails?.childSeats?.[extraId] || 1;
+          return total + (extra.price * quantity);
+        }
+        
+        // If it's an extra stop, multiply by the number of stops
+        if (extraId === 'extra-stop') {
+          const stopCount = bookingState.personalDetails?.extraStops?.length || 0;
+          return total + (extra.price * stopCount);
+        }
+        
+        return total + (extra.price || 0);
       }, 0);
+      
     return basePrice + extrasTotal;
   };
 
-  // Generate price details including the API price if available
+  // Generate price details including the API price if available and extra stops/child seats
   const getPriceDetails = () => {
     const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle?.id) || bookingState.selectedVehicle?.price || 0;
     
@@ -388,25 +412,46 @@ const PaymentDetails = () => {
       { 
         label: bookingState.selectedVehicle?.name || 'Vehicle Transfer', 
         price: vehiclePrice
-      },
-      ...(bookingState.personalDetails?.selectedExtras 
-        ? Array.from(bookingState.personalDetails.selectedExtras).map(extraId => {
-            const extra = extras.find(e => e.id === extraId);
-            return {
-              label: extra?.name || '',
-              price: extra?.price || 0
-            };
-          })
-        : []
-      )
+      }
     ];
-
-    // Add night transfer fee if applicable - this would be based on your business logic
-    // const pickupTime = new Date(bookingState.departureDate || '');
-    // const isNightTransfer = pickupTime.getHours() < 6 || pickupTime.getHours() >= 22;
-    // if (isNightTransfer) {
-    //   details.push({ label: 'Night Transfer Fee', price: 10.00 });
-    // }
+    
+    // Add child seats with quantities
+    const childSeatExtras = ['child-seat', 'infant-seat', 'booster-seat'];
+    Array.from(bookingState.personalDetails?.selectedExtras || [])
+      .filter(id => childSeatExtras.includes(id))
+      .forEach(extraId => {
+        const extra = extras.find(e => e.id === extraId);
+        if (extra) {
+          const quantity = bookingState.personalDetails?.childSeats?.[extraId] || 1;
+          details.push({
+            label: `${extra.name} × ${quantity}`,
+            price: extra.price * quantity
+          });
+        }
+      });
+    
+    // Add extra stops if any
+    const extraStopCount = bookingState.personalDetails?.extraStops?.length || 0;
+    if (extraStopCount > 0) {
+      const extraStopPrice = extras.find(e => e.id === 'extra-stop')?.price || 10.00;
+      details.push({
+        label: `Extra ${extraStopCount === 1 ? 'Stop' : 'Stops'} (${extraStopCount})`,
+        price: extraStopPrice * extraStopCount
+      });
+    }
+    
+    // Add other extras (not child seats or stops)
+    Array.from(bookingState.personalDetails?.selectedExtras || [])
+      .filter(id => !childSeatExtras.includes(id) && id !== 'extra-stop')
+      .forEach(extraId => {
+        const extra = extras.find(e => e.id === extraId);
+        if (extra) {
+          details.push({
+            label: extra.name,
+            price: extra.price
+          });
+        }
+      });
 
     return details;
   };

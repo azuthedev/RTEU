@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Info, AlertCircle, Plane } from 'lucide-react';
+import { Info, AlertCircle, Plane, Plus, Minus, X } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
 import { extras } from '../../data/extras';
@@ -7,6 +7,7 @@ import { useToast } from '../ui/use-toast';
 import FormField from '../ui/form-field';
 import FormSelect from '../ui/form-select';
 import { isAirport } from '../../utils/airportDetection';
+import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 
 const PersonalDetails = () => {
   const { bookingState, setBookingState, validateStep, scrollToError } = useBooking();
@@ -20,7 +21,10 @@ const PersonalDetails = () => {
     country: '',
     phone: '',
     flightNumber: '',
-    selectedExtras: new Set<string>()
+    selectedExtras: new Set<string>(),
+    extraStops: [] as {address: string, lat?: number, lng?: number}[],
+    childSeats: {} as Record<string, number>,
+    luggageCount: 2 // Default to 2 luggage items
   });
   
   const [formTouched, setFormTouched] = useState<Record<string, boolean>>({});
@@ -31,10 +35,21 @@ const PersonalDetails = () => {
   const [pickupIsAirport, setPickupIsAirport] = useState(false);
   const [dropoffIsAirport, setDropoffIsAirport] = useState(false);
   
+  // Get max luggage based on selected vehicle
+  const maxLuggage = bookingState.selectedVehicle?.suitcases || 8;
+  
   // Initialize form with existing data from context if available
   useEffect(() => {
     if (bookingState.personalDetails) {
-      setFormData(bookingState.personalDetails);
+      // Preserve existing data, including extraStops, childSeats, and luggageCount
+      setFormData({
+        ...bookingState.personalDetails,
+        extraStops: bookingState.personalDetails.extraStops || [],
+        childSeats: bookingState.personalDetails.childSeats || {},
+        luggageCount: bookingState.personalDetails.luggageCount !== undefined 
+          ? bookingState.personalDetails.luggageCount 
+          : 2 // Default to 2 luggage items
+      });
     }
     
     // Check if pickup or dropoff is an airport
@@ -66,15 +81,149 @@ const PersonalDetails = () => {
     }
   }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError, bookingState.fromDisplay, bookingState.from, bookingState.toDisplay, bookingState.to]);
 
-  const handleExtraToggle = (extraId: string) => {
-    const newExtras = new Set(formData.selectedExtras);
-    if (newExtras.has(extraId)) {
-      newExtras.delete(extraId);
-    } else {
-      newExtras.add(extraId);
+  // Handle adding an extra stop
+  const handleAddExtraStop = () => {
+    if (formData.extraStops.length >= 3) {
+      toast({
+        title: "Maximum Stops Reached",
+        description: "You can add up to 3 extra stops",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    setFormData({
+      ...formData,
+      extraStops: [...formData.extraStops, {address: ''}]
+    });
+    
+    setFormTouched({...formTouched, extraStops: true});
+  };
+
+  // Function to handle removing an extra stop
+  const handleRemoveExtraStop = (index: number) => {
+    const newStops = [...formData.extraStops];
+    newStops.splice(index, 1);
+    setFormData({
+      ...formData,
+      extraStops: newStops
+    });
+  };
+
+  // Function to update an extra stop address
+  const handleExtraStopChange = (index: number, address: string) => {
+    const newStops = [...formData.extraStops];
+    newStops[index] = {...newStops[index], address};
+    setFormData({
+      ...formData,
+      extraStops: newStops
+    });
+  };
+
+  // Handle coordinates for extra stops
+  const handleExtraStopSelect = (index: number, displayName: string, placeData?: google.maps.places.PlaceResult) => {
+    const newStops = [...formData.extraStops];
+    
+    // Update with coordinates if available
+    if (placeData?.geometry?.location) {
+      newStops[index] = {
+        address: displayName,
+        lat: placeData.geometry.location.lat(),
+        lng: placeData.geometry.location.lng()
+      };
+    } else {
+      newStops[index] = {
+        address: displayName
+      };
+    }
+    
+    setFormData({
+      ...formData,
+      extraStops: newStops
+    });
+  };
+
+  const handleExtraToggle = (extraId: string) => {
+    const isChildSeat = ['child-seat', 'infant-seat', 'booster-seat'].includes(extraId);
+    const newExtras = new Set(formData.selectedExtras);
+    
+    if (newExtras.has(extraId)) {
+      // Removing the extra
+      newExtras.delete(extraId);
+      
+      // If it's a child seat, also remove it from childSeats
+      if (isChildSeat) {
+        const newSeats = {...formData.childSeats};
+        delete newSeats[extraId];
+        setFormData({ 
+          ...formData, 
+          selectedExtras: newExtras,
+          childSeats: newSeats
+        });
+        return;
+      }
+    } else {
+      // Adding the extra
+      newExtras.add(extraId);
+      
+      // If it's a child seat, set default count to 1
+      if (isChildSeat) {
+        const newSeats = {...formData.childSeats, [extraId]: 1};
+        setFormData({ 
+          ...formData, 
+          selectedExtras: newExtras,
+          childSeats: newSeats 
+        });
+        return;
+      }
+    }
+    
     setFormData({ ...formData, selectedExtras: newExtras });
     setFormTouched({ ...formTouched, extras: true });
+  };
+
+  // Function to handle child seat quantity changes
+  const handleChildSeatQuantity = (extraId: string, increment: boolean) => {
+    if (!['child-seat', 'infant-seat', 'booster-seat'].includes(extraId)) return;
+    
+    const newSeats = {...formData.childSeats};
+    const currentCount = newSeats[extraId] || 1;
+    
+    if (increment) {
+      // Maximum 4 seats per type
+      if (currentCount < 4) {
+        newSeats[extraId] = currentCount + 1;
+      }
+    } else {
+      // Minimum 1 seat
+      if (currentCount <= 1) {
+        return; // Don't decrease below 1
+      } else {
+        newSeats[extraId] = currentCount - 1;
+      }
+    }
+    
+    setFormData({
+      ...formData,
+      childSeats: newSeats
+    });
+  };
+
+  // Function to handle luggage count changes
+  const handleLuggageCountChange = (increment: boolean) => {
+    let newCount = formData.luggageCount;
+    if (increment && newCount < maxLuggage) {
+      newCount++;
+    } else if (!increment && newCount > 0) {
+      newCount--;
+    }
+    
+    setFormData({
+      ...formData,
+      luggageCount: newCount
+    });
+    
+    setFormTouched({ ...formTouched, luggageCount: true });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -118,6 +267,19 @@ const PersonalDetails = () => {
     
     const extrasTotal = Array.from(formData.selectedExtras).reduce((total, extraId) => {
       const extra = extras.find(e => e.id === extraId);
+      if (!extra) return total;
+      
+      // If it's a child seat, multiply by quantity
+      if (['child-seat', 'infant-seat', 'booster-seat'].includes(extraId)) {
+        const quantity = formData.childSeats[extraId] || 1;
+        return total + (extra.price * quantity);
+      }
+      
+      // Add extra stop fee if applicable
+      if (extraId === 'extra-stop') {
+        return total + (extra.price * formData.extraStops.length);
+      }
+      
       return total + (extra?.price || 0);
     }, 0);
     
@@ -167,6 +329,14 @@ const PersonalDetails = () => {
       isValid = false;
     }
     
+    // Extra stops validation
+    for (let i = 0; i < formData.extraStops.length; i++) {
+      if (!formData.extraStops[i].address.trim()) {
+        errors[`extraStop${i}`] = `Address for stop ${i + 1} is required`;
+        isValid = false;
+      }
+    }
+    
     setFieldErrors(errors);
     return isValid;
   };
@@ -194,7 +364,13 @@ const PersonalDetails = () => {
     setBookingState(prev => ({
       ...prev,
       step: 3,
-      personalDetails: formData,
+      personalDetails: {
+        ...formData,
+        // Make sure we have the right types for storage
+        extraStops: formData.extraStops.length > 0 ? formData.extraStops : undefined,
+        childSeats: Object.keys(formData.childSeats).length > 0 ? formData.childSeats : undefined,
+        luggageCount: formData.luggageCount
+      },
       validationErrors: [] // Clear any validation errors
     }));
     
@@ -219,29 +395,258 @@ const PersonalDetails = () => {
         {/* Equipment & Extras */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl mb-4">Equipment & Extras</h2>
+          
+          {/* Luggage count control */}
+          <div className="mb-6 p-4 border rounded-md bg-gray-50">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-medium">Luggage</h3>
+                <p className="text-sm text-gray-600 mt-1">How many suitcases do you have?</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button 
+                  type="button"
+                  onClick={() => handleLuggageCountChange(false)}
+                  className={`w-8 h-8 flex items-center justify-center border rounded-full ${
+                    formData.luggageCount > 0 
+                      ? 'border-gray-300 hover:bg-gray-100' 
+                      : 'border-gray-200 text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={formData.luggageCount <= 0}
+                  aria-label="Decrease luggage count"
+                  id="luggage-decrease"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="w-6 text-center font-medium" id="luggage-count">{formData.luggageCount}</span>
+                <button 
+                  type="button"
+                  onClick={() => handleLuggageCountChange(true)}
+                  className={`w-8 h-8 flex items-center justify-center border rounded-full ${
+                    formData.luggageCount < maxLuggage 
+                      ? 'border-gray-300 hover:bg-gray-100' 
+                      : 'border-gray-200 text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={formData.luggageCount >= maxLuggage}
+                  aria-label="Increase luggage count"
+                  id="luggage-increase"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Maximum {maxLuggage} luggage items for {bookingState.selectedVehicle?.name}
+            </p>
+          </div>
+          
+          {/* Regular extras */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {extras.map((extra) => (
-              <label
-                key={extra.id}
-                className="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.selectedExtras.has(extra.id)}
-                  onChange={() => handleExtraToggle(extra.id)}
-                  className="h-5 w-5 text-black rounded"
-                  id={`extra-${extra.id}`}
-                />
-                <div className="flex-1">
-                  <div className="font-medium">{extra.name}</div>
-                  <div className="text-sm text-gray-500">
-                    {extra.price > 0 ? `€${extra.price.toFixed(2)}` : 'Free'}
-                  </div>
+            {extras.map((extra) => {
+              const isChildSeat = ['child-seat', 'infant-seat', 'booster-seat'].includes(extra.id);
+              const showQuantityControls = isChildSeat && formData.selectedExtras.has(extra.id);
+              const quantity = formData.childSeats[extra.id] || 1;
+              
+              return (
+                <div key={extra.id} className="flex flex-col">
+                  <label
+                    className="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
+                    htmlFor={`extra-${extra.id}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedExtras.has(extra.id)}
+                      onChange={() => {
+                        // If it's a child seat, also update counts
+                        if (isChildSeat) {
+                          if (formData.selectedExtras.has(extra.id)) {
+                            // Removing the extra - clear count
+                            const newSeats = {...formData.childSeats};
+                            delete newSeats[extra.id];
+                            setFormData({
+                              ...formData,
+                              selectedExtras: new Set(
+                                Array.from(formData.selectedExtras).filter(id => id !== extra.id)
+                              ),
+                              childSeats: newSeats
+                            });
+                          } else {
+                            // Adding the extra - set count to 1
+                            const newSeats = {...formData.childSeats, [extra.id]: 1};
+                            const newExtras = new Set(formData.selectedExtras);
+                            newExtras.add(extra.id);
+                            setFormData({
+                              ...formData,
+                              selectedExtras: newExtras,
+                              childSeats: newSeats
+                            });
+                          }
+                        } else {
+                          // Regular toggle for non-child seat extras
+                          handleExtraToggle(extra.id);
+                        }
+                      }}
+                      className="h-5 w-5 text-black rounded"
+                      id={`extra-${extra.id}`}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium">{extra.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {extra.price > 0 ? `€${extra.price.toFixed(2)}` : 'Free'}
+                        {showQuantityControls && ` × ${quantity}`}
+                      </div>
+                    </div>
+                  </label>
+                  
+                  {/* Show quantity controls for child seats */}
+                  {showQuantityControls && (
+                    <div className="flex justify-end items-center space-x-2 mt-2 px-3">
+                      <button 
+                        type="button"
+                        onClick={() => handleChildSeatQuantity(extra.id, false)}
+                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
+                        disabled={quantity <= 1}
+                        aria-label={`Decrease ${extra.name} count`}
+                        id={`${extra.id}-decrease`}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-6 text-center text-sm">
+                        {quantity}
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={() => handleChildSeatQuantity(extra.id, true)}
+                        className={`w-7 h-7 flex items-center justify-center rounded-full ${
+                          quantity < 4 
+                            ? 'bg-gray-100 hover:bg-gray-200'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                        disabled={quantity >= 4}
+                        aria-label={`Increase ${extra.name} count`}
+                        id={`${extra.id}-increase`}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </label>
-            ))}
+              );
+            })}
           </div>
         </section>
+        
+        {/* Extra Stops Section */}
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl">Extra Stops</h2>
+            <button
+              type="button"
+              onClick={handleAddExtraStop}
+              className={`px-3 py-1 rounded ${
+                formData.extraStops.length >= 3
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+              }`}
+              disabled={formData.extraStops.length >= 3}
+              id="add-stop-button"
+            >
+              Add Stop
+            </button>
+          </div>
+          
+          {formData.extraStops.length === 0 ? (
+            <p className="text-gray-500 text-sm">No extra stops added. Your transfer will go directly from pickup to dropoff.</p>
+          ) : (
+            <div className="space-y-4">
+              {formData.extraStops.map((stop, index) => (
+                <div key={index} className="border rounded-md p-4 relative" id={`extra-stop-${index}`}>
+                  <h3 className="font-medium mb-2">Stop {index + 1}</h3>
+                  <GooglePlacesAutocomplete
+                    value={stop.address}
+                    onChange={(value) => handleExtraStopChange(index, value)}
+                    onPlaceSelect={(displayName, placeData) => handleExtraStopSelect(index, displayName, placeData)}
+                    placeholder={`Address for stop ${index + 1}`}
+                    className="w-full"
+                    required={true}
+                    onValidation={(isValid) => {
+                      // Handle validation
+                      if (!isValid && formTouched.extraStops) {
+                        setFieldErrors({
+                          ...fieldErrors,
+                          [`extraStop${index}`]: `Please enter a valid address for stop ${index + 1}`
+                        });
+                      } else {
+                        const newErrors = {...fieldErrors};
+                        delete newErrors[`extraStop${index}`];
+                        setFieldErrors(newErrors);
+                      }
+                    }}
+                    id={`extra-stop-input-${index}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveExtraStop(index)}
+                    className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500"
+                    aria-label={`Remove stop ${index + 1}`}
+                    id={`remove-stop-${index}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  
+                  {fieldErrors[`extraStop${index}`] && (
+                    <p className="text-sm text-red-600 mt-1">{fieldErrors[`extraStop${index}`]}</p>
+                  )}
+                </div>
+              ))}
+              
+              {formData.extraStops.length > 0 && formData.extraStops.length < 3 && (
+                <button
+                  type="button"
+                  onClick={handleAddExtraStop}
+                  className="mt-2 text-blue-600 hover:text-blue-800 flex items-center"
+                  id="add-another-stop-button"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Another Stop
+                </button>
+              )}
+              
+              <div className="text-sm text-gray-500 mt-2">
+                <p>Each extra stop adds €10.00 to your total fare.</p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Flight Number Field - Only shown if pickup or dropoff is an airport */}
+        {showFlightNumberField && (
+          <section className="bg-blue-50 rounded-lg shadow-md p-6 mb-8">
+            <div className="flex items-start mb-4">
+              <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600" />
+              <div>
+                <h3 className="font-medium text-blue-800">Airport Transfer Details</h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  {pickupIsAirport 
+                    ? 'We detected an airport in your pickup location.' 
+                    : 'We detected an airport in your dropoff location.'} 
+                  Please provide your flight number for better service.
+                </p>
+              </div>
+            </div>
+            
+            <FormField
+              id="flightNumber"
+              name="flightNumber"
+              label="Flight Number"
+              value={formData.flightNumber}
+              onChange={handleInputChange}
+              error={fieldErrors.flightNumber}
+              required={true}
+              helpText="Example: BA1326 or FR8756"
+              icon={<Plane className="h-5 w-5" />}
+            />
+          </section>
+        )}
 
         {/* Personal Details Form */}
         <section className="bg-white rounded-lg shadow-md p-6">
@@ -366,36 +771,6 @@ const PersonalDetails = () => {
               </div>
             </div>
 
-            {/* Flight Number - Only shown if pickup or dropoff is an airport */}
-            {showFlightNumberField && (
-              <div className="bg-blue-50 p-4 rounded-md">
-                <div className="flex items-start mb-4">
-                  <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600" />
-                  <div>
-                    <h3 className="font-medium text-blue-800">Airport Transfer Details</h3>
-                    <p className="text-sm text-blue-600 mt-1">
-                      {pickupIsAirport 
-                        ? 'We detected an airport in your pickup location.' 
-                        : 'We detected an airport in your dropoff location.'} 
-                      Please provide your flight number for better service.
-                    </p>
-                  </div>
-                </div>
-                
-                <FormField
-                  id="flightNumber"
-                  name="flightNumber"
-                  label="Flight Number"
-                  value={formData.flightNumber}
-                  onChange={handleInputChange}
-                  error={fieldErrors.flightNumber}
-                  required={true}
-                  helpText="Example: BA1326 or FR8756"
-                  icon={<Plane className="h-5 w-5" />}
-                />
-              </div>
-            )}
-
             {/* Form-wide error display */}
             {Object.keys(fieldErrors).length > 0 && (
               <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 flex items-start">
@@ -408,6 +783,7 @@ const PersonalDetails = () => {
                         <button 
                           className="underline hover:text-red-800"
                           onClick={() => scrollToError(field)}
+                          type="button"
                         >
                           {message}
                         </button>

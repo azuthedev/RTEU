@@ -53,6 +53,10 @@ export interface BookingState {
     dropoff?: string; // Added to store dropoff location from form
     pickupDisplay?: string; // Display name for pickup
     dropoffDisplay?: string; // Display name for dropoff
+    flightNumber?: string; // Added flight number field
+    extraStops?: {address: string, lat?: number, lng?: number}[]; // Added extra stops
+    childSeats?: Record<string, number>; // Added child seat quantities
+    luggageCount?: number; // Added luggage count
   };
   paymentDetails: {
     method: 'card' | 'cash';
@@ -186,7 +190,10 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         email: '',
         country: '',
         phone: '',
-        selectedExtras: new Set()
+        selectedExtras: new Set(),
+        extraStops: [], // Initialize extra stops array
+        childSeats: {}, // Initialize child seats object
+        luggageCount: 2 // Default to 2 luggage items
       },
       paymentDetails: {
         method: 'card'
@@ -235,7 +242,10 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         email: '',
         country: '',
         phone: '',
-        selectedExtras: new Set()
+        selectedExtras: new Set(),
+        extraStops: [],
+        childSeats: {},
+        luggageCount: 2
       },
       paymentDetails: {
         method: 'card'
@@ -291,9 +301,27 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
           errors.push({ field: 'country', message: 'Country is required' });
         }
         
-        // Phone can be optional but if provided should be valid
-        if (bookingState.personalDetails.phone && bookingState.personalDetails.phone.length < 5) {
-          errors.push({ field: 'phone', message: 'Please enter a valid phone number' });
+        // Validate flight number if pickup or dropoff is an airport
+        const pickupLocation = bookingState.fromDisplay || bookingState.from || '';
+        const dropoffLocation = bookingState.toDisplay || bookingState.to || '';
+        
+        const isAirportTransfer = 
+          pickupLocation.toLowerCase().includes('airport') || 
+          dropoffLocation.toLowerCase().includes('airport') ||
+          /\b(MXP|LIN|FCO|CIA|NAP)\b/i.test(pickupLocation) ||
+          /\b(MXP|LIN|FCO|CIA|NAP)\b/i.test(dropoffLocation);
+        
+        if (isAirportTransfer && !bookingState.personalDetails.flightNumber) {
+          errors.push({ field: 'flightNumber', message: 'Flight number is required for airport transfers' });
+        }
+        
+        // Validate extra stops if any
+        if (bookingState.personalDetails.extraStops && bookingState.personalDetails.extraStops.length > 0) {
+          bookingState.personalDetails.extraStops.forEach((stop, index) => {
+            if (!stop.address) {
+              errors.push({ field: `extraStop${index}`, message: `Address for stop ${index + 1} is required` });
+            }
+          });
         }
         
         break;

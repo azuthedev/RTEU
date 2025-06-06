@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
       vehicle, 
       customer, 
       extras, 
+      extraStops,
+      childSeats,
+      luggageCount,
       amount, 
       discountCode, 
       payment_method,
@@ -106,9 +109,13 @@ Deno.serve(async (req) => {
       customer: { 
         email: customer?.email 
       },
-      flight_number,
+      extras: extras?.length,
+      extraStops: extraStops?.length,
+      childSeats: childSeats ? 'Present' : 'None',
+      luggageCount,
       amount, 
-      payment_method 
+      payment_method,
+      flight_number
     });
 
     // Validate required fields
@@ -147,7 +154,10 @@ Deno.serve(async (req) => {
       payment_method: payment_method || 'card',
       notes: '',
       customer_title: customer.title || null,
-      flight_number: flight_number || null // Store flight number
+      flight_number: flight_number || null, // Store flight number
+      extra_stops: extraStops && extraStops.length > 0 ? JSON.stringify(extraStops) : null,
+      child_seats: childSeats && Object.keys(childSeats).length > 0 ? JSON.stringify(childSeats) : null,
+      luggage_count: luggageCount || 0
     };
 
     // If there's no user_id provided but we have an email, try to find a matching user
@@ -264,7 +274,11 @@ Deno.serve(async (req) => {
                   vehicle_type: tripData.vehicle_type,
                   passengers: tripData.passengers,
                   total_price: formatPrice(tripData.estimated_price),
-                  flight_number: tripData.flight_number || 'Not provided'
+                  flight_number: tripData.flight_number || 'Not provided',
+                  extra_stops: tripData.extra_stops 
+                    ? `${JSON.parse(tripData.extra_stops).length} stop(s)` 
+                    : 'None',
+                  luggage_count: tripData.luggage_count || '0'
                 })
               });
               
@@ -321,6 +335,11 @@ Deno.serve(async (req) => {
     if (flight_number) {
       tripDescription += ` | Flight: ${flight_number}`;
     }
+    
+    // Add extra stops info if present
+    if (extraStops && extraStops.length > 0) {
+      tripDescription += ` | ${extraStops.length} extra stop${extraStops.length > 1 ? 's' : ''}`;
+    }
 
     // Prepare metadata
     const metadata = {
@@ -332,7 +351,9 @@ Deno.serve(async (req) => {
       trip_date: new Date(trip.date).toISOString(),
       vehicle_name: vehicle.name,
       customer_email: customer.email,
-      flight_number: flight_number || '' // Include flight number in metadata
+      flight_number: flight_number || '',
+      extra_stops: extraStops ? extraStops.length.toString() : '0',
+      luggage_count: luggageCount?.toString() || '0'
     };
 
     // Add optional metadata if available
@@ -344,6 +365,11 @@ Deno.serve(async (req) => {
     if (customer.phone) metadata.customer_phone = customer.phone;
     if (extras && extras.length) metadata.extras = extras.join(",");
     if (discountCode) metadata.discount_code = discountCode;
+    
+    // Add child seats info if present
+    if (childSeats && Object.keys(childSeats).length > 0) {
+      metadata.child_seats = JSON.stringify(childSeats);
+    }
 
     // Create a Stripe checkout session
     try {
@@ -359,7 +385,7 @@ Deno.serve(async (req) => {
         throw new Error("Cannot connect to Stripe API. Please verify network and API key configuration.");
       }
       
-      // Create checkout session - direct approach without balance check
+      // Create checkout session
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
