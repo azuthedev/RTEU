@@ -681,7 +681,7 @@ const PersonalDetails = () => {
 
         {/* Personal Details Form */}
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl mb-6">Personal Details</h2>
+          <h2 className="text-xl font-semibold mb-6">Personal Details</h2>
           
           <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {/* Title Selection */}

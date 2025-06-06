@@ -424,6 +424,10 @@ const BookingSuccess = () => {
                     <span className="text-gray-600">Passengers:</span>
                     <span className="font-medium">{bookingDetails.passengers}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Luggage:</span>
+                    <span className="font-medium">{bookingDetails.luggage_count || 0} items</span>
+                  </div>
                   {bookingDetails.extra_items && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Extras:</span>
