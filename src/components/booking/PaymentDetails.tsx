@@ -93,7 +93,8 @@ const PaymentDetails = () => {
         extras: Array.from(bookingState.personalDetails?.selectedExtras || []),
         amount: calculateTotal(), 
         discountCode: discountCode || null,
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        flight_number: bookingState.personalDetails?.flightNumber || null
       };
 
       console.log("Sending booking data:", bookingData);
@@ -285,7 +286,8 @@ const PaymentDetails = () => {
           extras: Array.from(bookingState.personalDetails?.selectedExtras || []),
           amount: calculateTotal(),
           discountCode: discountCode || null,
-          payment_method: 'cash'
+          payment_method: 'cash',
+          flight_number: bookingState.personalDetails?.flightNumber || null
         };
         
         // Call the Edge Function to create the booking

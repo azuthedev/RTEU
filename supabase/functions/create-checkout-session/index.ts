@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
       extras, 
       amount, 
       discountCode, 
-      payment_method 
+      payment_method,
+      flight_number
     } = requestData;
 
     console.log("Request data received:", { 
@@ -104,7 +105,8 @@ Deno.serve(async (req) => {
       }, 
       customer: { 
         email: customer?.email 
-      }, 
+      },
+      flight_number,
       amount, 
       payment_method 
     });
@@ -144,7 +146,8 @@ Deno.serve(async (req) => {
       extra_items: extras ? extras.join(',') : '',
       payment_method: payment_method || 'card',
       notes: '',
-      customer_title: customer.title || null
+      customer_title: customer.title || null,
+      flight_number: flight_number || null // Store flight number
     };
 
     // If there's no user_id provided but we have an email, try to find a matching user
@@ -260,7 +263,8 @@ Deno.serve(async (req) => {
                   pickup_datetime: formatDate(tripData.datetime),
                   vehicle_type: tripData.vehicle_type,
                   passengers: tripData.passengers,
-                  total_price: formatPrice(tripData.estimated_price)
+                  total_price: formatPrice(tripData.estimated_price),
+                  flight_number: tripData.flight_number || 'Not provided'
                 })
               });
               
@@ -312,6 +316,11 @@ Deno.serve(async (req) => {
     } else {
       tripDescription += ` (${new Date(trip.date).toLocaleDateString()})`;
     }
+    
+    // Add flight number to description if available
+    if (flight_number) {
+      tripDescription += ` | Flight: ${flight_number}`;
+    }
 
     // Prepare metadata
     const metadata = {
@@ -323,6 +332,7 @@ Deno.serve(async (req) => {
       trip_date: new Date(trip.date).toISOString(),
       vehicle_name: vehicle.name,
       customer_email: customer.email,
+      flight_number: flight_number || '' // Include flight number in metadata
     };
 
     // Add optional metadata if available

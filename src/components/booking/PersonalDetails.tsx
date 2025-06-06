@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Info, AlertCircle } from 'lucide-react';
+import { Info, AlertCircle, Plane } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
 import { extras } from '../../data/extras';
 import { useToast } from '../ui/use-toast';
 import FormField from '../ui/form-field';
 import FormSelect from '../ui/form-select';
+import { isAirport } from '../../utils/airportDetection';
 
 const PersonalDetails = () => {
   const { bookingState, setBookingState, validateStep, scrollToError } = useBooking();
@@ -18,6 +19,7 @@ const PersonalDetails = () => {
     email: '',
     country: '',
     phone: '',
+    flightNumber: '',
     selectedExtras: new Set<string>()
   });
   
@@ -25,10 +27,25 @@ const PersonalDetails = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
   
+  // Determine if pickup or dropoff is an airport
+  const [pickupIsAirport, setPickupIsAirport] = useState(false);
+  const [dropoffIsAirport, setDropoffIsAirport] = useState(false);
+  
   // Initialize form with existing data from context if available
   useEffect(() => {
     if (bookingState.personalDetails) {
       setFormData(bookingState.personalDetails);
+    }
+    
+    // Check if pickup or dropoff is an airport
+    if (bookingState.fromDisplay || bookingState.from) {
+      const pickupLocation = bookingState.fromDisplay || bookingState.from || '';
+      setPickupIsAirport(isAirport(pickupLocation));
+    }
+    
+    if (bookingState.toDisplay || bookingState.to) {
+      const dropoffLocation = bookingState.toDisplay || bookingState.to || '';
+      setDropoffIsAirport(isAirport(dropoffLocation));
     }
     
     // Check for existing validation errors in the booking state
@@ -47,7 +64,7 @@ const PersonalDetails = () => {
         }, 100);
       }
     }
-  }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError]);
+  }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError, bookingState.fromDisplay, bookingState.from, bookingState.toDisplay, bookingState.to]);
 
   const handleExtraToggle = (extraId: string) => {
     const newExtras = new Set(formData.selectedExtras);
@@ -144,6 +161,12 @@ const PersonalDetails = () => {
       isValid = false;
     }
     
+    // Flight number validation - required if pickup or dropoff is an airport
+    if ((pickupIsAirport || dropoffIsAirport) && !formData.flightNumber.trim()) {
+      errors.flightNumber = 'Flight number is required for airport transfers';
+      isValid = false;
+    }
+    
     setFieldErrors(errors);
     return isValid;
   };
@@ -178,6 +201,9 @@ const PersonalDetails = () => {
     // Scroll to top
     window.scrollTo(0, 0);
   };
+
+  // Determine if we need to show the flight number field
+  const showFlightNumberField = pickupIsAirport || dropoffIsAirport;
 
   return (
     <BookingLayout
@@ -339,6 +365,36 @@ const PersonalDetails = () => {
                 </div>
               </div>
             </div>
+
+            {/* Flight Number - Only shown if pickup or dropoff is an airport */}
+            {showFlightNumberField && (
+              <div className="bg-blue-50 p-4 rounded-md">
+                <div className="flex items-start mb-4">
+                  <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600" />
+                  <div>
+                    <h3 className="font-medium text-blue-800">Airport Transfer Details</h3>
+                    <p className="text-sm text-blue-600 mt-1">
+                      {pickupIsAirport 
+                        ? 'We detected an airport in your pickup location.' 
+                        : 'We detected an airport in your dropoff location.'} 
+                      Please provide your flight number for better service.
+                    </p>
+                  </div>
+                </div>
+                
+                <FormField
+                  id="flightNumber"
+                  name="flightNumber"
+                  label="Flight Number"
+                  value={formData.flightNumber}
+                  onChange={handleInputChange}
+                  error={fieldErrors.flightNumber}
+                  required={true}
+                  helpText="Example: BA1326 or FR8756"
+                  icon={<Plane className="h-5 w-5" />}
+                />
+              </div>
+            )}
 
             {/* Form-wide error display */}
             {Object.keys(fieldErrors).length > 0 && (

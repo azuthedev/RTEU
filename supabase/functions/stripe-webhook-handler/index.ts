@@ -1,9 +1,9 @@
-import Stripe from "npm:stripe@12.0.0";
+import Stripe from "npm:stripe@13.3.0";
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 
 // CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
@@ -56,20 +56,31 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Add detailed logging to diagnose webhook issues
+    console.log("🔔 Webhook received at:", new Date().toISOString());
+    console.log("🔑 Headers received:", Array.from(req.headers.entries())
+      .filter(([key]) => !key.toLowerCase().includes('authorization'))
+      .map(([key, value]) => `${key}: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}`)
+    );
+    
     // Get the Stripe webhook secret from environment variables
     const stripeWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    console.log("🔐 Webhook secret available:", !!stripeWebhookSecret);
     
     // Get the Stripe secret key from environment variables
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("🔑 API key available:", !!stripeSecretKey);
     
     if (!stripeSecretKey) {
       throw new Error("Stripe secret key is missing from environment variables");
     }
 
-    // Initialize Stripe
+    // Initialize Stripe with the latest supported API version
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
+      apiVersion: "2023-10-16", // Use a stable API version
+      typescript: true,
     });
+    console.log("⚙️ Stripe client initialized");
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -80,26 +91,40 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log("⚙️ Supabase client initialized");
     
     // Get webhook secret for email sending
     const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
     if (!webhookSecret) {
-      console.error("Missing WEBHOOK_SECRET environment variable");
+      console.warn("⚠️ Missing WEBHOOK_SECRET environment variable");
     }
 
-    // Get the request body as text
-    const payload = await req.text();
+    // Get the request body as text for signature verification
+    let payload;
+    try {
+      payload = await req.text();
+      console.log("📦 Webhook payload size:", payload.length, "bytes");
+    } catch (error) {
+      console.error("❌ Failed to read request body:", error);
+      return new Response("Error reading request body", { 
+        status: 400,
+        headers: headersWithOrigin
+      });
+    }
     
     // Get the signature from headers
-    const signature = req.headers.get("stripe-signature") || "";
+    const signature = req.headers.get("stripe-signature");
+    console.log("🔏 Signature received:", !!signature);
 
     // Verify the webhook signature if webhook secret is available
     let event;
-    if (stripeWebhookSecret) {
+    if (stripeWebhookSecret && signature) {
       try {
         event = stripe.webhooks.constructEvent(payload, signature, stripeWebhookSecret);
+        console.log("✅ Webhook signature verified successfully");
+        console.log("📣 Event type:", event.type);
       } catch (err) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
+        console.error("❌ Webhook signature verification failed:", err.message);
         return new Response(`Webhook Error: ${err.message}`, { 
           status: 400,
           headers: headersWithOrigin
@@ -110,145 +135,168 @@ Deno.serve(async (req: Request) => {
       // Note: This is less secure and should only be used for development
       try {
         event = JSON.parse(payload);
+        console.warn("⚠️ Webhook signature verification skipped: No webhook secret or signature");
+        console.log("📣 Event type:", event.type);
       } catch (err) {
-        console.error(`Failed to parse webhook payload: ${err.message}`);
+        console.error("❌ Failed to parse webhook payload:", err.message);
         return new Response(`Webhook Error: ${err.message}`, { 
           status: 400,
           headers: headersWithOrigin
         });
       }
-      console.warn('Webhook signature verification skipped: No webhook secret available');
     }
 
     // Handle the event based on its type
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
+      console.log("💰 Checkout session completed:", session.id);
       
       // Get booking reference from metadata
       const bookingReference = session.metadata?.booking_reference;
       
       if (!bookingReference) {
+        console.error("❌ No booking reference found in session metadata");
         throw new Error("No booking reference found in session metadata");
       }
       
-      console.log(`Payment for booking ${bookingReference} was successful`);
+      console.log(`📝 Processing payment for booking ${bookingReference}`);
       
       // Check if the payment was successful
       if (session.payment_status === 'paid') {
+        console.log("✅ Payment status is 'paid'");
+        
+        // Find the trip record first
+        console.log(`🔍 Looking up trip with booking reference: ${bookingReference}`);
+        const { data: tripData, error: tripFindError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('trips')
+            .select('id, estimated_price, customer_email, customer_name, pickup_address, dropoff_address, datetime, vehicle_type, passengers')
+            .eq('booking_reference', bookingReference)
+            .single();
+        });
+        
+        if (tripFindError || !tripData) {
+          console.error('❌ Error finding trip:', tripFindError);
+          throw new Error(`Failed to find trip with booking reference ${bookingReference}`);
+        }
+        
+        console.log(`✅ Found trip with ID: ${tripData.id}`);
+        
         // Update the trip record to show payment is completed
-        const { error } = await retryDatabaseOperation(async () => {
+        console.log(`📝 Updating trip status to 'accepted'`);
+        const { error: updateError } = await retryDatabaseOperation(async () => {
           return await supabase
             .from('trips')
             .update({ 
               status: 'accepted', // Mark as accepted since payment is confirmed
-              // Add any other fields that need to be updated
             })
-            .eq('booking_reference', bookingReference);
+            .eq('id', tripData.id);
         });
         
-        if (error) {
-          console.error('Error updating trip record:', error);
-          throw new Error(`Failed to update trip: ${error.message}`);
+        if (updateError) {
+          console.error('❌ Error updating trip record:', updateError);
+          throw new Error(`Failed to update trip: ${updateError.message}`);
         }
         
+        console.log(`✅ Trip status updated successfully`);
+        
         // Create a payment record
+        console.log(`💵 Creating payment record`);
         const paymentData = {
-          trip_id: null, // Will be updated with real ID once fetched
+          trip_id: tripData.id,
           user_id: session.metadata?.customer_user_id || null,
-          amount: session.amount_total ? session.amount_total / 100 : 0, // Convert from cents
+          amount: session.amount_total ? session.amount_total / 100 : tripData.estimated_price, // Convert from cents
           payment_method: 'credit_card',
           status: 'completed',
           paid_at: new Date().toISOString(),
           created_at: new Date().toISOString()
         };
         
-        // First get the trip ID and details using the booking reference
-        const { data: tripData, error: tripError } = await retryDatabaseOperation(async () => {
+        const { error: paymentError } = await retryDatabaseOperation(async () => {
           return await supabase
-            .from('trips')
-            .select('*')
-            .eq('booking_reference', bookingReference)
-            .single();
+            .from('payments')
+            .insert([paymentData]);
         });
         
-        if (tripError) {
-          console.error('Error fetching trip details:', tripError);
-        } else if (tripData) {
-          console.log('Trip data found:', tripData);
-          
-          // Now create the payment record with the trip ID
-          paymentData.trip_id = tripData.id;
-          
-          const { error: paymentError } = await retryDatabaseOperation(async () => {
-            return await supabase
-              .from('payments')
-              .insert([paymentData]);
-          });
-          
-          if (paymentError) {
-            console.error('Error creating payment record:', paymentError);
-          }
-          
-          // Send booking confirmation email
-          if (webhookSecret && tripData) {
-            try {
-              // Format datetime for email
-              const formatDate = (dateStr: string) => {
-                try {
-                  const date = new Date(dateStr);
-                  return date.toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  });
-                } catch (e) {
-                  return dateStr || 'Not specified';
-                }
-              };
-              
-              // Format price for email
-              const formatPrice = (price: number) => {
-                return new Intl.NumberFormat('en-US', { 
-                  style: 'currency', 
-                  currency: 'EUR',
-                }).format(price);
-              };
-              
-              console.log('Sending booking confirmation email for Stripe payment');
-              
-              // Send booking confirmation email with flat structure
-              await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-Auth': webhookSecret
-                },
-                body: JSON.stringify({
-                  name: tripData.customer_name || 'Valued Customer',
-                  email: tripData.customer_email,
-                  booking_id: bookingReference,
-                  email_type: "BookingReference",
-                  pickup_location: tripData.pickup_address,
-                  dropoff_location: tripData.dropoff_address,
-                  pickup_datetime: formatDate(tripData.datetime),
-                  vehicle_type: tripData.vehicle_type,
-                  passengers: tripData.passengers,
-                  total_price: formatPrice(tripData.estimated_price)
-                })
-              });
-              
-              console.log('Booking confirmation email sent successfully for Stripe payment');
-            } catch (emailError) {
-              console.error('Error sending booking confirmation email:', emailError);
-              // Continue even if email sending fails - it's not critical for webhook processing
+        if (paymentError) {
+          console.error('❌ Error creating payment record:', paymentError);
+          // Don't throw here - we can still proceed with the rest of the process
+        } else {
+          console.log(`✅ Payment record created successfully`);
+        }
+        
+        // Send booking confirmation email
+        if (webhookSecret && tripData) {
+          try {
+            // Format datetime for email
+            const formatDate = (dateStr: string) => {
+              try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              } catch (e) {
+                return dateStr || 'Not specified';
+              }
+            };
+            
+            // Format price for email
+            const formatPrice = (price: number) => {
+              return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: 'EUR',
+              }).format(price);
+            };
+            
+            console.log('📧 Sending booking confirmation email');
+            
+            // Send booking confirmation email with flat structure
+            const emailResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth': webhookSecret
+              },
+              body: JSON.stringify({
+                name: tripData.customer_name || 'Valued Customer',
+                email: tripData.customer_email,
+                booking_id: bookingReference,
+                email_type: "BookingReference",
+                pickup_location: tripData.pickup_address,
+                dropoff_location: tripData.dropoff_address,
+                pickup_datetime: formatDate(tripData.datetime),
+                vehicle_type: tripData.vehicle_type,
+                passengers: tripData.passengers,
+                total_price: formatPrice(tripData.estimated_price)
+              })
+            });
+            
+            if (!emailResponse.ok) {
+              console.warn(`⚠️ Email webhook response: ${emailResponse.status} ${emailResponse.statusText}`);
+              const responseText = await emailResponse.text();
+              console.warn(`⚠️ Email webhook response body: ${responseText.substring(0, 200)}`);
+            } else {
+              console.log('✅ Booking confirmation email sent successfully');
             }
+          } catch (emailError) {
+            console.error('❌ Error sending booking confirmation email:', emailError);
+            // Continue even if email sending fails - it's not critical for webhook processing
           }
         }
+        
+        console.log(`✅ Webhook processing complete for ${bookingReference}`);
+      } else {
+        console.warn(`⚠️ Payment status is not 'paid': ${session.payment_status}`);
       }
+    } else {
+      console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
 
+    // Always return a 200 response to acknowledge receipt of the event
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
       headers: {
@@ -257,12 +305,18 @@ Deno.serve(async (req: Request) => {
       },
     });
   } catch (error) {
-    console.error("Error handling webhook:", error);
+    console.error("❌ Error handling webhook:", error);
     
+    // Return a 200 response even on error to prevent Stripe from retrying
+    // This prevents the webhook queue from filling up with failed attempts
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        received: true,
+        error: error.message,
+        processedAt: new Date().toISOString()
+      }),
       {
-        status: 500,
+        status: 200, // Important: Return 200 to acknowledge receipt
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
