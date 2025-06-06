@@ -6,7 +6,7 @@ import { extras } from '../../data/extras';
 import { useToast } from '../ui/use-toast';
 import FormField from '../ui/form-field';
 import FormSelect from '../ui/form-select';
-import { isAirport } from '../../utils/airportDetection';
+import { isAirport, extractAirportName } from '../../utils/airportDetection';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 
 const PersonalDetails = () => {
@@ -34,6 +34,7 @@ const PersonalDetails = () => {
   // Determine if pickup or dropoff is an airport
   const [pickupIsAirport, setPickupIsAirport] = useState(false);
   const [dropoffIsAirport, setDropoffIsAirport] = useState(false);
+  const [detectedAirportName, setDetectedAirportName] = useState<string | null>(null);
   
   // Get max luggage based on selected vehicle
   const maxLuggage = bookingState.selectedVehicle?.suitcases || 8;
@@ -55,12 +56,22 @@ const PersonalDetails = () => {
     // Check if pickup or dropoff is an airport
     if (bookingState.fromDisplay || bookingState.from) {
       const pickupLocation = bookingState.fromDisplay || bookingState.from || '';
-      setPickupIsAirport(isAirport(pickupLocation));
+      const isPickupAirport = isAirport(pickupLocation);
+      setPickupIsAirport(isPickupAirport);
+      
+      if (isPickupAirport) {
+        setDetectedAirportName(extractAirportName(pickupLocation));
+      }
     }
     
     if (bookingState.toDisplay || bookingState.to) {
       const dropoffLocation = bookingState.toDisplay || bookingState.to || '';
-      setDropoffIsAirport(isAirport(dropoffLocation));
+      const isDropoffAirport = isAirport(dropoffLocation);
+      setDropoffIsAirport(isDropoffAirport);
+      
+      if (isDropoffAirport && !pickupIsAirport) {
+        setDetectedAirportName(extractAirportName(dropoffLocation));
+      }
     }
     
     // Check for existing validation errors in the booking state
@@ -94,7 +105,8 @@ const PersonalDetails = () => {
     
     setFormData({
       ...formData,
-      extraStops: [...formData.extraStops, {address: ''}]
+      extraStops: [...formData.extraStops, {address: ''}],
+      selectedExtras: new Set([...formData.selectedExtras, 'extra-stop'])
     });
     
     setFormTouched({...formTouched, extraStops: true});
@@ -104,9 +116,17 @@ const PersonalDetails = () => {
   const handleRemoveExtraStop = (index: number) => {
     const newStops = [...formData.extraStops];
     newStops.splice(index, 1);
+    
+    // If removing the last stop, also remove the extra-stop selection
+    const newExtras = new Set(formData.selectedExtras);
+    if (newStops.length === 0) {
+      newExtras.delete('extra-stop');
+    }
+    
     setFormData({
       ...formData,
-      extraStops: newStops
+      extraStops: newStops,
+      selectedExtras: newExtras
     });
   };
 
@@ -275,12 +295,13 @@ const PersonalDetails = () => {
         return total + (extra.price * quantity);
       }
       
-      // Add extra stop fee if applicable
+      // If it's an extra stop, multiply by the number of stops
       if (extraId === 'extra-stop') {
-        return total + (extra.price * formData.extraStops.length);
+        const stopCount = formData.extraStops?.length || 0;
+        return total + (extra.price * stopCount);
       }
       
-      return total + (extra?.price || 0);
+      return total + (extra.price || 0);
     }, 0);
     
     return basePrice + extrasTotal;
@@ -392,8 +413,43 @@ const PersonalDetails = () => {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl mb-8">Transfer & Personal Details</h1>
 
+        {/* Flight Number Field - Only shown if pickup or dropoff is an airport */}
+        {showFlightNumberField && (
+          <section className="bg-blue-50 rounded-lg shadow-md p-6 mb-8" id="flight-info-section">
+            <div className="flex items-start mb-4">
+              <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-blue-800">Flight Information Required</h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  We detected an airport in your {pickupIsAirport ? 'pickup' : 'dropoff'} location:
+                  <strong className="font-semibold ml-1">{detectedAirportName || (pickupIsAirport ? bookingState.fromDisplay : bookingState.toDisplay)}</strong>
+                </p>
+              </div>
+            </div>
+            
+            <FormField
+              id="flightNumber"
+              name="flightNumber"
+              label="Flight Number"
+              value={formData.flightNumber}
+              onChange={handleInputChange}
+              error={fieldErrors.flightNumber}
+              required={true}
+              helpText="Example: BA1326, FR8756, AZ1234 or IB3456"
+              icon={<Plane className="h-5 w-5" />}
+            />
+            
+            <div className="mt-4 bg-blue-100 rounded p-3 text-sm text-blue-800">
+              <p>
+                <strong>Why we need this:</strong> Your flight number helps us track your flight status and adjust pickup times 
+                automatically in case of delays. This ensures you'll always have a driver waiting when you arrive.
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* Equipment & Extras */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8" id="equipment-section">
           <h2 className="text-xl mb-4">Equipment & Extras</h2>
           
           {/* Luggage count control */}
@@ -537,7 +593,7 @@ const PersonalDetails = () => {
         </section>
         
         {/* Extra Stops Section */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8" id="extra-stops-section">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl">Extra Stops</h2>
             <button
@@ -617,36 +673,6 @@ const PersonalDetails = () => {
             </div>
           )}
         </section>
-
-        {/* Flight Number Field - Only shown if pickup or dropoff is an airport */}
-        {showFlightNumberField && (
-          <section className="bg-blue-50 rounded-lg shadow-md p-6 mb-8">
-            <div className="flex items-start mb-4">
-              <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600" />
-              <div>
-                <h3 className="font-medium text-blue-800">Airport Transfer Details</h3>
-                <p className="text-sm text-blue-600 mt-1">
-                  {pickupIsAirport 
-                    ? 'We detected an airport in your pickup location.' 
-                    : 'We detected an airport in your dropoff location.'} 
-                  Please provide your flight number for better service.
-                </p>
-              </div>
-            </div>
-            
-            <FormField
-              id="flightNumber"
-              name="flightNumber"
-              label="Flight Number"
-              value={formData.flightNumber}
-              onChange={handleInputChange}
-              error={fieldErrors.flightNumber}
-              required={true}
-              helpText="Example: BA1326 or FR8756"
-              icon={<Plane className="h-5 w-5" />}
-            />
-          </section>
-        )}
 
         {/* Personal Details Form */}
         <section className="bg-white rounded-lg shadow-md p-6">
