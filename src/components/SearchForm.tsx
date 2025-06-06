@@ -15,39 +15,7 @@ import { withRetry } from '../utils/retryHelper';
 import { sanitizeInput } from '../utils/dataValidator';
 import { errorTracker, ErrorContext, ErrorSeverity } from '../utils/errorTracker';
 import { requestTracker } from '../utils/requestTracker';
-
-const formatDateForUrl = (date: Date) => {
-  if (!date || isNaN(date.getTime())) {
-    return '';
-  }
-  const year = date.getFullYear().toString().slice(-2);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}${month}${day}`;
-};
-
-const parseDateFromUrl = (dateStr: string): Date | undefined => {
-  if (!dateStr || dateStr === '0' || dateStr.length !== 6) {
-    return undefined;
-  }
-  
-  try {
-    const year = parseInt(`20${dateStr.slice(0, 2)}`);
-    const month = parseInt(dateStr.slice(2, 4)) - 1;
-    const day = parseInt(dateStr.slice(4, 6));
-    
-    const date = new Date(year, month, day, 12, 0, 0, 0);
-    
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-    
-    return date;
-  } catch (error) {
-    console.error('Error parsing date:', error);
-    return undefined;
-  }
-};
+import { geocodeAddress, formatDateForUrl, parseDateFromUrl, validateTransferAddress } from '../utils/searchFormHelpers';
 
 // Interface for API price response
 interface PricingResponse {
@@ -105,6 +73,8 @@ const SearchForm = () => {
   // State for geocoded coordinates
   const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
   const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
+  const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
   
   // State for loading prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
@@ -146,11 +116,6 @@ const SearchForm = () => {
         requestTracker.abortRequest(activeRequestRef.current, 'Component unmounted');
       }
     };
-  }, []);
-
-  // Ensure Google Maps API is initialized
-  useEffect(() => {
-    console.log('SearchForm: Ready for autocomplete');
   }, []);
 
   // First, check if we have display data from context (coming back from booking flow)
@@ -291,7 +256,7 @@ const SearchForm = () => {
     trackEvent('Search Form', 'Change Trip Type', newIsReturn ? 'Round Trip' : 'One Way');
     
     // If we're toggling back to the original trip type without saving changes,
-    // restore the original values
+    // restore original values
     if (newIsReturn === originalValuesRef.current.isReturn) {
       setIsReturn(newIsReturn);
       setFormData({
@@ -304,412 +269,378 @@ const SearchForm = () => {
     
     setIsReturn(newIsReturn);
     
-    if (newIsReturn) {
-      // If switching to round trip
-      setFormData(prev => ({
-        ...prev,
-        departureDate: undefined,
-        dateRange: prev.departureDate ? {
-          from: prev.departureDate,
-          to: undefined
-        } : undefined
-      }));
-    } else {
-      // If switching to one way
-      setFormData(prev => ({
-        ...prev,
-        // Use the departure date from the date range if it exists
-        departureDate: prev.dateRange?.from || prev.departureDate,
-        dateRange: undefined
-      }));
-    }
-  };
-
-  // Function to geocode addresses using Google Maps Geocoding API
-  const geocodeAddress = async (address: string, field: 'pickup' | 'dropoff'): Promise<{lat: number, lng: number} | null> => {
-    if (!address || !window.google?.maps?.Geocoder) return null;
-    
-    const sanitizedAddress = sanitizeInput(address);
-    const geocoder = new google.maps.Geocoder();
-    
-    try {
-      const requestId = requestTracker.startRequest(`Geocoding ${field} address`);
-      requestTracker.updateStage(requestId, 'geocoding');
-      
-      return new Promise<{lat: number, lng: number} | null>((resolve, reject) => {
-        geocoder.geocode({ address: sanitizedAddress }, (results, status) => {
-          if (!isMountedRef.current) {
-            requestTracker.abortRequest(requestId, 'Component unmounted during geocoding');
-            resolve(null);
-            return;
-          }
-          
-          if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-            const location = {
-              lat: results[0].geometry.location.lat(),
-              lng: results[0].geometry.location.lng()
-            };
-            
-            if (field === 'pickup') {
-              setPickupCoords(location);
-              console.log('Geocoded pickup coordinates:', location);
-              
-              // Clear any existing geocoding error for this field
-              if (geocodingErrorField === 'pickup') {
-                setGeocodingErrorField(null);
-              }
-            } else {
-              setDropoffCoords(location);
-              console.log('Geocoded dropoff coordinates:', location);
-              
-              // Clear any existing geocoding error for this field
-              if (geocodingErrorField === 'dropoff') {
-                setGeocodingErrorField(null);
-              }
-            }
-            
-            requestTracker.updateStage(requestId, 'complete');
-            resolve(location);
-          } else {
-            console.error('Geocoding failed:', status);
-            
-            // Set geocoding error field
-            if (isMountedRef.current) {
-              setGeocodingErrorField(field);
-            }
-            
-            if (field === 'pickup') {
-              setPickupCoords(null);
-            } else {
-              setDropoffCoords(null);
-            }
-            
-            requestTracker.updateStage(requestId, 'failed', { error: `Geocoding failed: ${status}` });
-            reject(status);
-          }
-        });
+    if (oneWay) {
+      setFormData(prev => {
+        return {
+          ...prev,
+          departureDate: prev.dateRange?.from || prev.departureDate,
+          dateRange: undefined
+        };
       });
-    } catch (error) {
-      console.error(`Error during ${field} geocoding:`, error);
-      
-      // Set geocoding error field
-      if (isMountedRef.current) {
-        setGeocodingErrorField(field);
-      }
-      
-      // Log error
-      errorTracker.trackError(
-        error instanceof Error ? error : new Error(String(error)),
-        ErrorContext.GEOCODING,
-        ErrorSeverity.MEDIUM,
-        { field, address: sanitizedAddress }
-      );
-      
-      return null;
+    } else {
+      setFormData(prev => {
+        return {
+          ...prev,
+          departureDate: undefined,
+          dateRange: {
+            from: prev.departureDate || prev.dateRange?.from,
+            to: prev.dateRange?.to || undefined
+          }
+        };
+      });
     }
   };
 
   // Function to fetch prices from the API
   const fetchPrices = async (): Promise<PricingResponse | null> => {
-    // Get coordinates if not already available
-    let pickup = pickupCoords;
-    let dropoff = dropoffCoords;
-    
-    if (!pickup) {
-      try {
-        pickup = await geocodeAddress(formData.pickup, 'pickup');
-      } catch (error) {
-        // Handle geocoding error - specific to pickup
-        if (isMountedRef.current) {
-          setGeocodingErrorField('pickup');
-          setIsLoadingPrices(false);
-        }
-        return null;
-      }
-    }
-    
-    if (!dropoff) {
-      try {
-        dropoff = await geocodeAddress(formData.dropoff, 'dropoff');
-      } catch (error) {
-        // Handle geocoding error - specific to dropoff
-        if (isMountedRef.current) {
-          setGeocodingErrorField('dropoff');
-          setIsLoadingPrices(false);
-        }
-        return null;
-      }
-    }
-    
-    if (!pickup || !dropoff) {
-      // Set appropriate geocoding error field if not already set
-      if (isMountedRef.current) {
-        if (!pickup && !dropoff) {
-          setGeocodingErrorField('pickup'); // Default to pickup if both failed
-        } else if (!pickup) {
-          setGeocodingErrorField('pickup');
-        } else if (!dropoff) {
-          setGeocodingErrorField('dropoff');
-        }
-        
-        toast({
-          title: "Location Error",
-          description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
-          variant: "destructive"
-        });
-        
-        setIsLoadingPrices(false);
-      }
-      return null;
-    }
-    
-    const pickupTime = isReturn 
-      ? formData.dateRange?.from 
-      : formData.departureDate;
-      
-    if (!pickupTime) {
+    if (!formData.pickup || !formData.dropoff) {
       if (isMountedRef.current) {
         toast({
-          title: "Time Error",
-          description: "Please select a pickup date and time.",
+          title: "Missing Information",
+          description: "Please enter both pickup and dropoff locations.",
           variant: "destructive"
         });
-        setIsLoadingPrices(false);
       }
       return null;
     }
-    
-    // Format date to ISO8601
-    const pickupTimeISO = pickupTime.toISOString();
-    
-    // Prepare request payload with trip_type parameter
-    const payload = {
-      pickup_lat: pickup.lat,
-      pickup_lng: pickup.lng,
-      dropoff_lat: dropoff.lat,
-      dropoff_lng: dropoff.lng,
-      pickup_time: pickupTimeISO,
-      trip_type: isReturn ? "2" : "1" // Add trip_type parameter
-    };
-    
-    console.log('Sending price request with payload:', payload);
-    
-    if (!isMountedRef.current) {
-      console.log('Component unmounted, aborting price fetch');
-      return null;
-    }
-    
-    setApiError(null);
-    
-    // Track the request
-    const requestId = requestTracker.startRequest('Fetch Pricing', 'POST');
-    activeRequestRef.current = requestId;
     
     try {
-      // Use our CORS-aware fetch utility
-      const apiEndpoint = getApiUrl('/check-price');
-      console.log('API Endpoint:', apiEndpoint);
+      // Try to use existing coordinates if available
+      let pickup = pickupCoords;
+      let dropoff = dropoffCoords;
       
-      // Display the request details for debugging
-      console.log('Request URL:', apiEndpoint);
-      console.log('Request Method:', 'POST');
-      console.log('Request Headers:', {
-        'Content-Type': 'application/json',
-        'Origin': window.location.origin
-      });
-      console.log('Request Body:', JSON.stringify(payload));
+      // If we don't have coordinates, geocode the addresses
+      if (!pickup) {
+        try {
+          pickup = await geocodeAddress(formData.pickup, 'pickup', pickupPlaceId);
+        } catch (error) {
+          // Handle geocoding error - specific to pickup
+          if (isMountedRef.current) {
+            setGeocodingErrorField('pickup');
+            setIsLoadingPrices(false);
+          }
+          return null;
+        }
+      }
       
-      // Update request stage
-      requestTracker.updateStage(requestId, 'network');
+      if (!dropoff) {
+        try {
+          dropoff = await geocodeAddress(formData.dropoff, 'dropoff', dropoffPlaceId);
+        } catch (error) {
+          // Handle geocoding error - specific to dropoff
+          if (isMountedRef.current) {
+            setGeocodingErrorField('dropoff');
+            setIsLoadingPrices(false);
+          }
+          return null;
+        }
+      }
       
-      // Use retryHelper for resilient fetching
-      const response = await withRetry(
-        async () => {
-          // Check if component is still mounted
-          if (!isMountedRef.current) {
-            throw new Error('Component unmounted');
+      if (!pickup || !dropoff) {
+        // Set appropriate geocoding error field if not already set
+        if (isMountedRef.current) {
+          if (!pickup && !dropoff) {
+            setGeocodingErrorField('pickup'); // Default to pickup if both failed
+          } else if (!pickup) {
+            setGeocodingErrorField('pickup');
+          } else if (!dropoff) {
+            setGeocodingErrorField('dropoff');
           }
           
-          return fetchWithCors(apiEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
+          toast({
+            title: "Location Error",
+            description: !pickup 
+              ? "Unable to find coordinates for pickup location. Please select a more specific address." 
+              : "Unable to find coordinates for dropoff location. Please select a more specific address.",
+            variant: "destructive"
           });
-        },
-        {
-          maxRetries: 2,
-          initialDelay: 1000,
-          onRetry: (attempt, error, delay) => {
-            console.log(`Retry attempt ${attempt} for pricing request after ${delay}ms delay due to: ${error.message}`);
+          
+          setIsLoadingPrices(false);
+        }
+        return null;
+      }
+      
+      const pickupTime = isReturn 
+        ? formData.dateRange?.from 
+        : formData.departureDate;
+        
+      if (!pickupTime) {
+        if (isMountedRef.current) {
+          toast({
+            title: "Time Error",
+            description: "Please select a pickup date and time.",
+            variant: "destructive"
+          });
+          setIsLoadingPrices(false);
+        }
+        return null;
+      }
+      
+      // Format date to ISO8601
+      const pickupTimeISO = pickupTime.toISOString();
+      
+      // Prepare request payload with trip_type parameter
+      const payload = {
+        pickup_lat: pickup.lat,
+        pickup_lng: pickup.lng,
+        dropoff_lat: dropoff.lat,
+        dropoff_lng: dropoff.lng,
+        pickup_time: pickupTimeISO,
+        trip_type: isReturn ? "2" : "1" // Add trip_type parameter
+      };
+      
+      console.log('Sending price request with payload:', payload);
+      
+      if (!isMountedRef.current) {
+        console.log('Component unmounted, aborting price fetch');
+        return null;
+      }
+      
+      setApiError(null);
+      
+      // Track the request
+      const requestId = requestTracker.startRequest('Fetch Pricing', 'POST');
+      activeRequestRef.current = requestId;
+      
+      try {
+        // Use our CORS-aware fetch utility
+        const apiEndpoint = getApiUrl('/check-price');
+        console.log('API Endpoint:', apiEndpoint);
+        
+        // Display the request details for debugging
+        console.log('Request URL:', apiEndpoint);
+        console.log('Request Method:', 'POST');
+        console.log('Request Headers:', {
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
+        });
+        console.log('Request Body:', JSON.stringify(payload));
+        
+        // Update request stage
+        requestTracker.updateStage(requestId, 'network');
+        
+        // Use retryHelper for resilient fetching
+        const response = await withRetry(
+          async () => {
+            // Check if component is still mounted
+            if (!isMountedRef.current) {
+              throw new Error('Component unmounted');
+            }
             
-            if (isMountedRef.current) {
-              // Only show error toast if not navigating intentionally
-              if (!navigatingIntentionallyRef.current && !successfulSearchRef.current) {
-                toast({
-                  title: "Connection Issue",
-                  description: `Retrying (${attempt}/2)...`,
-                  variant: "destructive"
-                });
+            return fetchWithCors(apiEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+          },
+          {
+            maxRetries: 2,
+            initialDelay: 1000,
+            onRetry: (attempt, error, delay) => {
+              console.log(`Retry attempt ${attempt} for pricing request after ${delay}ms delay due to: ${error.message}`);
+              
+              if (isMountedRef.current) {
+                // Only show error toast if not navigating intentionally
+                if (!navigatingIntentionallyRef.current && !successfulSearchRef.current) {
+                  toast({
+                    title: "Connection Issue",
+                    description: `Retrying (${attempt}/2)...`,
+                    variant: "destructive"
+                  });
+                }
               }
             }
           }
-        }
-      );
-      
-      // Check if component is unmounted during response processing
-      if (!isMountedRef.current) {
-        console.log('Component unmounted during API response handling');
-        return null;
-      }
-      
-      // Log response status and headers for debugging
-      console.log('Response Status:', response.status);
-      console.log('Response Status Text:', response.statusText);
-      console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
-      
-      if (!response.ok) {
-        // Try to get detailed error text from response
-        let errorText = '';
-        try {
-          errorText = await response.text();
-        } catch (e) {
-          errorText = 'Could not read error details';
-        }
-        
-        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
-        console.error('API Error:', errorDetail);
-        
-        requestTracker.updateStage(requestId, 'failed', {
-          status: response.status,
-          error: errorDetail
-        });
-        
-        // Track API error
-        errorTracker.trackError(
-          new Error(`API Error: ${errorDetail}`),
-          ErrorContext.PRICING,
-          ErrorSeverity.HIGH,
-          { response: { status: response.status, statusText: response.statusText } }
         );
         
-        throw new Error(`API Error: ${errorDetail}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.warn('Response is not JSON:', contentType);
-        let text = '';
-        try {
-          text = await response.text();
-          console.log('Response Text:', text);
-        } catch (e) {
-          console.error('Error reading response text:', e);
+        // Check if component is still mounted before continuing
+        if (!isMountedRef.current) {
+          console.log('Component unmounted, aborting fetchPrices after API response');
+          return null;
         }
         
+        // Log response status and headers for debugging
+        console.log('Response Status:', response.status);
+        console.log('Response Status Text:', response.statusText);
+        console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
+        
+        if (!response.ok) {
+          // Try to get detailed error text from response
+          let errorText = '';
+          try {
+            errorText = await response.text();
+          } catch (e) {
+            errorText = 'Could not read error details';
+          }
+          
+          const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
+          console.error('API Error:', errorDetail);
+          
+          requestTracker.updateStage(requestId, 'failed', {
+            status: response.status,
+            error: errorDetail
+          });
+          
+          // Track API error
+          errorTracker.trackError(
+            new Error(`API Error: ${errorDetail}`),
+            ErrorContext.PRICING,
+            ErrorSeverity.HIGH,
+            { response: { status: response.status, statusText: response.statusText } }
+          );
+          
+          throw new Error(`API Error: ${errorDetail}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('Response is not JSON:', contentType);
+          let text = '';
+          try {
+            text = await response.text();
+            console.log('Response Text:', text);
+          } catch (e) {
+            console.error('Error reading response text:', e);
+          }
+          
+          requestTracker.updateStage(requestId, 'failed', {
+            error: `Expected JSON response but got: ${contentType}`
+          });
+          
+          throw new Error(`Expected JSON response but got: ${contentType}`);
+        }
+        
+        // Update request to processing stage
+        requestTracker.updateStage(requestId, 'processing');
+        
+        const data: PricingResponse = await response.json();
+        console.log('Pricing data received:', data);
+        
+        // Mark request as complete
+        requestTracker.updateStage(requestId, 'complete');
+        
+        // Set successful search flag to true - to indicate search completed successfully
+        // even if the component is unmounted during navigation
+        successfulSearchRef.current = true;
+        
+        // Track successful price fetch
+        trackEvent('Search Form', 'Price Fetched', `${formData.pickup} to ${formData.dropoff}`);
+        
+        // Clear active request ID
+        activeRequestRef.current = null;
+        
+        return data;
+        
+      } catch (error) {
+        // If component is unmounted or we're navigating intentionally, don't show errors
+        if (!isMountedRef.current || navigatingIntentionallyRef.current || successfulSearchRef.current) {
+          console.log('Not showing error because component is unmounted or navigation was intentional');
+          return null;
+        }
+        
+        console.error('Error fetching prices:', error);
+        
+        // Create detailed error message
+        let errorMessage = 'Failed to get pricing information. ';
+        
+        if (error.message) {
+          // Don't show "Component unmounted" errors to the user
+          if (error.message.includes('unmounted') || error.message.includes('AbortError')) {
+            console.log('Suppressing unmount-related error message');
+            return null;
+          }
+          
+          errorMessage += error.message;
+        } else {
+          errorMessage += 'Please try again later.';
+        }
+        
+        if (isMountedRef.current) {
+          setApiError(errorMessage);
+          
+          toast({
+            title: "Pricing Error",
+            description: errorMessage,
+            variant: "destructive"
+          });
+        }
+        
+        // Update request as failed
         requestTracker.updateStage(requestId, 'failed', {
-          error: `Expected JSON response but got: ${contentType}`
+          error: errorMessage
         });
         
-        throw new Error(`Expected JSON response but got: ${contentType}`);
+        // Track error
+        errorTracker.trackError(
+          error instanceof Error ? error : new Error(String(error)),
+          ErrorContext.PRICING,
+          ErrorSeverity.HIGH,
+          { 
+            payload,
+            correlationId: requestId
+          }
+        );
+        
+        return null;
+      } finally {
+        // Only update loading state if component is still mounted
+        if (isMountedRef.current) {
+          setIsLoadingPrices(false);
+        }
       }
-      
-      // Update request to processing stage
-      requestTracker.updateStage(requestId, 'processing');
-      
-      const data: PricingResponse = await response.json();
-      console.log('Pricing data received:', data);
-      
-      // Mark request as complete
-      requestTracker.updateStage(requestId, 'complete');
-      
-      // Set successful search flag to true - to indicate search completed successfully
-      // even if the component is unmounted during navigation
-      successfulSearchRef.current = true;
-      
-      // Track successful price fetch
-      trackEvent('Search Form', 'Price Fetched', `${formData.pickup} to ${formData.dropoff}`);
-      
-      // Clear active request ID
-      activeRequestRef.current = null;
-      
-      return data;
-      
     } catch (error) {
-      // If component is unmounted or we're navigating intentionally, don't show errors
-      if (!isMountedRef.current || navigatingIntentionallyRef.current || successfulSearchRef.current) {
-        console.log('Not showing error because component is unmounted or navigation was intentional');
+      // Check if component is still mounted before handling error
+      if (!isMountedRef.current) {
+        console.log('Component unmounted, aborting error handling in fetchPrices');
         return null;
       }
       
       console.error('Error fetching prices:', error);
       
-      // Create detailed error message
-      let errorMessage = 'Failed to get pricing information. ';
-      
-      if (error.message) {
-        // Don't show "Component unmounted" errors to the user
-        if (error.message.includes('unmounted') || error.message.includes('AbortError')) {
-          console.log('Suppressing unmount-related error message');
-          return null;
-        }
-        
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Please try again later.';
-      }
-      
       if (isMountedRef.current) {
-        setApiError(errorMessage);
-        
         toast({
           title: "Pricing Error",
-          description: errorMessage,
+          description: error.message || "Failed to get pricing information. Please try again later.",
           variant: "destructive"
         });
       }
       
-      // Update request as failed
-      requestTracker.updateStage(requestId, 'failed', {
-        error: errorMessage
-      });
-      
-      // Track error
-      errorTracker.trackError(
-        error instanceof Error ? error : new Error(String(error)),
-        ErrorContext.PRICING,
-        ErrorSeverity.HIGH,
-        { 
-          payload,
-          correlationId: requestId
-        }
-      );
-      
       return null;
-    } finally {
-      // Only update loading state if component is still mounted
-      if (isMountedRef.current) {
-        setIsLoadingPrices(false);
-      }
     }
   };
 
   const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
     userInteractedRef.current = true;
+    console.log(`Place selected for ${field}:`, displayName);
     
     if (field === 'pickup') {
-      setFormData(prev => ({
-        ...prev,
+      console.log('Setting pickup value from place selection:', displayName);
+      setFormData(prev => ({ 
+        ...prev, 
         pickup: displayName,
         pickupDisplay: displayName
       }));
+      
+      // Store place_id if available
+      if (placeData?.place_id) {
+        console.log('Storing pickup place_id:', placeData.place_id);
+        setPickupPlaceId(placeData.place_id);
+      }
     } else {
-      setFormData(prev => ({
-        ...prev,
+      console.log('Setting dropoff value from place selection:', displayName);
+      setFormData(prev => ({ 
+        ...prev, 
         dropoff: displayName,
         dropoffDisplay: displayName
       }));
+      
+      // Store place_id if available
+      if (placeData?.place_id) {
+        console.log('Storing dropoff place_id:', placeData.place_id);
+        setDropoffPlaceId(placeData.place_id);
+      }
     }
     
     // Get coordinates if placeData is provided
@@ -721,7 +652,7 @@ const SearchForm = () => {
       
       if (field === 'pickup') {
         setPickupCoords(location);
-        console.log('Pickup coordinates:', location);
+        console.log('Pickup coordinates from place selection:', location);
         
         // Clear any existing geocoding error
         if (geocodingErrorField === 'pickup') {
@@ -729,13 +660,44 @@ const SearchForm = () => {
         }
       } else {
         setDropoffCoords(location);
-        console.log('Dropoff coordinates:', location);
+        console.log('Dropoff coordinates from place selection:', location);
         
         // Clear any existing geocoding error
         if (geocodingErrorField === 'dropoff') {
           setGeocodingErrorField(null);
         }
       }
+    } else if (placeData?.place_id) {
+      // If we have place_id but no geometry, fetch the coordinates
+      geocodeAddress(displayName, field, placeData.place_id)
+        .then(coords => {
+          if (coords) {
+            if (field === 'pickup') {
+              setPickupCoords(coords);
+              if (geocodingErrorField === 'pickup') {
+                setGeocodingErrorField(null);
+              }
+            } else {
+              setDropoffCoords(coords);
+              if (geocodingErrorField === 'dropoff') {
+                setGeocodingErrorField(null);
+              }
+            }
+          }
+        })
+        .catch(error => {
+          console.error(`Error geocoding ${field} place:`, error);
+          if (isMountedRef.current) {
+            // Set geocoding error field
+            setGeocodingErrorField(field);
+            
+            toast({
+              title: "Geocoding Error",
+              description: `Unable to find coordinates for this ${field} location. Please try a different address.`,
+              variant: "destructive"
+            });
+          }
+        });
     }
   };
 
@@ -767,7 +729,7 @@ const SearchForm = () => {
     if (!pickupIsValid) {
       toast({
         title: "Invalid Pickup Address",
-        description: "Please enter a complete pickup address with street name and number",
+        description: "Please enter a complete pickup address with street name and number, or select an option from the suggestions",
         variant: "destructive"
       });
       return;
@@ -776,7 +738,7 @@ const SearchForm = () => {
     if (!dropoffIsValid) {
       toast({
         title: "Invalid Dropoff Address",
-        description: "Please enter a complete dropoff address with street name and number",
+        description: "Please enter a complete dropoff address with street name and number, or select an option from the suggestions",
         variant: "destructive"
       });
       return;
@@ -998,6 +960,9 @@ const SearchForm = () => {
                 pickup: value,
                 pickupDisplay: value
               }));
+              // Clear coordinates when changing pickup manually
+              setPickupCoords(null);
+              setGeocodingErrorField(null);
             }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
             placeholder="Pickup location"
@@ -1017,6 +982,9 @@ const SearchForm = () => {
                 dropoff: value,
                 dropoffDisplay: value
               }));
+              // Clear coordinates when changing dropoff manually
+              setDropoffCoords(null);
+              setGeocodingErrorField(null);
             }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
             placeholder="Dropoff location"

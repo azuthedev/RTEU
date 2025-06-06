@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
+import { MapPin, Loader2, AlertCircle, X, Check } from 'lucide-react';
 import { throttle } from 'lodash-es';
 import { initGoogleMaps, isGoogleMapsLoaded } from '../../utils/optimizeThirdParty';
 
@@ -12,6 +12,7 @@ interface GooglePlacesAutocompleteProps {
   disabled?: boolean;
   onValidation?: (isValid: boolean, message?: string) => void;
   required?: boolean;
+  id?: string;
 }
 
 export function GooglePlacesAutocomplete({
@@ -22,7 +23,8 @@ export function GooglePlacesAutocomplete({
   className = '',
   disabled = false,
   onValidation,
-  required = false
+  required = false,
+  id
 }: GooglePlacesAutocompleteProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +32,9 @@ export function GooglePlacesAutocomplete({
   const [apiLoaded, setApiLoaded] = useState(isGoogleMapsLoaded());
   const [isValidAddress, setIsValidAddress] = useState<boolean | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [placeId, setPlaceId] = useState<string | null>(null);
+  const [isGeocoded, setIsGeocoded] = useState(false);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -156,7 +161,7 @@ export function GooglePlacesAutocomplete({
         autocompleteRef.current = new google.maps.places.Autocomplete(
           inputRef.current,
           {
-            fields: ['formatted_address', 'geometry', 'name', 'address_components', 'types'],
+            fields: ['formatted_address', 'geometry', 'name', 'address_components', 'place_id', 'types'],
           }
         );
 
@@ -171,6 +176,12 @@ export function GooglePlacesAutocomplete({
               if (place) {
                 isSelectingRef.current = true;
                 
+                // Store the place_id for future geocoding
+                if (place.place_id) {
+                  setPlaceId(place.place_id);
+                  console.log('Stored place_id:', place.place_id);
+                }
+                
                 // Get the best display name for the selected place
                 const displayName = getDisplayName(place);
                 
@@ -183,6 +194,10 @@ export function GooglePlacesAutocomplete({
                   onValidation(isValidPlace.isValid, isValidPlace.message || undefined);
                 }
                 
+                // Reset geocoding state for new selection
+                setIsGeocoded(false);
+                setGeocodingError(null);
+                
                 if (displayName) {
                   // Update the parent component state
                   onChange(displayName);
@@ -190,6 +205,15 @@ export function GooglePlacesAutocomplete({
                   // If onPlaceSelect callback is provided, call it with the display name and place data
                   if (onPlaceSelect) {
                     onPlaceSelect(displayName, place);
+                  }
+                  
+                  // Immediately geocode the place if we have geometry
+                  if (place.geometry && place.geometry.location) {
+                    // Already has coordinates, no need to geocode
+                    setIsGeocoded(true);
+                  } else if (place.place_id) {
+                    // If we have a place_id but no geometry, fetch details to get coordinates
+                    geocodePlaceById(place.place_id);
                   }
                 }
                 
@@ -240,6 +264,88 @@ export function GooglePlacesAutocomplete({
       autocompleteInitializedRef.current = false;
     };
   }, []);
+
+  // Geocode place by ID using Places API
+  const geocodePlaceById = async (placeId: string) => {
+    if (!window.google?.maps?.places?.PlacesService) {
+      console.error('Places service not available');
+      setGeocodingError('Places API not available');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Create a PlacesService instance (requires a DOM element)
+      const dummyElement = document.createElement('div');
+      const placesService = new google.maps.places.PlacesService(dummyElement);
+      
+      // Fetch place details with a Promise wrapper
+      const placeDetails = await new Promise<google.maps.places.PlaceResult>((resolve, reject) => {
+        placesService.getDetails(
+          { 
+            placeId: placeId,
+            fields: ['geometry', 'formatted_address', 'name'] 
+          }, 
+          (result, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && result) {
+              resolve(result);
+            } else {
+              reject(new Error(`Failed to get place details: ${status}`));
+            }
+          }
+        );
+      });
+      
+      // Check if we got valid coordinates
+      if (placeDetails.geometry && placeDetails.geometry.location) {
+        console.log('Successfully geocoded place by ID:', {
+          placeId,
+          lat: placeDetails.geometry.location.lat(),
+          lng: placeDetails.geometry.location.lng()
+        });
+        
+        setIsGeocoded(true);
+        setGeocodingError(null);
+        
+        // Update validation state
+        setIsValidAddress(true);
+        setValidationMessage(null);
+        
+        if (onValidation) {
+          onValidation(true);
+        }
+        
+        // If we have a new formatted_address, update the display value
+        if (placeDetails.formatted_address && placeDetails.formatted_address !== value) {
+          onChange(placeDetails.formatted_address);
+        }
+        
+        // If onPlaceSelect callback is provided, call it with the updated place data
+        if (onPlaceSelect) {
+          onPlaceSelect(
+            placeDetails.formatted_address || value, 
+            placeDetails
+          );
+        }
+      } else {
+        throw new Error('Place details returned without valid geometry');
+      }
+    } catch (error) {
+      console.error('Error geocoding place by ID:', error);
+      setGeocodingError(`Unable to find coordinates for this address. Please try a different address.`);
+      
+      // Update validation state
+      setIsValidAddress(false);
+      setValidationMessage('This address cannot be used for transfers. Please select another address.');
+      
+      if (onValidation) {
+        onValidation(false, 'Unable to find coordinates for this address');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Function to determine the best display name for a place
   const getDisplayName = (place: google.maps.places.PlaceResult): string => {
@@ -325,30 +431,40 @@ export function GooglePlacesAutocomplete({
           component.types.includes('country')
       );
 
-      // Address is complete if it has street number and route
-      if (hasStreetNumber && hasRoute) {
-        return { isValid: true, message: null };
-      }
-      
-      // If there's a route but no street number
-      if (hasRoute && !hasStreetNumber) {
-        return { 
-          isValid: false, 
-          message: 'Please provide a complete address with building number' 
-        };
-      }
-      
-      // If we only have high-level components
-      if (onlyHighLevelComponents) {
-        return { 
-          isValid: false, 
-          message: 'Please enter a specific street address' 
-        };
+      // Check for specific establishment types
+      const isEstablishment = place.types?.includes('establishment') || 
+                              place.types?.includes('point_of_interest');
+
+      // Address is valid if it has place_id and has coordinates
+      if (place.place_id && place.geometry && place.geometry.location) {
+        if (hasStreetNumber && hasRoute) {
+          return { isValid: true, message: null };
+        }
+        
+        if (isEstablishment) {
+          return { isValid: true, message: null };
+        }
+        
+        // If there's a route but no street number
+        if (hasRoute && !hasStreetNumber) {
+          return { 
+            isValid: false, 
+            message: 'Please provide a complete address with building number' 
+          };
+        }
+        
+        // If we only have high-level components
+        if (onlyHighLevelComponents) {
+          return { 
+            isValid: false, 
+            message: 'Please enter a specific street address' 
+          };
+        }
       }
     }
     
-    // If we don't have address components or can't validate, default to requiring a selection
-    if (place.geometry?.location) {
+    // If place has valid geometry, consider it valid
+    if (place.geometry?.location && place.place_id) {
       return { isValid: true, message: null }; // It has coordinates at least
     }
     
@@ -383,6 +499,13 @@ export function GooglePlacesAutocomplete({
       if (!isSelectingRef.current) {
         const newValue = e.target.value;
         onChange(newValue);
+        
+        // Reset place_id when manually editing
+        setPlaceId(null);
+        
+        // Reset geocoding status
+        setIsGeocoded(false);
+        setGeocodingError(null);
         
         // Validate the free text input
         if (newValue.trim() && required) {
@@ -458,6 +581,11 @@ export function GooglePlacesAutocomplete({
       if (onValidation) {
         onValidation(isValid, message || undefined);
       }
+      
+      // If we have a place_id but haven't geocoded yet, do it now
+      if (placeId && !isGeocoded) {
+        geocodePlaceById(placeId);
+      }
     }
   };
 
@@ -472,6 +600,9 @@ export function GooglePlacesAutocomplete({
     // Reset validation state
     setIsValidAddress(null);
     setValidationMessage(null);
+    setPlaceId(null);
+    setIsGeocoded(false);
+    setGeocodingError(null);
     
     // Focus the input after clearing
     if (inputRef.current) {
@@ -498,19 +629,24 @@ export function GooglePlacesAutocomplete({
         disabled={disabled}
         className={`
           w-full pl-10 pr-${isLoading || error || validationMessage ? '10' : '10'} py-2 
-          border ${error || (validationMessage && !isValidAddress) ? 'border-red-300 bg-red-50' : isValidAddress ? 'border-green-300' : 'border-gray-200'} 
+          border ${error || (validationMessage && !isValidAddress) || geocodingError ? 'border-red-300 bg-red-50' : isGeocoded ? 'border-green-300 bg-green-50' : isValidAddress ? 'border-green-300' : 'border-gray-200'} 
           rounded-md 
-          focus:outline-none focus:ring-2 focus:${error || (validationMessage && !isValidAddress) ? 'ring-red-300' : isValidAddress ? 'ring-green-300' : 'ring-blue-600'}
+          focus:outline-none focus:ring-2 focus:${error || (validationMessage && !isValidAddress) || geocodingError ? 'ring-red-300' : isGeocoded ? 'ring-green-300' : isValidAddress ? 'ring-green-300' : 'ring-blue-600'}
           h-[42px] transition-all
-          ${isFocused ? (error || (validationMessage && !isValidAddress)) ? 'border-red-300' : isValidAddress ? 'border-green-300' : 'border-blue-300' : ''}
+          ${isFocused ? (error || (validationMessage && !isValidAddress) || geocodingError) ? 'border-red-300' : isGeocoded ? 'border-green-300' : isValidAddress ? 'border-green-300' : 'border-blue-300' : ''}
           ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
           text-black z-20
         `}
         autoComplete="off"
         spellCheck="false"
-        aria-invalid={!!error || (validationMessage && !isValidAddress)}
-        aria-describedby={validationMessage ? 'address-validation-message' : undefined}
+        aria-invalid={!!error || (validationMessage && !isValidAddress) || !!geocodingError}
+        aria-describedby={
+          validationMessage ? 'address-validation-message' : 
+          geocodingError ? 'address-geocoding-error' : 
+          undefined
+        }
         required={required}
+        id={id}
       />
       
       {/* Clear button - show whenever there's text in the input */}
@@ -525,25 +661,46 @@ export function GooglePlacesAutocomplete({
         </button>
       )}
       
+      {/* Loading indicator */}
       {isLoading && (
         <div className="absolute right-3 top-3">
           <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
         </div>
       )}
       
-      {error && !isLoading && !value && (
-        <div className="absolute right-3 top-3" title={error}>
+      {/* Success indicator for geocoded addresses */}
+      {isGeocoded && !isLoading && !geocodingError && (
+        <div className="absolute right-3 top-3">
+          <Check className="h-5 w-5 text-green-500" />
+        </div>
+      )}
+      
+      {/* Error indicator */}
+      {(error || geocodingError) && !isLoading && (
+        <div className="absolute right-3 top-3" title={error || geocodingError || ''}>
           <AlertCircle className="h-5 w-5 text-red-500" />
         </div>
       )}
       
+      {/* Validation message warning */}
       {validationMessage && !isValidAddress && !error && !isLoading && !value && (
         <div className="absolute right-3 top-3" title={validationMessage}>
           <AlertCircle className="h-5 w-5 text-amber-500" />
         </div>
       )}
       
-      {validationMessage && (
+      {/* Geocoding error message */}
+      {geocodingError && (
+        <div 
+          id="address-geocoding-error" 
+          className="text-sm mt-1 text-red-600"
+        >
+          {geocodingError}
+        </div>
+      )}
+      
+      {/* Validation message */}
+      {validationMessage && !geocodingError && (
         <div 
           id="address-validation-message" 
           className={`text-sm mt-1 ${isValidAddress ? 'text-green-600' : 'text-amber-600'}`}

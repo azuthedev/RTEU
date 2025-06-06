@@ -10,39 +10,7 @@ import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
-
-const formatDateForUrl = (date: Date) => {
-  if (!date || isNaN(date.getTime())) {
-    return '';
-  }
-  const year = date.getFullYear().toString().slice(-2);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}${month}${day}`;
-};
-
-const parseDateFromUrl = (dateStr: string): Date | undefined => {
-  if (!dateStr || dateStr === '0' || dateStr.length !== 6) {
-    return undefined;
-  }
-  
-  try {
-    const year = parseInt(`20${dateStr.slice(0, 2)}`);
-    const month = parseInt(dateStr.slice(2, 4)) - 1;
-    const day = parseInt(dateStr.slice(4, 6));
-    
-    const date = new Date(year, month, day, 12, 0, 0, 0);
-    
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-    
-    return date;
-  } catch (error) {
-    console.error('Error parsing date:', error);
-    return undefined;
-  }
-};
+import { formatDateForUrl, parseDateFromUrl, geocodeAddress } from '../../utils/searchFormHelpers';
 
 // Interface for API price response
 interface PricingResponse {
@@ -106,14 +74,19 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const [pickupValue, setPickupValue] = useState('');
   const [dropoffValue, setDropoffValue] = useState('');
   
-  // State for geocoded coordinates
+  // State for geocoded coordinates and place IDs
   const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
   const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
+  const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
+  
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  
   // Track validation state for addresses
   const [pickupIsValid, setPickupIsValid] = useState(true); // Default to true for initial values
   const [dropoffIsValid, setDropoffIsValid] = useState(true); // Default to true for initial values
+  
   // Store original URL values for comparison
   const originalValuesRef = useRef({
     from,
@@ -131,6 +104,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           to: returnDateParsed
         } as DateRange | undefined
   });
+  
   // Form data state
   const [formData, setFormData] = useState({
     from,
@@ -249,60 +223,26 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setHasChanges(hasFormChanges);
   }, [formData, isOneWay, pickupValue, dropoffValue]);
 
-  // Function to geocode addresses using Google Maps Geocoding API
-  const geocodeAddress = (address: string, field: 'pickup' | 'dropoff') => {
-    if (!address || !window.google?.maps?.Geocoder) return null;
-    
-    return new Promise<{lat: number, lng: number} | null>((resolve) => {
-      const geocoder = new google.maps.Geocoder();
-      
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-          const location = {
-            lat: results[0].geometry.location.lat(),
-            lng: results[0].geometry.location.lng()
-          };
-          
-          if (field === 'pickup') {
-            setPickupCoords(location);
-            console.log('Geocoded pickup coordinates:', location);
-          } else {
-            setDropoffCoords(location);
-            console.log('Geocoded dropoff coordinates:', location);
-          }
-          
-          resolve(location);
-        } else {
-          console.error('Geocoding failed:', status);
-          if (field === 'pickup') {
-            setPickupCoords(null);
-          } else {
-            setDropoffCoords(null);
-          }
-          resolve(null);
-        }
-      });
-    });
-  };
-
   // Function to fetch prices from the API
   const fetchPrices = async (): Promise<PricingResponse | null> => {
-    // Get coordinates if not already available
+    // Use stored place_ids when available for more reliable geocoding
     let pickup = pickupCoords;
     let dropoff = dropoffCoords;
     
     if (!pickup) {
-      pickup = await geocodeAddress(pickupValue, 'pickup');
+      pickup = await geocodeAddress(pickupValue, 'pickup', pickupPlaceId);
     }
     
     if (!dropoff) {
-      dropoff = await geocodeAddress(dropoffValue, 'dropoff');
+      dropoff = await geocodeAddress(dropoffValue, 'dropoff', dropoffPlaceId);
     }
     
     if (!pickup || !dropoff) {
       toast({
         title: "Location Error",
-        description: "Unable to get coordinates for one or both locations. Please make sure they are valid addresses.",
+        description: !pickup 
+          ? "Unable to find coordinates for pickup location. Please try a more specific address." 
+          : "Unable to find coordinates for dropoff location. Please try a more specific address.",
         variant: "destructive"
       });
       return null;
@@ -427,9 +367,21 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     if (field === 'pickup') {
       console.log('Setting pickup value from place selection:', displayName);
       setPickupValue(displayName);
+      
+      // Store place_id if available
+      if (placeData?.place_id) {
+        console.log('Storing pickup place_id:', placeData.place_id);
+        setPickupPlaceId(placeData.place_id);
+      }
     } else {
       console.log('Setting dropoff value from place selection:', displayName);
       setDropoffValue(displayName);
+      
+      // Store place_id if available
+      if (placeData?.place_id) {
+        console.log('Storing dropoff place_id:', placeData.place_id);
+        setDropoffPlaceId(placeData.place_id);
+      }
     }
     
     // Get coordinates if placeData is provided
@@ -441,11 +393,31 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       
       if (field === 'pickup') {
         setPickupCoords(location);
-        console.log('Pickup coordinates:', location);
+        console.log('Pickup coordinates from place selection:', location);
       } else {
         setDropoffCoords(location);
-        console.log('Dropoff coordinates:', location);
+        console.log('Dropoff coordinates from place selection:', location);
       }
+    } else if (placeData?.place_id) {
+      // If we have place_id but no geometry, fetch the coordinates
+      geocodeAddress(displayName, field, placeData.place_id)
+        .then(coords => {
+          if (coords) {
+            if (field === 'pickup') {
+              setPickupCoords(coords);
+            } else {
+              setDropoffCoords(coords);
+            }
+          }
+        })
+        .catch(error => {
+          console.error(`Error geocoding ${field} place:`, error);
+          toast({
+            title: "Geocoding Error",
+            description: `Unable to find coordinates for this ${field} location. Please try a different address.`,
+            variant: "destructive"
+          });
+        });
     }
   };
 
@@ -672,12 +644,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 userInteractedRef.current = true;
                 console.log('Pickup value changed to:', value);
                 setPickupValue(value);
+                // Clear coordinates when manually editing
+                setPickupCoords(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
               placeholder="From"
               className="w-full"
               required={true}
               onValidation={handlePickupValidation}
+              id="pickup-field-mobile"
             />
             {/* Mobile Dropoff Location */}
             <GooglePlacesAutocomplete
@@ -686,12 +661,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 userInteractedRef.current = true;
                 console.log('Dropoff value changed to:', value);
                 setDropoffValue(value);
+                // Clear coordinates when manually editing
+                setDropoffCoords(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
               placeholder="To"
               className="w-full"
               required={true}
               onValidation={handleDropoffValidation}
+              id="dropoff-field-mobile"
             />
             {isOneWay ? (
               <DatePicker
@@ -780,12 +758,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   userInteractedRef.current = true;
                   console.log('Pickup value changed to:', value);
                   setPickupValue(value);
+                  // Clear coordinates when manually editing
+                  setPickupCoords(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
                 placeholder="From"
                 className="w-full"
                 required={true}
                 onValidation={handlePickupValidation}
+                id="pickup-field-desktop"
               />
               {/* Desktop Dropoff Location */}
               <GooglePlacesAutocomplete
@@ -794,12 +775,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   userInteractedRef.current = true;
                   console.log('Dropoff value changed to:', value);
                   setDropoffValue(value);
+                  // Clear coordinates when manually editing
+                  setDropoffCoords(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
                 placeholder="To"
                 className="w-full"
                 required={true}
                 onValidation={handleDropoffValidation}
+                id="dropoff-field-desktop"
               />
               {isOneWay ? (
                 <DatePicker
