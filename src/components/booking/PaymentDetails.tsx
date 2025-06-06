@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, CreditCard, Banknote, Tag } from 'lucide-react';
+import { ChevronDown, CreditCard, Banknote, Tag, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../../contexts/BookingContext';
@@ -9,12 +9,14 @@ import BookingLayout from './BookingLayout';
 import { supabase } from '../../lib/supabase';
 import { generateBookingReference } from '../../utils/bookingHelper';
 import { extras } from '../../data/extras';
+import { useToast } from '../ui/use-toast';
 
 const PaymentDetails = () => {
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, validateStep } = useBooking();
   const { user, userData } = useAuth();
   const { trackEvent } = useAnalytics();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [showDiscount, setShowDiscount] = useState(false);
@@ -22,6 +24,18 @@ const PaymentDetails = () => {
   const [showPriceDetails, setShowPriceDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Check for missing required data before submitting
+  useEffect(() => {
+    // Validate that all previous steps are complete
+    const errors = validateStep(3);
+    if (errors.length > 0) {
+      setValidationError(errors[0].message);
+    } else {
+      setValidationError(null);
+    }
+  }, [bookingState, validateStep]);
 
   const handleStripeCheckout = async () => {
     try {
@@ -200,6 +214,18 @@ const PaymentDetails = () => {
   };
 
   const handleBook = async () => {
+    // First check if there are any validation errors
+    const errors = validateStep(3);
+    if (errors.length > 0) {
+      setValidationError(errors[0].message);
+      toast({
+        title: "Missing Information",
+        description: errors[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (paymentMethod === 'card') {
       handleStripeCheckout();
     } else {
@@ -403,6 +429,7 @@ const PaymentDetails = () => {
       nextButtonText={isSubmitting ? "Processing..." : "Complete Booking"}
       showNewsletter={true}
       preventScrollOnNext={true}
+      validateBeforeNext={false} // We'll handle validation ourselves
     >
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl mb-8">Payment Details</h1>
@@ -413,9 +440,20 @@ const PaymentDetails = () => {
             <p className="text-sm whitespace-pre-line">{error}</p>
           </div>
         )}
+        
+        {validationError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
+            <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Missing Information</p>
+              <p>{validationError}</p>
+              <p className="text-sm mt-1">Please go back and complete all required information.</p>
+            </div>
+          </div>
+        )}
 
         {/* Payment Method Selection */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8" id="payment-method-section">
           <h2 className="text-xl mb-4">Choose Payment Method</h2>
           
           <div className="space-y-4">
@@ -427,6 +465,7 @@ const PaymentDetails = () => {
                   checked={paymentMethod === 'card'}
                   onChange={() => setPaymentMethod('card')}
                   className="h-5 w-5 text-blue-600"
+                  id="payment-card"
                 />
                 <CreditCard className="w-6 h-6 text-gray-500" aria-hidden="true" />
                 <div>
@@ -446,6 +485,7 @@ const PaymentDetails = () => {
                   checked={paymentMethod === 'cash'}
                   onChange={() => setPaymentMethod('cash')}
                   className="h-5 w-5 text-blue-600"
+                  id="payment-cash"
                 />
                 <Banknote className="w-6 h-6 text-gray-500" aria-hidden="true" />
                 <div>
@@ -460,11 +500,12 @@ const PaymentDetails = () => {
         </section>
 
         {/* Discount Code */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8" id="discount-section">
           <button
             onClick={() => setShowDiscount(!showDiscount)}
             className="flex items-center text-black hover:text-gray-600"
             aria-expanded={showDiscount}
+            id="discount-toggle-button"
           >
             <Tag className="w-5 h-5 mr-2" aria-hidden="true" />
             Got a Discount Code?
@@ -487,12 +528,14 @@ const PaymentDetails = () => {
                     placeholder="Enter code"
                     className="flex-1 px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                     aria-label="Discount code"
+                    id="discount-code-input"
                   />
                   <button
                     className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     onClick={() => {
                       trackEvent('Payment', 'Apply Discount', discountCode);
                     }}
+                    id="apply-discount-button"
                   >
                     Apply
                   </button>
@@ -503,13 +546,14 @@ const PaymentDetails = () => {
         </section>
 
         {/* Price Breakdown */}
-        <section className="bg-white rounded-lg shadow-md p-6">
+        <section className="bg-white rounded-lg shadow-md p-6" id="price-details-section">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl">Price Details</h2>
             <button
               onClick={() => setShowPriceDetails(!showPriceDetails)}
               className="text-black hover:text-gray-700 flex items-center"
               aria-expanded={showPriceDetails}
+              id="price-details-toggle"
             >
               {showPriceDetails ? 'Hide' : 'Show'} details
               <ChevronDown
@@ -548,7 +592,7 @@ const PaymentDetails = () => {
 
           <div className="mt-6 text-sm text-gray-500">
             By clicking 'Complete Booking' you acknowledge that you have read and
-            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className="underline hover:text-black">Privacy Policy</a>.
+            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className=\"underline hover:text-black">Privacy Policy</a>.
           </div>
         </section>
       </div>

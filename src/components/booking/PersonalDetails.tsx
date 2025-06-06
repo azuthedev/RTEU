@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Info, AlertCircle } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
 import { extras } from '../../data/extras';
+import { useToast } from '../ui/use-toast';
+import FormField from '../ui/form-field';
+import FormSelect from '../ui/form-select';
 
 const PersonalDetails = () => {
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, validateStep, scrollToError } = useBooking();
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     title: 'mr',
     firstName: '',
@@ -15,13 +20,34 @@ const PersonalDetails = () => {
     phone: '',
     selectedExtras: new Set<string>()
   });
-
+  
+  const [formTouched, setFormTouched] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  
   // Initialize form with existing data from context if available
   useEffect(() => {
     if (bookingState.personalDetails) {
       setFormData(bookingState.personalDetails);
     }
-  }, [bookingState.personalDetails]);
+    
+    // Check for existing validation errors in the booking state
+    if (bookingState.validationErrors?.length > 0) {
+      const errors: Record<string, string> = {};
+      bookingState.validationErrors.forEach(error => {
+        errors[error.field] = error.message;
+      });
+      setFieldErrors(errors);
+      
+      // If there are errors, scroll to the first one
+      if (bookingState.validationErrors.length > 0) {
+        const firstErrorField = bookingState.validationErrors[0].field;
+        setTimeout(() => {
+          scrollToError(firstErrorField);
+        }, 100);
+      }
+    }
+  }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError]);
 
   const handleExtraToggle = (extraId: string) => {
     const newExtras = new Set(formData.selectedExtras);
@@ -31,11 +57,18 @@ const PersonalDetails = () => {
       newExtras.add(extraId);
     }
     setFormData({ ...formData, selectedExtras: newExtras });
+    setFormTouched({ ...formTouched, extras: true });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    setFormTouched({ ...formTouched, [name]: true });
+    
+    // Clear the error for this field when it's changed
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: '' });
+    }
   };
 
   const calculateTotal = () => {
@@ -74,16 +107,76 @@ const PersonalDetails = () => {
     return basePrice + extrasTotal;
   };
 
-  const handleNext = () => {
-    // Scroll to top
-    window.scrollTo(0, 0);
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    let isValid = true;
     
-    // Update context with personal details
+    // First name validation
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required';
+      isValid = false;
+    }
+    
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+      isValid = false;
+    }
+    
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+    
+    // Country validation
+    if (!formData.country) {
+      errors.country = 'Please select your country';
+      isValid = false;
+    }
+    
+    // Phone validation - optional but must be valid if provided
+    if (formData.phone && formData.phone.trim().length < 5) {
+      errors.phone = 'Please enter a valid phone number';
+      isValid = false;
+    }
+    
+    setFieldErrors(errors);
+    return isValid;
+  };
+
+  const handleNext = () => {
+    // Validate the form
+    if (!validateForm()) {
+      // Find the first error field and scroll to it
+      const firstErrorField = Object.keys(fieldErrors)[0];
+      if (firstErrorField) {
+        scrollToError(firstErrorField);
+      }
+      
+      // Show toast notification
+      toast({
+        title: "Please complete all required fields",
+        description: "Some required information is missing or invalid.",
+        variant: "destructive"
+      });
+      
+      return;
+    }
+    
+    // All validation passed - update context with personal details
     setBookingState(prev => ({
       ...prev,
       step: 3,
-      personalDetails: formData
+      personalDetails: formData,
+      validationErrors: [] // Clear any validation errors
     }));
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -92,6 +185,7 @@ const PersonalDetails = () => {
       totalPrice={calculateTotal()}
       onNext={handleNext}
       nextButtonText="Next: Payment Details"
+      validateBeforeNext={false} // We'll handle validation ourselves
     >
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl mb-8">Transfer & Personal Details</h1>
@@ -110,6 +204,7 @@ const PersonalDetails = () => {
                   checked={formData.selectedExtras.has(extra.id)}
                   onChange={() => handleExtraToggle(extra.id)}
                   className="h-5 w-5 text-black rounded"
+                  id={`extra-${extra.id}`}
                 />
                 <div className="flex-1">
                   <div className="font-medium">{extra.name}</div>
@@ -122,13 +217,13 @@ const PersonalDetails = () => {
           </div>
         </section>
 
-        {/* Personal Details */}
+        {/* Personal Details Form */}
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl mb-4">Personal Details</h2>
+          <h2 className="text-xl mb-6">Personal Details</h2>
           
-          <div className="space-y-6">
+          <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {/* Title Selection */}
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mb-6">
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -137,6 +232,7 @@ const PersonalDetails = () => {
                   checked={formData.title === 'mr'}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-black"
+                  id="title-mr"
                 />
                 <span>Mr.</span>
               </label>
@@ -148,6 +244,7 @@ const PersonalDetails = () => {
                   checked={formData.title === 'ms'}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-black"
+                  id="title-ms"
                 />
                 <span>Ms.</span>
               </label>
@@ -155,90 +252,116 @@ const PersonalDetails = () => {
 
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
+              <FormField
+                id="firstName"
+                name="firstName"
+                label="First Name"
+                value={formData.firstName}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                required
+                error={fieldErrors.firstName}
+                required={true}
+                autoComplete="given-name"
+              />
+              <FormField
+                id="lastName"
+                name="lastName"
+                label="Last Name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                error={fieldErrors.lastName}
+                required={true}
+                autoComplete="family-name"
               />
             </div>
 
+            {/* Email */}
+            <FormField
+              id="email"
+              name="email"
+              label="Email Address"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              error={fieldErrors.email}
+              required={true}
+              autoComplete="email"
+            />
+
             {/* Country & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <select
-                  name="country"
-                  value={formData.country}
+              <FormSelect
+                id="country"
+                name="country"
+                label="Country"
+                options={[
+                  { value: "", label: "Select a country" },
+                  { value: "IT", label: "Italy" },
+                  { value: "FR", label: "France" },
+                  { value: "ES", label: "Spain" },
+                  { value: "DE", label: "Germany" },
+                  { value: "UK", label: "United Kingdom" },
+                  { value: "US", label: "United States" },
+                  { value: "CA", label: "Canada" },
+                  { value: "AU", label: "Australia" },
+                  { value: "CH", label: "Switzerland" },
+                  { value: "AT", label: "Austria" },
+                  { value: "NL", label: "Netherlands" },
+                  { value: "BE", label: "Belgium" },
+                  { value: "PT", label: "Portugal" },
+                  { value: "GR", label: "Greece" },
+                  { value: "SE", label: "Sweden" },
+                  { value: "NO", label: "Norway" },
+                  { value: "DK", label: "Denmark" },
+                  { value: "FI", label: "Finland" },
+                  { value: "IE", label: "Ireland" },
+                  { value: "RU", label: "Russia" },
+                  { value: "PL", label: "Poland" }
+                ]}
+                value={formData.country}
+                onChange={handleInputChange}
+                error={fieldErrors.country}
+                required={true}
+              />
+              <div className="relative">
+                <FormField
+                  id="phone"
+                  name="phone"
+                  label="Phone Number"
+                  type="tel"
+                  value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                >
-                  <option value="">Select a country</option>
-                  <option value="IT">Italy</option>
-                  <option value="FR">France</option>
-                  <option value="ES">Spain</option>
-                  <option value="DE">Germany</option>
-                  <option value="UK">United Kingdom</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    required
-                  />
-                  <div className="absolute right-3 top-2">
-                    <Info className="w-5 h-5 text-gray-400" title="We'll only contact you about your transfer" />
-                  </div>
+                  error={fieldErrors.phone}
+                  autoComplete="tel"
+                  helpText="Recommended for booking notifications"
+                />
+                <div className="absolute right-3 top-[38px]">
+                  <Info className="w-5 h-5 text-gray-400" title="We'll only contact you about your transfer" />
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Form-wide error display */}
+            {Object.keys(fieldErrors).length > 0 && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 flex items-start">
+                <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Please complete all required fields</p>
+                  <ul className="list-disc list-inside mt-1 text-sm">
+                    {Object.entries(fieldErrors).map(([field, message]) => (
+                      <li key={field} className="ml-2">
+                        <button 
+                          className="underline hover:text-red-800"
+                          onClick={() => scrollToError(field)}
+                        >
+                          {message}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </form>
         </section>
       </div>
     </BookingLayout>

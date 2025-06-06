@@ -22,7 +22,13 @@ interface PricingResponse {
   };
 }
 
-interface BookingState {
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+// Define the shape of our booking state
+export interface BookingState {
   step: 1 | 2 | 3;
   previousStep?: 1 | 2 | 3; // Added to track previous step for animations
   selectedVehicle: typeof vehicles[0];
@@ -56,12 +62,16 @@ interface BookingState {
     discountCode?: string;
   };
   pricingResponse?: PricingResponse; // Store pricing data from API
+  validationErrors: ValidationError[]; // Added to track validation errors
 }
 
 interface BookingContextType {
   bookingState: BookingState;
   setBookingState: React.Dispatch<React.SetStateAction<BookingState>>;
   clearBookingState: () => void;
+  validateStep: (step: number) => ValidationError[];
+  proceedToNextStep: () => boolean;
+  scrollToError: (fieldId: string) => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -117,6 +127,11 @@ const deserializeBookingState = (serialized: string | null): BookingState | null
       } else {
         parsed.selectedVehicle = vehicles[0]; // Default to first vehicle if not found
       }
+    }
+
+    // Initialize validation errors if not present
+    if (!parsed.validationErrors) {
+      parsed.validationErrors = [];
     }
 
     return parsed;
@@ -175,7 +190,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       },
       paymentDetails: {
         method: 'card'
-      }
+      },
+      validationErrors: []
     };
   });
 
@@ -223,15 +239,149 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       },
       paymentDetails: {
         method: 'card'
-      }
+      },
+      validationErrors: []
     });
+  };
+
+  // Function to validate a specific step of the booking process
+  const validateStep = (step: number): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    switch (step) {
+      case 1: // Vehicle selection step
+        if (!bookingState.selectedVehicle) {
+          errors.push({ field: 'vehicle', message: 'Please select a vehicle' });
+        }
+        
+        // Check if we have the required route information
+        if (!bookingState.from || !bookingState.to) {
+          errors.push({ field: 'route', message: 'Route information is missing' });
+        }
+        
+        // Check if we have date information
+        if (!bookingState.departureDate) {
+          errors.push({ field: 'date', message: 'Departure date is required' });
+        }
+        
+        // Check if return date is set for round trips
+        if (bookingState.isReturn && !bookingState.returnDate) {
+          errors.push({ field: 'returnDate', message: 'Return date is required for round trips' });
+        }
+        
+        break;
+      
+      case 2: // Personal details step
+        // Validate personal details
+        if (!bookingState.personalDetails.firstName) {
+          errors.push({ field: 'firstName', message: 'First name is required' });
+        }
+        
+        if (!bookingState.personalDetails.lastName) {
+          errors.push({ field: 'lastName', message: 'Last name is required' });
+        }
+        
+        if (!bookingState.personalDetails.email) {
+          errors.push({ field: 'email', message: 'Email is required' });
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingState.personalDetails.email)) {
+          errors.push({ field: 'email', message: 'Please enter a valid email address' });
+        }
+        
+        if (!bookingState.personalDetails.country) {
+          errors.push({ field: 'country', message: 'Country is required' });
+        }
+        
+        // Phone can be optional but if provided should be valid
+        if (bookingState.personalDetails.phone && bookingState.personalDetails.phone.length < 5) {
+          errors.push({ field: 'phone', message: 'Please enter a valid phone number' });
+        }
+        
+        break;
+      
+      case 3: // Payment details step
+        // No validation needed for payment method selection as there's always a default
+        // Any card validation will be handled by Stripe
+        
+        // Check if we have all the necessary details from previous steps
+        if (!bookingState.selectedVehicle) {
+          errors.push({ field: 'vehicle', message: 'Vehicle selection is missing' });
+        }
+        
+        if (!bookingState.personalDetails.firstName || !bookingState.personalDetails.lastName) {
+          errors.push({ field: 'personalDetails', message: 'Personal details are incomplete' });
+        }
+        
+        if (!bookingState.personalDetails.email) {
+          errors.push({ field: 'email', message: 'Email is required' });
+        }
+        
+        break;
+    }
+
+    // Update the validation errors in the state
+    setBookingState(prev => ({
+      ...prev,
+      validationErrors: errors
+    }));
+
+    return errors;
+  };
+
+  // Function to attempt proceeding to the next step, with validation
+  const proceedToNextStep = (): boolean => {
+    const currentStep = bookingState.step;
+    const errors = validateStep(currentStep);
+
+    if (errors.length > 0) {
+      // Cannot proceed if there are validation errors
+      console.log(`Cannot proceed to step ${currentStep + 1} due to validation errors:`, errors);
+      return false;
+    }
+
+    // All validation passed, proceed to next step
+    const nextStep = (currentStep + 1) as 1 | 2 | 3;
+    if (nextStep <= 3) {
+      setBookingState(prev => ({
+        ...prev,
+        step: nextStep,
+        validationErrors: [] // Clear validation errors
+      }));
+      return true;
+    }
+
+    return false;
+  };
+
+  // Function to scroll to an error field
+  const scrollToError = (fieldId: string) => {
+    const element = document.getElementById(fieldId);
+    if (element) {
+      // Calculate the position to scroll to
+      const rect = element.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const elementTop = rect.top + scrollTop;
+      
+      // Scroll with offset to account for the fixed header
+      window.scrollTo({
+        top: elementTop - 120, // 120px offset to account for header and padding
+        behavior: 'smooth'
+      });
+      
+      // Focus the element after scrolling
+      setTimeout(() => {
+        element.focus();
+      }, 500);
+    }
   };
 
   return (
     <BookingContext.Provider value={{ 
       bookingState, 
       setBookingState,
-      clearBookingState
+      clearBookingState,
+      validateStep,
+      proceedToNextStep,
+      scrollToError
     }}>
       {children}
     </BookingContext.Provider>

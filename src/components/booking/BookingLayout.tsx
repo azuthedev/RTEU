@@ -8,6 +8,7 @@ import ProgressBar from './ProgressBar';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import Newsletter from '../Newsletter';
+import { useToast } from '../ui/use-toast';
 
 interface BookingLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ interface BookingLayoutProps {
   showNewsletter?: boolean;
   modalOpen?: boolean;
   preventScrollOnNext?: boolean;
+  validateBeforeNext?: boolean;
 }
 
 const BookingLayout: React.FC<BookingLayoutProps> = ({
@@ -30,13 +32,15 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
   nextButtonText = 'Next Step',
   showNewsletter = true,
   modalOpen = false,
-  preventScrollOnNext = false
+  preventScrollOnNext = false,
+  validateBeforeNext = true
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { from, to, type, date, returnDate, passengers } = useParams();
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, validateStep, scrollToError } = useBooking();
   const { trackEvent } = useAnalytics();
+  const { toast } = useToast();
   
   // Refs for scroll calculations
   const priceBarRef = useRef<HTMLDivElement>(null);
@@ -181,12 +185,35 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
       // Update step in context
       setBookingState(prev => ({
         ...prev,
-        step: (prev.step - 1) as 1 | 2 | 3
+        step: (prev.step - 1) as 1 | 2 | 3,
+        validationErrors: [] // Clear validation errors when going back
       }));
     }
   };
 
   const handleNext = () => {
+    // If validateBeforeNext is true, use the validation logic
+    if (validateBeforeNext) {
+      // Validate the current step
+      const errors = validateStep(currentStep);
+      
+      if (errors.length > 0) {
+        // Display toast with first error
+        toast({
+          title: "Please complete all required fields",
+          description: errors[0].message,
+          variant: "destructive"
+        });
+        
+        // Scroll to the first error field if it exists
+        if (errors[0].field) {
+          scrollToError(errors[0].field);
+        }
+        
+        return;
+      }
+    }
+    
     // Track next button click
     trackEvent('Booking Flow', 'Navigate Next', `From Step ${currentStep}`);
     
@@ -201,7 +228,8 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
       // Update step in context
       setBookingState(prev => ({
         ...prev,
-        step: (prev.step + 1) as 1 | 2 | 3
+        step: (prev.step + 1) as 1 | 2 | 3,
+        validationErrors: [] // Clear validation errors when moving forward
       }));
     }
   };

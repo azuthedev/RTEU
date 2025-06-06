@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
 import VehicleCard from './VehicleCard';
@@ -12,27 +12,23 @@ import { useToast } from '../ui/use-toast';
 const vehicleCategories = [
   { 
     id: 'sedan', 
-    name: 'Sedan', 
-    color: 'bg-blue-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/sedann_blk.png'
+    name: 'Sedan',
+    color: 'bg-blue-50'
   },
   { 
     id: 'minivan', 
-    name: 'Minivan', 
-    color: 'bg-green-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/mnivan_blk.png'
+    name: 'Minivan',
+    color: 'bg-green-50'
   },
   { 
     id: 'sprinter', 
-    name: 'Sprinter', 
-    color: 'bg-gray-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/sprinterrr_blk.png'
+    name: 'Sprinter',
+    color: 'bg-gray-50'
   },
   { 
     id: 'bus', 
-    name: 'Bus', 
-    color: 'bg-amber-50',
-    logoUrl: 'https://files.royaltransfereu.com/assets/busting_blk.png'
+    name: 'Coach',
+    color: 'bg-amber-50'
   }
 ];
 
@@ -107,7 +103,7 @@ const getCategoryDisplayName = (category: string): string => {
 };
 
 const VehicleSelection = () => {
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, validateStep } = useBooking();
   const { toast } = useToast();
   const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]);
   const [modalVehicle, setModalVehicle] = useState<typeof vehicles[0] | null>(null);
@@ -115,6 +111,7 @@ const VehicleSelection = () => {
   const [activeCategory, setActiveCategory] = useState('sedan');
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
   const itemsPerView = isMobile ? 1 : 3;
@@ -280,9 +277,35 @@ const VehicleSelection = () => {
         behavior: 'smooth'
       });
     }
+    
+    // Clear any validation error when changing category
+    setValidationError(null);
   };
 
   const handleNext = () => {
+    // Validate that a vehicle is selected
+    if (!selectedVehicle) {
+      setValidationError("Please select a vehicle to continue");
+      toast({
+        title: "Vehicle Selection Required",
+        description: "Please select a vehicle to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validate other required data for this step
+    const errors = validateStep(1);
+    if (errors.length > 0) {
+      setValidationError(errors[0].message);
+      toast({
+        title: "Required Information Missing",
+        description: errors[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Update selected vehicle in context with current API price
     const apiPrice = getVehiclePrice(selectedVehicle.id);
     const vehicleWithPrice = apiPrice !== null ? 
@@ -292,7 +315,8 @@ const VehicleSelection = () => {
     setBookingState(prev => ({
       ...prev,
       step: 2,
-      selectedVehicle: vehicleWithPrice
+      selectedVehicle: vehicleWithPrice,
+      validationErrors: [] // Clear validation errors
     }));
   };
 
@@ -329,15 +353,6 @@ const VehicleSelection = () => {
     }
   };
 
-  // Function to format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'EUR',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   // Get current vehicle price (API price or default)
   const getCurrentVehiclePrice = () => {
     if (!selectedVehicle) return 0;
@@ -357,32 +372,35 @@ const VehicleSelection = () => {
       onNext={handleNext}
       nextButtonText="Next: Personal Details"
       modalOpen={isModalOpen}
+      validateBeforeNext={false} // We'll handle validation ourselves
     >
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl mb-8">Choose Your Vehicle</h1>
         
-        {/* Category Tabs */}
+        {/* Validation error alert */}
+        {validationError && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
+        
+        {/* Category Tabs - UPDATED TO TEXT-ONLY BUTTONS */}
         <div className="mb-8 sticky top-0 z-10 bg-white py-4 -mt-4 shadow-sm">
-          <div className="flex items-center justify-center md:justify-start space-x-2 overflow-x-auto py-2 px-1">
+          <div className="flex justify-center md:justify-start gap-2 overflow-x-auto py-2 px-1">
             {vehicleCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.id)}
-                className={`w-14 h-14 rounded-full transition-colors flex items-center justify-center ${
+                className={`px-4 py-2 rounded-lg transition-colors ${
                   activeCategory === category.id 
-                    ? `${category.color} text-gray-800 shadow-md`
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    ? `bg-blue-600 text-white shadow-sm`
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
                 aria-selected={activeCategory === category.id}
-                title={category.name}
+                id={`category-tab-${category.id}`}
               >
-                <div className="w-10 h-10 bg-white rounded-full p-1 flex items-center justify-center">
-                  <img 
-                    src={category.logoUrl}
-                    alt={`${category.name} icon`}
-                    className="w-8 h-8 object-contain" 
-                  />
-                </div>
+                {category.name}
               </button>
             ))}
           </div>
@@ -390,7 +408,7 @@ const VehicleSelection = () => {
         
         {/* Category Title */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl">
+          <h2 className="text-xl" id="vehicle-category-heading">
             {vehicleCategories.find(c => c.id === activeCategory)?.name} Options
           </h2>
           <div className="flex items-center">
@@ -418,7 +436,7 @@ const VehicleSelection = () => {
         </div>
         
         {/* Vehicles Carousel */}
-        <div className="relative overflow-hidden p-2">
+        <div className="relative overflow-hidden p-2" aria-labelledby="vehicle-category-heading">
           <div 
             ref={carouselRef}
             className="flex space-x-4 overflow-x-auto snap-x scroll-smooth scrollbar-hide pb-6"
@@ -440,9 +458,10 @@ const VehicleSelection = () => {
                 }
               }
             }}
+            role="list"
           >
             {activeVehicles.length > 0 ? (
-              activeVehicles.map((vehicle) => {
+              activeVehicles.map((vehicle, idx) => {
                 // Get API price if available
                 const apiPrice = getVehiclePrice(vehicle.id);
                 const finalPrice = apiPrice !== null ? apiPrice : vehicle.price;
@@ -455,12 +474,18 @@ const VehicleSelection = () => {
                     key={vehicle.id}
                     className="vehicle-card flex-shrink-0 w-full md:w-[calc(33.333%-16px)] snap-center p-2"
                     style={{ scrollSnapAlign: 'center' }}
+                    role="listitem"
                   >
                     <VehicleCard
                       {...vehicleWithPrice}
                       isSelected={selectedVehicle.id === vehicle.id}
-                      onSelect={() => setSelectedVehicle(vehicleWithPrice)}
+                      onSelect={() => {
+                        setSelectedVehicle(vehicleWithPrice);
+                        setValidationError(null); // Clear validation error when a vehicle is selected
+                      }}
                       onLearnMore={() => handleOpenModal(vehicleWithPrice)}
+                      aria-label={`${vehicle.name} - €${finalPrice} - ${vehicle.seats} passengers`}
+                      id={`vehicle-${vehicle.id}`}
                     />
                   </div>
                 );
@@ -536,6 +561,7 @@ const VehicleSelection = () => {
               modalVehicle;
             
             setSelectedVehicle(vehicleWithPrice);
+            setValidationError(null); // Clear validation error when a vehicle is selected
           }}
           vehicle={modalVehicle}
           isSelected={selectedVehicle.id === modalVehicle.id}

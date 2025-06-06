@@ -14,6 +14,7 @@ interface VehicleCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onLearnMore: () => void;
+  'aria-label'?: string;
 }
 
 const VehicleCard: React.FC<VehicleCardProps> = ({
@@ -27,7 +28,8 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   price,
   isSelected,
   onSelect,
-  onLearnMore
+  onLearnMore,
+  'aria-label': ariaLabel
 }) => {
   // Format price with euro symbol
   const formattedPrice = new Intl.NumberFormat('en-US', {
@@ -44,6 +46,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
         isSelected ? 'ring-2 ring-blue-600' : ''
       }`}
       whileHover={{ y: -5 }}
+      aria-label={ariaLabel}
     >
       {/* Vehicle Image */}
       <div className="relative aspect-[16/9] mb-4 flex items-center justify-center">
@@ -118,6 +121,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
           aria-pressed={isSelected}
+          id={id}
         >
           {isSelected ? 'Selected' : 'Choose'}
         </motion.button>
