@@ -172,7 +172,13 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     } catch (error: any) {
       console.error('Error requesting password reset:', error);
       
-      setError('An unexpected error occurred. Please try again later.');
+      // Display user-friendly error message
+      if (error.message && error.message.includes('No account found')) {
+        setError('No account found with this email address. Please sign up first.');
+      } else {
+        setError('An unexpected error occurred. Please try again later.');
+      }
+      
       trackEvent('Authentication', 'Password Reset Error', error.message);
     } finally {
       setIsSubmitting(false);
