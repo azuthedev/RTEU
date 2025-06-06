@@ -21,7 +21,7 @@ const PaymentDetails = () => {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [showDiscount, setShowDiscount] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
-  const [showPriceDetails, setShowPriceDetails] = useState(false);
+  const [showPriceDetails, setShowPriceDetails] = useState(true); // Changed to true for open by default
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -565,7 +565,7 @@ const PaymentDetails = () => {
             </button>
           </div>
 
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {showPriceDetails && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
