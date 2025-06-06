@@ -601,7 +601,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           .from('users')
           .select('name')
           .eq('email', email)
-          .single();
+          .maybeSingle(); // Use maybeSingle() instead of single() to handle no results gracefully
         
         if (!userLookupError && userData?.name) {
           userName = userData.name;
@@ -626,6 +626,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       if (!supabaseUrl || !anonKey) {
         console.error('Missing required environment variables');
         throw new Error('Server configuration error: Missing required configuration');
+      }
+      
+      // Check if user exists in database before sending reset email
+      try {
+        const { data: userExists, error: userExistsError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+          
+        if (userExistsError) {
+          console.error('Error checking if user exists:', userExistsError);
+          throw new Error('Error checking user account');
+        }
+        
+        // If user doesn't exist, return a meaningful error
+        if (!userExists) {
+          console.log(`No account found with email: ${email}`);
+          return { 
+            success: false, 
+            error: 'No account found with this email address. Please sign up first.'
+          };
+        }
+      } catch (userCheckError) {
+        console.error('Error during user existence check:', userCheckError);
+        // Continue with the reset attempt even if the check fails
       }
       
       // Send password reset request via edge function with anon key auth
