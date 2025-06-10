@@ -11,7 +11,7 @@ import OTPVerificationModal from '../components/OTPVerificationModal';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { sendOtpEmail } from '../utils/emailValidator';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '../components/ui/use-toast';
 
 // Simple debounce function to prevent excessive API calls
 const debounce = (fn: Function, ms = 300) => {
