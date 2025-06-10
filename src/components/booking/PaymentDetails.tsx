@@ -9,7 +9,7 @@ import BookingLayout from './BookingLayout';
 import { supabase } from '../../lib/supabase';
 import { generateBookingReference } from '../../utils/bookingHelper';
 import { extras } from '../../data/extras';
-import { useToast } from '../../ui/use-toast';
+import { useToast } from '../ui/use-toast';
 
 const PaymentDetails = () => {
   const { bookingState, setBookingState, validateStep } = useBooking();
