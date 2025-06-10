@@ -174,32 +174,35 @@ export const useBooking = () => {
   return context;
 };
 
+// Get default booking state
+const getDefaultBookingState = (): BookingState => ({
+  step: 1,
+  selectedVehicle: vehicles[0],
+  personalDetails: {
+    title: 'mr',
+    firstName: '',
+    lastName: '',
+    email: '',
+    country: '',
+    phone: '',
+    selectedExtras: new Set(),
+    extraStops: [], // Initialize extra stops array
+    childSeats: {}, // Initialize child seats object
+    luggageCount: 2 // Default to 2 luggage items
+  },
+  paymentDetails: {
+    method: 'card'
+  },
+  validationErrors: []
+});
+
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Initialize with default state or loaded state from sessionStorage
   const [bookingState, setBookingState] = useState<BookingState>(() => {
     const savedState = loadBookingState();
     
     // Return saved state if available, otherwise use default state
-    return savedState || {
-      step: 1,
-      selectedVehicle: vehicles[0],
-      personalDetails: {
-        title: 'mr',
-        firstName: '',
-        lastName: '',
-        email: '',
-        country: '',
-        phone: '',
-        selectedExtras: new Set(),
-        extraStops: [], // Initialize extra stops array
-        childSeats: {}, // Initialize child seats object
-        luggageCount: 2 // Default to 2 luggage items
-      },
-      paymentDetails: {
-        method: 'card'
-      },
-      validationErrors: []
-    };
+    return savedState || getDefaultBookingState();
   });
 
   // Track previous step for animation purposes
@@ -231,27 +234,9 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Function to clear booking state
   const clearBookingState = () => {
+    console.log("Clearing booking state");
     sessionStorage.removeItem(BOOKING_STORAGE_KEY);
-    setBookingState({
-      step: 1,
-      selectedVehicle: vehicles[0],
-      personalDetails: {
-        title: 'mr',
-        firstName: '',
-        lastName: '',
-        email: '',
-        country: '',
-        phone: '',
-        selectedExtras: new Set(),
-        extraStops: [],
-        childSeats: {},
-        luggageCount: 2
-      },
-      paymentDetails: {
-        method: 'card'
-      },
-      validationErrors: []
-    });
+    setBookingState(getDefaultBookingState());
   };
 
   // Function to validate a specific step of the booking process

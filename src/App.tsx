@@ -11,7 +11,6 @@ import Header from './components/Header';
 import { preloadImagesForRoute } from './utils/imagePreloader';
 
 // Import contexts providers only (not their implementations)
-import { BookingProvider } from './contexts/BookingContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -45,6 +44,9 @@ const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
 const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
 const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPrompt'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+
+// Import BookingProvider but DON'T apply it globally
+import { BookingProvider } from './contexts/BookingContext';
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -176,9 +178,14 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          {/* BookingProvider is ONLY applied to the booking flow route */}
           <Route 
             path="/transfer/:from/:to/:type/:date/:returnDate/:passengers/form" 
-            element={<BookingFlow />} 
+            element={
+              <BookingProvider>
+                <BookingFlow />
+              </BookingProvider>
+            } 
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -208,9 +215,7 @@ const AppWithAuth = () => {
   
   return (
     <AuthProvider trackEvent={analytics.trackEvent} setUserId={analytics.setUserId}>
-      <BookingProvider>
-        <AppRoutes />
-      </BookingProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 };
