@@ -595,7 +595,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       // In development environment, provide fallback values
       if (isDevEnvironment.current) {
-        console.log('DEVELOPMENT MODE: Simulating email verification check for', normalizedEmail);
+        console.log('DEVELOPMENT FALLBACK: Simulating email verification check for', normalizedEmail);
         
         // Some test emails to demonstrate different states
         const testCases: Record<string, { verified: boolean, exists: boolean, requiresVerification: boolean }> = {
