@@ -17,6 +17,9 @@ import { useAnalytics } from './hooks/useAnalytics';
 import { FeatureFlagProvider, useFeatureFlags } from './components/FeatureFlagProvider';
 import OTPVerificationModal from './components/OTPVerificationModal';
 
+// Import BookingProvider
+import { BookingProvider } from './contexts/BookingContext';
+
 // Lazily load all pages to improve initial load time
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -44,9 +47,6 @@ const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
 const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
 const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPrompt'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-
-// Import BookingProvider but DON'T apply it globally
-import { BookingProvider } from './contexts/BookingContext';
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -178,14 +178,10 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          {/* BookingProvider is ONLY applied to the booking flow route */}
+          {/* BookingFlow route - BookingProvider is already available from parent */}
           <Route 
             path="/transfer/:from/:to/:type/:date/:returnDate/:passengers/form" 
-            element={
-              <BookingProvider>
-                <BookingFlow />
-              </BookingProvider>
-            } 
+            element={<BookingFlow />}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -215,7 +211,9 @@ const AppWithAuth = () => {
   
   return (
     <AuthProvider trackEvent={analytics.trackEvent} setUserId={analytics.setUserId}>
-      <AppRoutes />
+      <BookingProvider>
+        <AppRoutes />
+      </BookingProvider>
     </AuthProvider>
   );
 };
