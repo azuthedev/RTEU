@@ -76,6 +76,61 @@ export interface Database {
           verified?: boolean | null
         }
       }
+      password_reset_tokens: {
+        Row: {
+          id: string
+          token: string
+          user_email: string
+          expires_at: string
+          used_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          token?: string
+          user_email: string
+          expires_at: string
+          used_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          token?: string
+          user_email?: string
+          expires_at?: string
+          used_at?: string | null
+          created_at?: string | null
+        }
+      }
+      password_reset_attempts: {
+        Row: {
+          id: string
+          email: string
+          attempted_at: string | null
+          ip_address: string | null
+          success: boolean | null
+          user_agent: string | null
+          referrer: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          attempted_at?: string | null
+          ip_address?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          referrer?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          attempted_at?: string | null
+          ip_address?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          referrer?: string | null
+        }
+      }
     }
     Enums: {
       user_role: "admin" | "customer" | "partner" | "support"

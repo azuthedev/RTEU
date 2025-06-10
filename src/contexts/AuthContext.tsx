@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 import { sendOtpEmail, checkEmailVerification as checkEmailVerificationUtil } from '../utils/emailValidator';
+import { normalizeEmail } from '../utils/emailNormalizer';
 
 type UserData = Database['public']['Tables']['users']['Row'];
 
@@ -73,6 +74,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       window.location.hostname.includes('webcontainer')
     )
   );
+
+  // Helper function to get the correct API URL based on environment
+  const getApiUrl = (endpoint: string): string => {
+    if (isDevEnvironment.current) {
+      // Use proxy URL in development
+      return `/api/${endpoint}`;
+    } else {
+      // Use direct Supabase URL in production
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      return `${supabaseUrl}/functions/v1/${endpoint}`;
+    }
+  };
+
+  // Helper function to get headers for API requests
+  const getApiHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+    };
+
+    const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      headers['X-Auth'] = webhookSecret;
+    }
+
+    return headers;
+  };
 
   // Function to fetch user data
   const fetchUserData = async (userId: string) => {
@@ -209,11 +237,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       setLoading(true);
       
+      // Normalize email
+      const normalizedEmail = normalizeEmail(email);
+      
       // Track signup attempt
       trackEvent('Authentication', 'Sign Up Attempt', inviteCode ? 'With Invite' : 'Standard');
       
       // Log for debugging
       console.log('Signup with invite code:', inviteCode);
+      console.log('Using normalized email:', normalizedEmail);
       
       // Check invite code validity first if provided
       let inviteData = null;
@@ -302,7 +334,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       // Call Supabase signup with the metadata
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: normalizedEmail,
         password,
         options: {
           data: metadata
@@ -382,11 +414,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       setLoading(true);
       
+      // Normalize email
+      const normalizedEmail = normalizeEmail(email);
+      
       // Track sign in attempt
       trackEvent('Authentication', 'Sign In Attempt');
       
+      console.log('Attempting sign in with normalized email:', normalizedEmail);
+      
       const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
+        email: normalizedEmail, 
         password 
       });
       
@@ -505,10 +542,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   // Send verification email with OTP
   const sendVerificationEmail = async (email: string, name?: string) => {
     try {
-      trackEvent('Authentication', 'Send Verification Email Attempt', email);
+      // Normalize email
+      const normalizedEmail = normalizeEmail(email);
+      
+      trackEvent('Authentication', 'Send Verification Email Attempt', normalizedEmail);
       
       // Use the dedicated function to send OTP email
-      const result = await sendOtpEmail(email, name);
+      const result = await sendOtpEmail(normalizedEmail, name);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to send verification email');
@@ -545,14 +585,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   // Check if an email has been verified
   const checkEmailVerificationStatus = async (email: string) => {
     try {
+      // Normalize email
+      const normalizedEmail = normalizeEmail(email);
+      
       // Use the utility function from emailValidator.ts
-      return await checkEmailVerificationUtil(email);
+      return await checkEmailVerificationUtil(normalizedEmail);
     } catch (err: any) {
       console.error('Error checking email verification:', err);
       
       // In development environment, provide fallback values
       if (isDevEnvironment.current) {
-        console.log('DEVELOPMENT MODE: Simulating email verification check for', email);
+        console.log('DEVELOPMENT MODE: Simulating email verification check for', normalizedEmail);
         
         // Some test emails to demonstrate different states
         const testCases: Record<string, { verified: boolean, exists: boolean, requiresVerification: boolean }> = {
@@ -561,9 +604,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           'admin@example.com': { verified: true, exists: true, requiresVerification: false }
         };
         
-        const emailKey = email.toLowerCase();
+        const emailKey = normalizedEmail.toLowerCase();
         if (testCases[emailKey]) {
-          console.log(`DEVELOPMENT MODE: Using predefined test case for ${email}`);
+          console.log(`DEVELOPMENT MODE: Using predefined test case for ${normalizedEmail}`);
           return testCases[emailKey];
         }
         
@@ -583,7 +626,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
-  // Request a password reset
+  // Request a password reset - Let Edge Function handle user existence check
   const requestPasswordReset = async (email: string): Promise<{
     success: boolean,
     error?: string,
@@ -591,92 +634,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     nextAllowedAttempt?: string
   }> => {
     try {
-      trackEvent('Authentication', 'Password Reset Request Initiated', email);
+      // Ensure email is properly normalized
+      const normalizedEmail = normalizeEmail(email);
+      console.log(`[Password Reset] Requesting reset for email: "${normalizedEmail}"`);
       
-      // First, try to find the user's actual name from the users table
-      let userName = email.split('@')[0]; // Default fallback
+      trackEvent('Authentication', 'Password Reset Request Initiated', normalizedEmail);
       
-      try {
-        const { data: userData, error: userLookupError } = await supabase
-          .from('users')
-          .select('name')
-          .eq('email', email)
-          .maybeSingle(); // Use maybeSingle() instead of single() to handle no results gracefully
-        
-        if (!userLookupError && userData?.name) {
-          userName = userData.name;
-        }
-      } catch (dbError) {
-        console.log('Could not fetch user name, using email prefix fallback');
-        // Continue with email prefix fallback
-      }
+      // Set default user name fallback - Edge Function will try to fetch actual name
+      const userName = normalizedEmail.split('@')[0];
       
-      // Set to production URL, not window.location.origin
+      // Set to production URL
       const productionDomain = 'https://royaltransfereu.com';
       
-      // Debug logging to help identify issues
-      console.log('Environment variables check:');
-      console.log('VITE_SUPABASE_URL exists:', !!import.meta.env.VITE_SUPABASE_URL);
-      console.log('VITE_SUPABASE_ANON_KEY exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+      // Get API URL and headers using helper functions
+      const apiUrl = getApiUrl('email-webhook');
+      const headers = getApiHeaders();
       
-      // Using anon key for auth - more secure approach
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log(`[Password Reset] Using API URL: ${apiUrl}`);
       
-      if (!supabaseUrl || !anonKey) {
-        console.error('Missing required environment variables');
-        throw new Error('Server configuration error: Missing required configuration');
-      }
+      console.log(`[Password Reset] Calling Edge Function for: "${normalizedEmail}"`);
       
-      // Check if user exists in database before sending reset email
-      try {
-        const { data: userExists, error: userExistsError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
-          
-        if (userExistsError) {
-          console.error('Error checking if user exists:', userExistsError);
-          throw new Error('Error checking user account');
-        }
-        
-        // If user doesn't exist, return a meaningful error
-        if (!userExists) {
-          console.log(`No account found with email: ${email}`);
-          return { 
-            success: false, 
-            error: 'No account found with this email address. Please sign up first.'
-          };
-        }
-      } catch (userCheckError) {
-        console.error('Error during user existence check:', userCheckError);
-        // Continue with the reset attempt even if the check fails
-      }
+      // Send password reset request
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name: userName, // Fallback name - Edge Function will try to fetch actual name
+          email: normalizedEmail.trim(), // Ensure email is trimmed
+          reset_link: productionDomain, // Base URL - Edge Function will generate complete link
+          email_type: 'PWReset'
+        })
+      });
       
-      // Send password reset request via edge function with anon key auth
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/email-webhook`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`
-          },
-          body: JSON.stringify({
-            name: userName, // Use actual name or fallback
-            email: email,
-            reset_link: productionDomain, // Base URL only, the Edge Function will generate the token and complete link
-            email_type: 'PWReset'
-          })
-        }
-      );
+      console.log(`[Password Reset] Edge function response status:`, response.status);
       
       // Check for rate limiting response (status 429)
       if (response.status === 429) {
-        const rateLimitData = await response.json();
+        let rateLimitData;
+        try {
+          const responseText = await response.text();
+          rateLimitData = responseText ? JSON.parse(responseText) : {};
+        } catch (jsonError) {
+          console.error('[Password Reset] Failed to parse rate limit response:', jsonError);
+          rateLimitData = {};
+        }
         
-        // Return rate limit information to the client
+        console.log(`[Password Reset] Rate limit exceeded:`, rateLimitData);
+        
         return { 
           success: false,
           error: 'Too many password reset attempts. Please try again later.',
@@ -686,15 +690,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       }
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Edge function response error:', errorText);
-        throw new Error('Failed to send password reset email');
+        let errorMessage = 'Failed to send password reset email';
+        
+        try {
+          // First try to get the response as text
+          const responseText = await response.text();
+          console.log('[Password Reset] Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              // Try to parse as JSON
+              const errorData = JSON.parse(responseText);
+              errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+              // If JSON parsing fails, use the raw text as error message
+              console.log('[Password Reset] Response is not JSON, using raw text');
+              errorMessage = responseText;
+            }
+          }
+        } catch (textError) {
+          console.error('[Password Reset] Failed to read response body:', textError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        
+        console.error('[Password Reset] Edge function response error:', errorMessage);
+        throw new Error(errorMessage);
       }
       
-      trackEvent('Authentication', 'Password Reset Email Sent', email);
+      console.log(`[Password Reset] Reset email sent successfully to: "${normalizedEmail}"`);
+      trackEvent('Authentication', 'Password Reset Email Sent', normalizedEmail);
       return { success: true };
     } catch (err: any) {
-      console.error('Error in password reset request:', err);
+      console.error('[Password Reset] Error in password reset request:', err);
+      trackEvent('Authentication', 'Password Reset Request Error', err.message);
       return { 
         success: false, 
         error: err.message || 'Failed to process password reset request'
@@ -711,37 +739,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     try {
       trackEvent('Authentication', 'Verify Password Reset Token');
       
-      // Using anon key for auth - more secure approach
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log(`[Token Verification] Verifying token: ${token}`);
       
-      if (!supabaseUrl || !anonKey) {
-        console.error('Missing required environment variables');
-        throw new Error('Server configuration error: Missing required configuration');
-      }
+      // Get API URL and headers using helper functions
+      const apiUrl = getApiUrl('verify-reset-token');
+      const headers = getApiHeaders();
+      
+      console.log(`[Token Verification] Using API URL: ${apiUrl}`);
       
       // Verify the token via Edge Function
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/verify-reset-token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`
-          },
-          body: JSON.stringify({
-            token: token,
-            action: 'verify'
-          })
-        }
-      );
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          token: token,
+          action: 'verify'
+        })
+      });
+      
+      console.log(`[Token Verification] Response status: ${response.status}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Invalid or expired token');
+        let errorMessage = 'Invalid or expired token';
+        
+        try {
+          const responseText = await response.text();
+          console.log('[Token Verification] Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              const errorData = JSON.parse(responseText);
+              errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (textError) {
+          console.error('[Token Verification] Failed to read response body:', textError);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
+      console.log(`[Token Verification] Response data:`, data);
       
       // Return token verification result
       return {
@@ -778,54 +819,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     error?: string 
   }> => {
     try {
+      // Normalize email
+      const normalizedEmail = normalizeEmail(email);
+      
       trackEvent('Authentication', 'Password Reset Attempt');
       
-      // Using anon key for auth - more secure approach
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log(`[Password Reset] Resetting password for email: "${normalizedEmail}" with token: ${token}`);
       
-      if (!supabaseUrl || !anonKey) {
-        console.error('Missing required environment variables');
-        throw new Error('Server configuration error: Missing required configuration');
-      }
+      // Get API URL and headers using helper functions
+      const apiUrl = getApiUrl('reset-password');
+      const headers = getApiHeaders();
+      
+      console.log(`[Password Reset] Using API URL: ${apiUrl}`);
       
       // Reset password via Edge Function
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/reset-password`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`
-          },
-          body: JSON.stringify({
-            email: email,
-            password: password,
-            token: token
-          })
-        }
-      );
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password: password,
+          token: token
+        })
+      });
+      
+      console.log(`[Password Reset] Response status: ${response.status}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to reset password');
+        let errorMessage = 'Failed to reset password';
+        
+        try {
+          const responseText = await response.text();
+          console.log('[Password Reset] Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              const errorData = JSON.parse(responseText);
+              errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (textError) {
+          console.error('[Password Reset] Failed to read response body:', textError);
+        }
+        
+        throw new Error(errorMessage);
       }
       
+      const responseData = await response.json();
+      console.log(`[Password Reset] Response data:`, responseData);
+      
       // Consume the token to prevent reuse
-      await fetch(
-        `${supabaseUrl}/functions/v1/verify-reset-token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`
-          },
-          body: JSON.stringify({
-            token: token,
-            action: 'consume'
-          })
-        }
-      );
+      const consumeUrl = getApiUrl('verify-reset-token');
+      await fetch(consumeUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          token: token,
+          action: 'consume'
+        })
+      });
       
       trackEvent('Authentication', 'Password Reset Success');
       return { success: true };

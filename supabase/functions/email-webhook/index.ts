@@ -31,6 +31,26 @@ function getProductionDomain(req: Request): string {
   return 'https://royaltransfereu.com';
 }
 
+// Normalize email address
+function normalizeEmail(email: string): string {
+  if (!email) return '';
+  
+  // First decode any URL encoding
+  let decoded = email;
+  try {
+    // Try to decode if it looks URL-encoded
+    if (email.includes('%')) {
+      decoded = decodeURIComponent(email);
+    }
+  } catch (e) {
+    // If decoding fails, continue with original string
+    console.warn('Failed to decode email:', e);
+  }
+  
+  // Then replace any remaining %40 with @, trim whitespace, and convert to lowercase
+  return decoded.replace(/%40/g, '@').trim().toLowerCase();
+}
+
 // Helper function to retry database operations
 const retryDatabaseOperation = async (operation, maxRetries = 2) => {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -110,17 +130,14 @@ async function checkRateLimits(email: string, ip: string, supabase: any): Promis
 async function recordResetAttempt(email: string, ip: string, supabase: any, success: boolean = false, userAgent?: string, referrer?: string): Promise<void> {
   try {
     await retryDatabaseOperation(async () => {
-      await supabase
-        .from('password_reset_attempts')
-        .insert([
-          {
-            email,
-            ip_address: ip,
-            success,
-            user_agent: userAgent || null,
-            referrer: referrer || null
-          }
-        ]);
+      return await supabase.from('password_reset_attempts')
+        .insert([{
+          email,
+          ip_address: ip,
+          success,
+          user_agent: userAgent || null,
+          referrer: referrer || null
+        }]);
     });
   } catch (error) {
     console.error('Error recording password reset attempt:', error);
@@ -290,23 +307,34 @@ Deno.serve(async (req) => {
         // Send password reset email
         console.log("Processing password reset email request");
         
+        // Ensure email is properly formatted and not URL-encoded
+        const normalizedEmail = normalizeEmail(email);
+        console.log("Normalized email:", normalizedEmail);
+        console.log("Raw email from request:", email);
+        
         // First, try to find the user's full name from the users table
         const { data: userData, error: userLookupError } = await retryDatabaseOperation(async () => {
           return await supabase
             .from('users')
             .select('id, name, email')
-            .eq('email', email)
+            .ilike('email', normalizedEmail)
             .maybeSingle();
         });
         
         console.log("User lookup result:", userData || "Not found");
+        console.log("User lookup query parameters:", { email: normalizedEmail });
+        
+        if (userLookupError) {
+          console.error("User lookup error:", userLookupError);
+        }
         
         // If user doesn't exist or is already verified
         if (!userData) {
-          console.log(`No user found with email ${email} - skipping password reset`);
+          console.log(`No user found with email ${normalizedEmail} - skipping password reset`);
+          console.log("Database query used: users.select('id, name, email').ilike('email', '", normalizedEmail, "')");
           
           // Record failed attempt
-          await recordResetAttempt(email, clientIp, supabase, false, 
+          await recordResetAttempt(normalizedEmail, clientIp, supabase, false, 
             req.headers.get('user-agent'),
             req.headers.get('referer')
           );
@@ -326,21 +354,21 @@ Deno.serve(async (req) => {
         }
         
         // Use the user's real name from the database, or fall back to email prefix
-        const userRealName = userData.name || email.split('@')[0];
+        const userRealName = userData.name || normalizedEmail.split('@')[0];
         console.log(`Using name "${userRealName}" for reset email`);
         
         // Check rate limits
         const { allowed, remaining, nextAllowedTime } = await checkRateLimits(
-          email, 
+          normalizedEmail, 
           clientIp, 
           supabase
         );
         
         if (!allowed) {
-          console.log(`Rate limit exceeded for ${email} from ${clientIp}`);
+          console.log(`Rate limit exceeded for ${normalizedEmail} from ${clientIp}`);
           
           // Record attempt but mark as failed
-          await recordResetAttempt(email, clientIp, supabase, false,
+          await recordResetAttempt(normalizedEmail, clientIp, supabase, false,
             req.headers.get('user-agent'),
             req.headers.get('referer')
           );
@@ -364,7 +392,7 @@ Deno.serve(async (req) => {
         }
         
         // Create a secure reset token
-        const token = await createPasswordResetToken(email, supabase);
+        const token = await createPasswordResetToken(normalizedEmail, supabase);
         
         if (!token) {
           console.error('Failed to create password reset token');
@@ -389,7 +417,7 @@ Deno.serve(async (req) => {
         
         try {
           console.log("=== PASSWORD RESET EMAIL SENDING ATTEMPT ===");
-          console.log('To:', email);
+          console.log('To:', normalizedEmail);
           console.log('Using name:', userRealName);
           console.log('Reset Link:', resetUrl);
           
@@ -398,7 +426,7 @@ Deno.serve(async (req) => {
             console.log('DEVELOPMENT MODE: Simulating email sending success');
             
             // Record successful attempt
-            await recordResetAttempt(email, clientIp, supabase, true,
+            await recordResetAttempt(normalizedEmail, clientIp, supabase, true,
               req.headers.get('user-agent'),
               req.headers.get('referer')
             );
@@ -425,7 +453,7 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               name: userRealName, // Use the user's real name from the database
-              email: email,
+              email: normalizedEmail,
               reset_link: resetUrl, // Use the FULL reset URL with token
               email_type: 'PWReset'
             })
@@ -440,7 +468,7 @@ Deno.serve(async (req) => {
           console.log('Password reset email sent successfully');
           
           // Record successful attempt
-          await recordResetAttempt(email, clientIp, supabase, true,
+          await recordResetAttempt(normalizedEmail, clientIp, supabase, true,
             req.headers.get('user-agent'),
             req.headers.get('referer')
           );
@@ -460,7 +488,7 @@ Deno.serve(async (req) => {
           console.error('Error sending password reset email:', emailError);
           
           // Record failed attempt
-          await recordResetAttempt(email, clientIp, supabase, false,
+          await recordResetAttempt(normalizedEmail, clientIp, supabase, false,
             req.headers.get('user-agent'),
             req.headers.get('referer')
           );

@@ -69,6 +69,97 @@ export default defineConfig(({ mode }) => {
           headers: {
             'Origin': 'http://localhost:3000'
           },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Forward Authorization header from client request
+              if (req.headers.authorization) {
+                proxyReq.setHeader('Authorization', req.headers.authorization);
+              }
+              // Forward Content-Type header
+              if (req.headers['content-type']) {
+                proxyReq.setHeader('Content-Type', req.headers['content-type']);
+              }
+              // Forward X-Auth header for authentication
+              if (req.headers['x-auth']) {
+                proxyReq.setHeader('X-Auth', req.headers['x-auth']);
+              }
+            });
+          }
+        },
+        // Proxy email webhook for password reset during development
+        '/api/email-webhook': {
+          target: 'https://phcqdnzuicgmlhkmnpxc.supabase.co/functions/v1',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+          headers: {
+            'Origin': 'http://localhost:3000'
+          },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Forward Authorization header from client request
+              if (req.headers.authorization) {
+                proxyReq.setHeader('Authorization', req.headers.authorization);
+              }
+              // Forward Content-Type header
+              if (req.headers['content-type']) {
+                proxyReq.setHeader('Content-Type', req.headers['content-type']);
+              }
+              // Forward X-Auth header for authentication
+              if (req.headers['x-auth']) {
+                proxyReq.setHeader('X-Auth', req.headers['x-auth']);
+              }
+            });
+          }
+        },
+        // Proxy verify reset token Edge Function for development
+        '/api/verify-reset-token': {
+          target: 'https://phcqdnzuicgmlhkmnpxc.supabase.co/functions/v1',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+          headers: {
+            'Origin': 'http://localhost:3000'
+          },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Forward Authorization header from client request
+              if (req.headers.authorization) {
+                proxyReq.setHeader('Authorization', req.headers.authorization);
+              }
+              // Forward Content-Type header
+              if (req.headers['content-type']) {
+                proxyReq.setHeader('Content-Type', req.headers['content-type']);
+              }
+              // Forward X-Auth header for authentication
+              if (req.headers['x-auth']) {
+                proxyReq.setHeader('X-Auth', req.headers['x-auth']);
+              }
+            });
+          }
+        },
+        // Proxy reset password Edge Function for development
+        '/api/reset-password': {
+          target: 'https://phcqdnzuicgmlhkmnpxc.supabase.co/functions/v1',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+          headers: {
+            'Origin': 'http://localhost:3000'
+          },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Forward Authorization header from client request
+              if (req.headers.authorization) {
+                proxyReq.setHeader('Authorization', req.headers.authorization);
+              }
+              // Forward Content-Type header
+              if (req.headers['content-type']) {
+                proxyReq.setHeader('Content-Type', req.headers['content-type']);
+              }
+              // Forward X-Auth header for authentication
+              if (req.headers['x-auth']) {
+                proxyReq.setHeader('X-Auth', req.headers['x-auth']);
+              }
+            });
+          }
         }
       }
     },

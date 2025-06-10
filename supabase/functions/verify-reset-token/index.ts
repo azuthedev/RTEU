@@ -7,6 +7,26 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 
+// Helper function to normalize email addresses
+function normalizeEmail(email: string): string {
+  if (!email) return '';
+  
+  // First decode any URL encoding
+  let decoded = email;
+  try {
+    // Try to decode if it looks URL-encoded
+    if (email.includes('%')) {
+      decoded = decodeURIComponent(email);
+    }
+  } catch (e) {
+    // If decoding fails, continue with original string
+    console.warn('Failed to decode email:', e);
+  }
+  
+  // Then replace any remaining %40 with @, trim whitespace, and convert to lowercase
+  return decoded.replace(/%40/g, '@').trim().toLowerCase();
+}
+
 // Helper function to retry database operations
 const retryDatabaseOperation = async (operation, maxRetries = 2) => {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -58,7 +78,7 @@ async function verifyAndConsumeToken(token: string, supabase: any): Promise<{ va
     // Return success with user email
     return { 
       valid: true,
-      email: tokenData.user_email
+      email: normalizeEmail(tokenData.user_email)
     };
   } catch (error) {
     console.error('Error verifying token:', error);

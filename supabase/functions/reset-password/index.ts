@@ -7,6 +7,26 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 
+// Helper function to normalize email addresses
+function normalizeEmail(email: string): string {
+  if (!email) return '';
+  
+  // First decode any URL encoding
+  let decoded = email;
+  try {
+    // Try to decode if it looks URL-encoded
+    if (email.includes('%')) {
+      decoded = decodeURIComponent(email);
+    }
+  } catch (e) {
+    // If decoding fails, continue with original string
+    console.warn('Failed to decode email:', e);
+  }
+  
+  // Then replace any remaining %40 with @, trim whitespace, and convert to lowercase
+  return decoded.replace(/%40/g, '@').trim().toLowerCase();
+}
+
 // Helper function to retry database operations
 const retryDatabaseOperation = async (operation, maxRetries = 2) => {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -28,6 +48,10 @@ async function resetPassword(
   supabase: any
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Normalize email
+    const normalizedEmail = normalizeEmail(email);
+    console.log(`[resetPassword] Using normalized email: "${normalizedEmail}"`);
+    
     // First verify the token is valid
     const { data: tokenData, error: tokenError } = await retryDatabaseOperation(async () => {
       return await supabase
@@ -38,14 +62,20 @@ async function resetPassword(
     });
     
     if (tokenError || !tokenData) {
+      console.error('[resetPassword] Token verification error:', tokenError);
       return { 
         success: false, 
         error: 'Invalid or expired token' 
       };
     }
     
-    // Check if token is for this email
-    if (tokenData.user_email !== email) {
+    // Normalize the token's email for comparison
+    const tokenEmail = normalizeEmail(tokenData.user_email);
+    console.log(`[resetPassword] Token email: "${tokenEmail}", Request email: "${normalizedEmail}"`);
+    
+    // Check if token is for this email (case-insensitive comparison)
+    if (tokenEmail !== normalizedEmail) {
+      console.error(`[resetPassword] Token email mismatch: "${tokenEmail}" vs "${normalizedEmail}"`);
       return { 
         success: false, 
         error: 'Token does not match email' 
@@ -54,6 +84,7 @@ async function resetPassword(
     
     // Check if token has already been used
     if (tokenData.used_at) {
+      console.error('[resetPassword] Token already used at:', tokenData.used_at);
       return { 
         success: false, 
         error: 'This reset link has already been used' 
@@ -65,6 +96,7 @@ async function resetPassword(
     const expiry = new Date(tokenData.expires_at);
     
     if (expiry < now) {
+      console.error('[resetPassword] Token expired at:', expiry, 'Current time:', now);
       return { 
         success: false, 
         error: 'This reset link has expired' 
@@ -80,28 +112,32 @@ async function resetPassword(
     });
     
     if (updateError) {
-      console.error('Error marking token as used:', updateError);
+      console.error('[resetPassword] Error marking token as used:', updateError);
       return { 
         success: false, 
         error: 'Error processing password reset' 
       };
     }
     
-    // Find the user by email
+    // Find the user by email (case-insensitive)
     const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
       return await supabase
         .from('users')
         .select('id')
-        .eq('email', email)
+        .ilike('email', normalizedEmail)
         .single();
     });
     
     if (userError || !userData) {
+      console.error('[resetPassword] Error finding user:', userError);
+      console.log(`[resetPassword] Query parameters: email="${normalizedEmail}"`);
       return { 
         success: false, 
         error: 'User not found' 
       };
     }
+    
+    console.log(`[resetPassword] Found user with ID: ${userData.id}`);
     
     // Reset the user's password using admin API
     const { error: passwordError } = await retryDatabaseOperation(async () => {
@@ -112,32 +148,34 @@ async function resetPassword(
     });
     
     if (passwordError) {
-      console.error('Error resetting password:', passwordError);
+      console.error('[resetPassword] Error resetting password:', passwordError);
       return { 
         success: false, 
         error: 'Failed to reset password: ' + passwordError.message 
       };
     }
     
+    console.log(`[resetPassword] Password reset successful for user: ${userData.id}`);
+    
     // Record successful password reset
     try {
       await retryDatabaseOperation(async () => {
         return await supabase.from('password_reset_attempts')
           .insert([{
-            email,
+            email: normalizedEmail,
             success: true,
             user_agent: 'Supabase Edge Function'
           }]);
       });
     } catch (recordError) {
       // Non-critical error, just log it
-      console.error('Error recording successful reset:', recordError);
+      console.error('[resetPassword] Error recording successful reset:', recordError);
     }
     
     return { success: true };
     
   } catch (error) {
-    console.error('Error in resetPassword function:', error);
+    console.error('[resetPassword] Error in resetPassword function:', error);
     return { 
       success: false, 
       error: 'An unexpected error occurred' 
@@ -219,7 +257,7 @@ Deno.serve(async (req) => {
       
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(normalizeEmail(email))) {
         return new Response(
           JSON.stringify({ 
             error: 'Invalid email format'
