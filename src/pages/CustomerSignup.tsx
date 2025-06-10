@@ -11,7 +11,7 @@ import OTPVerificationModal from '../components/OTPVerificationModal';
 import BookingReferenceInput from '../components/BookingReferenceInput';
 import { sendOtpEmail } from '../utils/emailValidator';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '../ui/use-toast';
 
 // Simple debounce function to prevent excessive API calls
 const debounce = (fn: Function, ms = 300) => {
@@ -380,14 +380,12 @@ const CustomerSignup = () => {
     setShowOtpModal(false);
     trackEvent('Authentication', 'Email Verified');
     
-    // Update user's verification status if we have a created user ID
-    if (createdUserId) {
-      await updateUserVerificationStatus(createdUserId);
-      
-      // Link booking if provided
-      if (bookingReference) {
-        await linkBookingToUser(bookingReference, createdUserId);
-      }
+    // The Edge Function already updates user verification status
+    // No need to call updateUserVerificationStatus
+
+    // Link booking if provided
+    if (bookingReference && createdUserId) {
+      await linkBookingToUser(bookingReference, createdUserId);
     }
     
     // Navigate to login with success message
@@ -397,34 +395,6 @@ const CustomerSignup = () => {
         prefillEmail: formData.email
       } 
     });
-  };
-
-  const updateUserVerificationStatus = async (userId: string) => {
-    try {
-      // Update the user's email_verified status
-      const { error } = await supabase
-        .from('users')
-        .update({ email_verified: true })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error updating user verification status:', error);
-      } else {
-        console.log('Successfully updated user verification status');
-        
-        // Also try to update auth.users if possible
-        try {
-          await supabase.auth.admin.updateUserById(
-            userId,
-            { user_metadata: { email_verified: true } }
-          );
-        } catch (metadataError) {
-          console.warn('Could not update auth metadata (non-critical):', metadataError);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating verification status:', error);
-    }
   };
 
   // Link booking to user after successful account creation with retry logic
