@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, CreditCard, Banknote, Tag, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -639,7 +639,7 @@ const PaymentDetails = () => {
 
           <div className="mt-6 text-sm text-gray-500">
             By clicking 'Complete Booking' you acknowledge that you have read and
-            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className="underline hover:text-black">Privacy Policy</a>.
+            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className=\"underline hover:text-black">Privacy Policy</a>.
           </div>
         </section>
       </div>

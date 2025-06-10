@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { X, CheckCircle, AlertCircle, Loader2, MailQuestion, RefreshCw, ExternalLink, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -433,4 +433,4 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   );
 };
 
-export default OTPVerificationModal;
+export default memo(OTPVerificationModal);

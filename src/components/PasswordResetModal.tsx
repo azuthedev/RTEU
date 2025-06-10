@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { X, CheckCircle, AlertCircle, Loader2, Mail, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -341,4 +341,4 @@ function formatDistanceToNow(date: Date, options: { addSuffix: boolean }): strin
   return `in ${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''}`;
 }
 
-export default PasswordResetModal;
+export default memo(PasswordResetModal);

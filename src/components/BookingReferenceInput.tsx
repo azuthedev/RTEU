@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Search, AlertCircle, Loader2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -23,28 +23,32 @@ const BookingReferenceInput: React.FC<BookingReferenceInputProps> = ({
   const [isValid, setIsValid] = useState(false);
   const [timeout, setTimeout] = useState<NodeJS.Timeout | null>(null);
   const { trackEvent } = useAnalytics();
+  const previousValueRef = useRef<string>('');
 
   // Regular expression for booking reference format: 0000a0
   const refRegex = /^\d{4}[a-z]\d{1}$/;
 
   useEffect(() => {
     // Reset validation states when value changes
-    setIsValid(false);
-    setError(null);
+    if (value !== previousValueRef.current) {
+      setIsValid(false);
+      setError(null);
+      previousValueRef.current = value;
 
-    // Clear previous timeout
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+      // Clear previous timeout
+      if (timeout) {
+        clearTimeout(timeout);
+      }
 
-    // Only validate if there's a value and it matches the expected format
-    if (value && refRegex.test(value)) {
-      // Debounce the validation to avoid unnecessary API calls
-      const newTimeout = setTimeout(() => {
-        validateBookingReference(value);
-      }, 500);
+      // Only validate if there's a value and it matches the expected format
+      if (value && refRegex.test(value)) {
+        // Debounce the validation to avoid unnecessary API calls
+        const newTimeout = setTimeout(() => {
+          validateBookingReference(value);
+        }, 500);
 
-      setTimeout(newTimeout);
+        setTimeout(newTimeout);
+      }
     }
   }, [value]);
 
@@ -132,4 +136,4 @@ const BookingReferenceInput: React.FC<BookingReferenceInputProps> = ({
   );
 };
 
-export default BookingReferenceInput;
+export default memo(BookingReferenceInput);
