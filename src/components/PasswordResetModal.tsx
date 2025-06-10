@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Loader2, Mail, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import EmailValidator from './EmailValidator';
-import { formatDistanceToNow } from 'date-fns';
+import { normalizeEmail } from '../utils/emailNormalizer';
 
 interface PasswordResetModalProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const { requestPasswordReset } = useAuth();
   const { trackEvent } = useAnalytics();
   
-  // Reset state when modal opens with new email
+  // Reset state when modal is opened with new data
   useEffect(() => {
     if (isOpen) {
       setResetEmail(email);
@@ -122,6 +122,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     // If email is empty or explicitly invalid, show error
     if (!resetEmail || (resetEmail && !emailValid)) {
@@ -136,12 +137,18 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     }
     
     setIsSubmitting(true);
-    setError(null);
     
     try {
+      console.log(`[PasswordResetModal] Submitting reset request for email: "${resetEmail}"`);
       trackEvent('Authentication', 'Password Reset Request', resetEmail);
       
-      const result = await requestPasswordReset(resetEmail);
+      // Ensure email is properly formatted and not URL-encoded
+      const normalizedEmail = normalizeEmail(resetEmail);
+      console.log(`[PasswordResetModal] Normalized email: "${normalizedEmail}"`);
+      
+      const result = await requestPasswordReset(normalizedEmail);
+      
+      console.log(`[PasswordResetModal] Reset request result:`, result);
       
       // Check for rate limiting
       if (result.rateLimitExceeded) {
@@ -158,7 +165,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       }
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to send password reset email.');
+        console.error(`[PasswordResetModal] Error from requestPasswordReset:`, result.error);
+        throw new Error(result.error || 'Failed to send verification email');
       }
       
       // Always show success message to prevent user enumeration
@@ -170,11 +178,11 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
         onClose();
       }, 5000);
     } catch (error: any) {
-      console.error('Error requesting password reset:', error);
+      console.error('[PasswordResetModal] Error requesting password reset:', error);
       
       // Display user-friendly error message
       if (error.message && error.message.includes('No account found')) {
-        setError('No account found with this email address. Please sign up first.');
+        setError(error.message || 'No account found with this email address. Please sign up first.');
       } else {
         setError('An unexpected error occurred. Please try again later.');
       }
@@ -313,5 +321,24 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     </AnimatePresence>
   );
 };
+
+// Helper function to format time distance
+function formatDistanceToNow(date: Date, options: { addSuffix: boolean }): string {
+  const now = new Date();
+  const diffInMinutes = Math.floor((date.getTime() - now.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 60) {
+    return `in ${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''}`;
+  }
+  
+  const hours = Math.floor(diffInMinutes / 60);
+  const minutes = diffInMinutes % 60;
+  
+  if (minutes === 0) {
+    return `in ${hours} hour${hours !== 1 ? 's' : ''}`;
+  }
+  
+  return `in ${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+}
 
 export default PasswordResetModal;
