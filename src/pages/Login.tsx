@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Car, User, ArrowRight, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,7 +46,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, sendVerificationEmail, checkEmailVerification, refreshSession } = useAuth();
+  const { signIn, user, loading: authLoading, sendVerificationEmail, checkEmailVerification, refreshSession } = useAuth();
 
   // Check if in development environment
   useEffect(() => {
@@ -120,8 +120,8 @@ const Login = () => {
     }
   }, []);
 
-  // Function to link a booking to a user account with retry logic
-  const linkBookingToUser = async (reference: string, userId: string, retries = 2) => {
+  // Function to link a booking to a user account with retry logic - memoized
+  const linkBookingToUser = useCallback(async (reference: string, userId: string, retries = 2) => {
     if (!reference || !userId) return;
     
     setIsLinkingBooking(true);
@@ -164,9 +164,9 @@ const Login = () => {
     } finally {
       setIsLinkingBooking(false);
     }
-  };
+  }, [toast, trackEvent]);
 
-  const handleValidBookingFound = (data: any) => {
+  const handleValidBookingFound = useCallback((data: any) => {
     setBookingData(data);
     
     // Pre-fill email field if it's not already filled
@@ -179,9 +179,9 @@ const Login = () => {
     
     // Track event
     trackEvent('Form', 'Booking Reference Found on Login', data.booking_reference);
-  };
+  }, [formData.email, trackEvent]);
 
-  const handleSendVerification = async (email = formData.email) => {
+  const handleSendVerification = useCallback(async (email = formData.email) => {
     if (!email) {
       setError('Please enter your email address');
       return;
@@ -240,9 +240,9 @@ const Login = () => {
     } finally {
       setIsSendingVerification(false);
     }
-  };
+  }, [formData.email, checkEmailVerification, sendVerificationEmail, trackEvent, isDevEnvironment]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
@@ -286,7 +286,7 @@ const Login = () => {
           throw userError;
         }
           
-        if (!userData?.email_verified && !isDevEnvironment) {
+        if (!userData?.email_verified) {
           // User needs to verify their email
           setIsUnverifiedUser(true);
           setError('Your email address needs to be verified before you can continue.');
@@ -333,9 +333,22 @@ const Login = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    formData, 
+    isDevEnvironment, 
+    isUnverifiedUser, 
+    signIn, 
+    bookingReference, 
+    bookingData, 
+    linkBookingToUser, 
+    handleSendVerification, 
+    refreshSession, 
+    navigate, 
+    location.state, 
+    trackEvent
+  ]);
 
-  const handleVerificationComplete = async () => {
+  const handleVerificationComplete = useCallback(async () => {
     // Track successful verification
     trackEvent('Authentication', 'Email Verification Completed', 'From Login');
     
@@ -350,28 +363,65 @@ const Login = () => {
     if (formData.email && formData.password) {
       await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
     }
-  };
+  }, [trackEvent, refreshSession, formData, handleSubmit]);
 
-  const handlePasswordResetClick = () => {
+  const handlePasswordResetClick = useCallback(() => {
     setShowPasswordResetModal(true);
     trackEvent('Authentication', 'Password Reset Modal Opened');
-  };
+  }, [trackEvent]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const handlePartnerClick = () => {
+  const handlePartnerClick = useCallback(() => {
     navigate('/partners#partner-form');
-  };
+  }, [navigate]);
 
-  const redirectToPartnerPortal = () => {
+  const redirectToPartnerPortal = useCallback(() => {
     window.location.href = 'https://app.royaltransfer.eu/partner';
-  };
+  }, []);
+  
+  const handleGoToLogin = useCallback(() => {
+    setIsDriver(false);
+  }, []);
+
+  // Memoized driver/customer tab buttons to prevent re-renders
+  const tabButtons = useMemo(() => (
+    <div className="flex bg-gray-100 p-1 rounded-lg mb-8">
+      <button
+        className={`flex-1 py-2 text-center rounded-lg transition-colors ${
+          !isDriver ? 'bg-blue-600 text-white' : 'text-gray-700'
+        }`}
+        onClick={() => setIsDriver(false)}
+      >
+        Customer
+      </button>
+      <button
+        className={`flex-1 py-2 text-center rounded-lg transition-colors ${
+          isDriver ? 'bg-blue-600 text-white' : 'text-gray-700'
+        }`}
+        onClick={() => setIsDriver(true)}
+      >
+        Driver
+      </button>
+    </div>
+  ), [isDriver]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -396,24 +446,7 @@ const Login = () => {
             )}
             
             {/* Toggle Switch */}
-            <div className="flex bg-gray-100 p-1 rounded-lg mb-8">
-              <button
-                className={`flex-1 py-2 text-center rounded-lg transition-colors ${
-                  !isDriver ? 'bg-blue-600 text-white' : 'text-gray-700'
-                }`}
-                onClick={() => setIsDriver(false)}
-              >
-                Customer
-              </button>
-              <button
-                className={`flex-1 py-2 text-center rounded-lg transition-colors ${
-                  isDriver ? 'bg-blue-600 text-white' : 'text-gray-700'
-                }`}
-                onClick={() => setIsDriver(true)}
-              >
-                Driver
-              </button>
-            </div>
+            {tabButtons}
 
             {/* Success Message */}
             {successMessage && (

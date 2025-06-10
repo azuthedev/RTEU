@@ -50,7 +50,7 @@ const BookingFlow = () => {
   const { toast } = useToast();
   const { trackEvent } = useAnalytics();
   
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, clearBookingState } = useBooking();
   
   // Track if initial fetch has been done
   const initialFetchDone = useRef(false);
@@ -58,12 +58,15 @@ const BookingFlow = () => {
   // Add component mount tracking to prevent updates on unmounted component
   const isMountedRef = useRef(true);
 
+  // Clean up booking state when component unmounts
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      // Clear booking state on unmount to prevent stale data affecting future visits
+      clearBookingState();
     };
-  }, []);
+  }, [clearBookingState]);
   
   // Format date for API request (YYMMDD -> ISO)
   const formatDateForApi = (dateStr: string): string | null => {
@@ -350,7 +353,7 @@ const BookingFlow = () => {
     };
 
     initBooking();
-  }, [from, to, type, date, returnDate, passengers, setBookingState, toast, trackEvent]);
+  }, [from, to, type, date, returnDate, passengers, setBookingState, toast, trackEvent, bookingState.fromDisplay, bookingState.toDisplay, bookingState.pricingResponse]);
 
   // Handle step navigation based on context
   const currentStep = bookingState.step;
