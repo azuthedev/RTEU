@@ -9,7 +9,7 @@ import BookingLayout from './BookingLayout';
 import { supabase } from '../../lib/supabase';
 import { generateBookingReference } from '../../utils/bookingHelper';
 import { extras } from '../../data/extras';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '../../ui/use-toast';
 
 const PaymentDetails = () => {
   const { bookingState, setBookingState, validateStep } = useBooking();
@@ -343,7 +343,7 @@ const PaymentDetails = () => {
         
         // Navigate to success page for cash payment using React Router
         navigate(`/booking-success?reference=${bookingReference}`, { replace: true });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error processing cash booking:', error);
         trackEvent('Booking', 'Cash Booking Error', error.message, 0, true);
         setError(`Failed to create booking: ${error.message}`);
@@ -639,7 +639,7 @@ const PaymentDetails = () => {
 
           <div className="mt-6 text-sm text-gray-500">
             By clicking 'Complete Booking' you acknowledge that you have read and
-            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className="underline hover:text-black">Privacy Policy</a>.
+            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className=\"underline hover:text-black">Privacy Policy</a>.
           </div>
         </section>
       </div>

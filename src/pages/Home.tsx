@@ -16,8 +16,9 @@ import { updateMetaTags, addStructuredData } from '../utils/seo';
 import LazyComponent from '../components/LazyComponent';
 import DeferredComponent from '../components/DeferredComponent';
 import { initGoogleMaps } from '../utils/optimizeThirdParty'; 
+import { BookingProvider } from '../contexts/BookingContext';
 
-function Home() {
+function HomeContent() {
   const location = useLocation();
   
   // Update SEO metadata when component mounts
@@ -66,7 +67,7 @@ function Home() {
   }, []);
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <Helmet>
         {/* Additional dynamic meta tags specific to Home */}
         <meta name="robots" content="index, follow" />
@@ -122,8 +123,18 @@ function Home() {
         <Testimonials />
       </LazyComponent>
       
-        <CallToAction />
+      <CallToAction />
+    </>
+  );
+}
 
+// Wrap the Home component with BookingProvider to fix the "useBooking must be used within a BookingProvider" error
+function Home() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <BookingProvider>
+        <HomeContent />
+      </BookingProvider>
     </div>
   );
 }
