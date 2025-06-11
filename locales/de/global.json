@@ -32,7 +32,8 @@
   "common.next": "Weiter",
   "common.previous": "Zurück",
   
-  "hero.headline": "Die Straße ist Teil<br />des Abenteuers",
+  "hero.headline": "Die Straße ist Teil",
+  "hero.headline1": "des Abenteuers",
   "hero.subhead": "Genießen Sie die Reise – wir kümmern uns um den Rest",
   
   "searchform.oneway": "Einfache Fahrt",

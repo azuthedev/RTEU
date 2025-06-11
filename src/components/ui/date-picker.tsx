@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 import { format } from "date-fns"
 import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react"
 import { useState } from "react"
+import { useLanguage } from "../../contexts/LanguageContext"
 
 interface DatePickerProps {
   date?: Date
@@ -15,12 +16,13 @@ interface DatePickerProps {
   placeholder?: string
 }
 
-export function DatePicker({ date, onDateChange, className, placeholder = "Pick a date" }: DatePickerProps) {
+export function DatePicker({ date, onDateChange, className, placeholder }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date)
   const [hours, setHours] = useState<number>(date ? date.getHours() : 12)
   const [minutes, setMinutes] = useState<number>(date ? date.getMinutes() : 0)
   const [step, setStep] = useState<'date' | 'time'>('date')
+  const { t } = useLanguage();
 
   const handleSelect = (date: Date | undefined) => {
     setSelectedDate(date)
@@ -100,7 +102,7 @@ export function DatePicker({ date, onDateChange, className, placeholder = "Pick 
   // Format the display date with time
   const formattedDate = date 
     ? `${format(date, "PPP")} at ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-    : placeholder
+    : placeholder || t('searchform.date')
 
   // Handle popover opening
   const handleOpenChange = (newOpen: boolean) => {

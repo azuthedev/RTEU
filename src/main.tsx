@@ -3,14 +3,14 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { HelmetProvider } from 'react-helmet-async';
-import { ErrorBoundary } from 'react-error-boundary';
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { initGoogleMaps, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
 import { reportWebVitals } from './utils/webVitals.ts';
 import { initializeAnalytics } from './utils/optimizeAnalytics.ts';
 import { LanguageProvider } from './contexts/LanguageContext.tsx';
 
 // Create a fallback component for the error boundary
-function ErrorFallback({ error, resetErrorBoundary }) {
+function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div role="alert" className="flex items-center justify-center min-h-screen p-4 bg-gray-100">
       <div className="max-w-md w-full bg-white p-6 rounded-lg shadow-lg">

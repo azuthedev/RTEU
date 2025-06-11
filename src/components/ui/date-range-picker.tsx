@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react"
 import { useState } from "react"
 import { DateRange } from "react-day-picker"
+import { useLanguage } from "../../contexts/LanguageContext"
 
 interface DateRangePickerProps {
   dateRange?: DateRange
@@ -20,10 +21,11 @@ export function DateRangePicker({
   dateRange, 
   onDateRangeChange, 
   className,
-  placeholder = "Pick a date range" 
+  placeholder
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(dateRange)
+  const { t } = useLanguage();
   
   // Time state for both from and to dates
   const [fromHours, setFromHours] = useState<number>(dateRange?.from ? dateRange.from.getHours() : 12)
@@ -187,7 +189,7 @@ export function DateRangePicker({
       return fromText
     }
     
-    return placeholder
+    return placeholder || t('searchform.dates')
   }
 
   // Handle popover open change

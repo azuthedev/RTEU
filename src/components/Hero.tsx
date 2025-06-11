@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const Hero = () => {
   const { t } = useLanguage();
-  console.log("Hero Headline String:", t('hero.headline'));
+  
   return (
     <div id="booking-form" className="relative h-[800px] md:h-auto md:min-h-[700px]">
       {/* Background Image Container */}
@@ -63,8 +63,9 @@ const Hero = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
-                dangerouslySetInnerHTML={{ __html: t('hero.headline') }}
               >
+                <span className="block">{t('hero.headline')}</span>
+                <span className="block">{t('hero.headline1')}</span>
               </motion.h1>
               <motion.p 
                 className="text-[18px] mb-8"
