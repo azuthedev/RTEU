@@ -32,7 +32,8 @@
   "common.next": "Avanti",
   "common.previous": "Precedente",
   
-  "hero.headline": "La strada è parte<br />dell'avventura",
+  "hero.headline": "La strada è parte",
+  "hero.headline1": "dell'avventura",
   "hero.subhead": "Goditi il viaggio – noi ci occupiamo del resto",
   
   "searchform.oneway": "Solo Andata",

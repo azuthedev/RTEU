@@ -32,7 +32,8 @@
   "common.next": "Next",
   "common.previous": "Previous",
   
-  "hero.headline": "The road is part of<br />the adventure",
+  "hero.headline": "The road is part of",
+  "hero.headline1": "the adventure",
   "hero.subhead": "Enjoy the trip — we'll handle the rest",
   
   "searchform.oneway": "One Way",

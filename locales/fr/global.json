@@ -32,7 +32,8 @@
   "common.next": "Suivant",
   "common.previous": "Précédent",
   
-  "hero.headline": "La route fait partie<br />de l'aventure",
+  "hero.headline": "La route fait partie",
+  "hero.headline1": "de l'aventure",
   "hero.subhead": "Profitez du voyage – nous nous occupons du reste",
   
   "searchform.oneway": "Aller Simple",
