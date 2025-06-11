@@ -2,37 +2,34 @@ import React, { useState } from 'react';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-
-interface FAQ {
-  question: string;
-  answer: string;
-}
-
-const faqs: FAQ[] = [
-  {
-    question: "How do I book a ride?",
-    answer: "Book online, via phone, or through our app—instant confirmation guaranteed."
-  },
-  {
-    question: "What happens if my flight is delayed?",
-    answer: "No worries! We track flights and adjust pick-up times at no extra cost."
-  },
-  {
-    question: "Are your prices fixed or metered?",
-    answer: "Choose between fixed fares for transparency or metered rides for flexibility."
-  },
-  {
-    question: "Where will my driver meet me at the airport?",
-    answer: "Your driver will be at the arrivals area with a sign displaying your name."
-  },
-  {
-    question: "Do you offer group or family-friendly vehicles?",
-    answer: "Yes! Our spacious minivans are perfect for groups, families, and business trips."
-  }
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 const FAQPreview = () => {
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: t('faq.how.head'),
+      answer: t('faq.how.sub')
+    },
+    {
+      question: t('faq.delay.head'),
+      answer: t('faq.delay.sub')
+    },
+    {
+      question: t('faq.prices.head'),
+      answer: t('faq.prices.sub')
+    },
+    {
+      question: t('faq.where.head'),
+      answer: t('faq.where.sub')
+    },
+    {
+      question: t('faq.group.head'),
+      answer: t('faq.group.sub')
+    }
+  ];
 
   const toggleFAQ = (index: number) => {
     setActiveIndex(activeIndex === index ? null : index);
@@ -41,7 +38,7 @@ const FAQPreview = () => {
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">{t('faq.head')}</h2>
         <div className="space-y-4">
           {faqs.map((faq, index) => (
             <motion.div
@@ -78,7 +75,7 @@ const FAQPreview = () => {
                         to="/faq"
                         className="inline-flex items-center text-blue-600 hover:text-blue-700"
                       >
-                        Read More <ArrowRight className="w-4 h-4 ml-1" />
+                        {t('faq.cta')} <ArrowRight className="w-4 h-4 ml-1" />
                       </Link>
                     </div>
                   </motion.div>

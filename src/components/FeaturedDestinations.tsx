@@ -2,67 +2,58 @@ import React from 'react';
 import { Star, Flag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
-
-interface Destination {
-  city: string;
-  country: string;
-  images: {
-    webp: string;
-    fallback: string;
-  };
-  rating: number;
-  reviews: string;
-  flag: string;
-}
-
-const destinations: Destination[] = [
-  {
-    city: 'Rome',
-    country: 'Italy',
-    images: {
-      webp: 'https://files.royaltransfereu.com/assets/rome327.webp',
-      fallback: 'https://files.royaltransfereu.com/assets/rome1280png.png'
-    },
-    rating: 4.9,
-    reviews: '1.7k',
-    flag: '🇮🇹'
-  },
-  {
-    city: 'Paris',
-    country: 'France',
-    images: {
-      webp: 'https://files.royaltransfereu.com/assets/paris136.webp',
-      fallback: 'https://files.royaltransfereu.com/assets/paris1280png.png'
-    },
-    rating: 4.8,
-    reviews: '2.2k',
-    flag: '🇫🇷'
-  },
-  {
-    city: 'Barcelona',
-    country: 'Spain',
-    images: {
-      webp: 'https://files.royaltransfereu.com/assets/barc255.webp',
-      fallback: 'https://files.royaltransfereu.com/assets/barca1280png.png'
-    },
-    rating: 4.9,
-    reviews: '1.2k',
-    flag: '🇪🇸'
-  },
-  {
-    city: 'Milan',
-    country: 'Italy',
-    images: {
-      webp: 'https://files.royaltransfereu.com/assets/milano250.webp',
-      fallback: 'https://files.royaltransfereu.com/assets/milano1280png.png'
-    },
-    rating: 4.7,
-    reviews: '2.3k',
-    flag: '🇮🇹'
-  }
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 const FeaturedDestinations = () => {
+  const { t } = useLanguage();
+  
+  const destinations = [
+    {
+      city: 'Rome',
+      country: 'Italy',
+      images: {
+        webp: 'https://files.royaltransfereu.com/assets/rome327.webp',
+        fallback: 'https://files.royaltransfereu.com/assets/rome1280png.png'
+      },
+      rating: 4.9,
+      reviews: '1.7k',
+      flag: '🇮🇹'
+    },
+    {
+      city: 'Paris',
+      country: 'France',
+      images: {
+        webp: 'https://files.royaltransfereu.com/assets/paris136.webp',
+        fallback: 'https://files.royaltransfereu.com/assets/paris1280png.png'
+      },
+      rating: 4.8,
+      reviews: '2.2k',
+      flag: '🇫🇷'
+    },
+    {
+      city: 'Barcelona',
+      country: 'Spain',
+      images: {
+        webp: 'https://files.royaltransfereu.com/assets/barc255.webp',
+        fallback: 'https://files.royaltransfereu.com/assets/barca1280png.png'
+      },
+      rating: 4.9,
+      reviews: '1.2k',
+      flag: '🇪🇸'
+    },
+    {
+      city: 'Milan',
+      country: 'Italy',
+      images: {
+        webp: 'https://files.royaltransfereu.com/assets/milano250.webp',
+        fallback: 'https://files.royaltransfereu.com/assets/milano1280png.png'
+      },
+      rating: 4.7,
+      reviews: '2.3k',
+      flag: '🇮🇹'
+    }
+  ];
+
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -109,9 +100,9 @@ const FeaturedDestinations = () => {
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl mb-4">Popular Destinations</h2>
+          <h2 className="text-3xl mb-4">{t('destinations.head')}</h2>
           <p className="text-lg text-gray-600">
-            Go Beyond Regular Service when Travelling with Royal Transfer EU
+            {t('destinations.sub')}
           </p>
         </div>
 

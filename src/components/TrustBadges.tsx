@@ -2,14 +2,17 @@ import React from 'react';
 import { Shield, CreditCard, Star, Banknote } from 'lucide-react';
 import { motion } from 'framer-motion';
 import OptimizedImage from './OptimizedImage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TrustBadges = () => {
+  const { t } = useLanguage();
+  
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-2xl mb-8 text-center font-serif">
-            Trusted by Travelers Worldwide
+            {t('trustbadges.head')}
           </h2>
           <div className="grid grid-cols-3 gap-4 md:gap-8 mb-12">
             <motion.div
@@ -22,10 +25,10 @@ const TrustBadges = () => {
                 aria-hidden="true"
               />
               <p className="text-sm md:text-base text-gray-600">
-                Secure Payments
+                {t('trustbadges.payments.head')}
               </p>
               <p className="text-xs md:text-sm text-gray-500">
-                All major cards accepted
+                {t('trustbadges.payments.sub')}
               </p>
             </motion.div>
 
@@ -53,10 +56,10 @@ const TrustBadges = () => {
                 <span className="text-xl md:text-2xl font-bold ml-2">4.9</span>
               </div>
               <p className="text-sm md:text-base text-gray-600">
-                Tripadvisor Rating
+                {t('trustbadges.tripadvisor.head')}
               </p>
               <p className="text-xs md:text-sm text-gray-500">
-                Based on 1000+ reviews
+                {t('trustbadges.tripadvisor.sub')}
               </p>
             </motion.div>
 
@@ -70,17 +73,17 @@ const TrustBadges = () => {
                 aria-hidden="true"
               />
               <p className="text-sm md:text-base text-gray-600">
-                SSL Encrypted
+                {t('trustbadges.ssl.head')}
               </p>
               <p className="text-xs md:text-sm text-gray-500">
-                Your data is protected
+                {t('trustbadges.ssl.sub')}
               </p>
             </motion.div>
           </div>
 
           <div className="border-t pt-8">
             <p className="text-center text-gray-600 mb-6">
-              Accepted Payment Methods
+              {t('trustbadges.methods')}
             </p>
             <div className="flex flex-col space-y-6">
               <div className="grid grid-cols-3 md:flex md:justify-center items-center gap-4 md:space-x-6">
@@ -156,7 +159,7 @@ const TrustBadges = () => {
                   className="w-6 h-6 text-green-600"
                   aria-hidden="true"
                 />
-                <span className="text-gray-600">Cash payment available</span>
+                <span className="text-gray-600">{t('trustbadges.cash')}</span>
               </div>
             </div>
           </div>

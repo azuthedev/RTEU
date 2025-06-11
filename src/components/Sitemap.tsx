@@ -3,10 +3,12 @@ import { Phone, Mail, MapPin, Facebook, Instagram, MessageCircle, Settings } fro
 import CookieSettings from './CookieSettings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { getCookie } from '../utils/cookieUtils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Sitemap = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const { trackEvent } = useAnalytics();
+  const { t } = useLanguage();
 
   // Check for cookie consent on mount to update UI if needed
   useEffect(() => {
@@ -50,52 +52,52 @@ const Sitemap = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4">
           {/* Quick Links - Mobile: Custom order and alignment, Desktop: Original layout */}
           <div className="flex flex-col md:col-span-4">
-            <h3 className="text-lg ml-4 mb-4 md:text-center md:ml-[50px] text-center">Quick Links</h3>
+            <h3 className="text-lg ml-4 mb-4 md:text-center md:ml-[50px] text-center">{t('sitemap.quicklinks.head')}</h3>
             <div className="flex md:hidden">
               <div className="w-1/2 pl-4">
                 <div className="space-y-2 text-left">
-                  <a href="/" className="block text-gray-600 hover:text-blue-600">Home</a>
-                  <a href="/faq" className="block text-gray-600 hover:text-blue-600">FAQs</a>
-                  <a href="/about" className="block text-gray-600 hover:text-blue-600">About Us</a>
-                  <a href="/partners" className="block text-gray-600 hover:text-blue-600">Partners</a>
+                  <a href="/" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.home')}</a>
+                  <a href="/faq" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.faqs')}</a>
+                  <a href="/about" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.about')}</a>
+                  <a href="/partners" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.partners')}</a>
                 </div>
               </div>
               <div className="w-1/2 pr-0">
                 <div className="space-y-2 text-right">
-                  <a href="/destinations" className="block text-gray-600 hover:text-blue-600">Destinations</a>
-                  <a href="/rent" className="block text-gray-600 hover:text-blue-600">Rent a Car</a>
-                  <a href="/services" className="block text-gray-600 hover:text-blue-600">Services</a>
-                  <a href="/contact" className="block text-gray-600 hover:text-blue-600">Contact</a>
+                  <a href="/destinations" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.destinations')}</a>
+                  <a href="/rent" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.rentacar')}</a>
+                  <a href="/services" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.services')}</a>
+                  <a href="/contact" className="block text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.contact')}</a>
                 </div>
               </div>
             </div>
             {/* Desktop Layout */}
             <div className="hidden md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-2 md:pl-[100px]">
-              <a href="/" className="text-gray-600 hover:text-blue-600">Home</a>
-              <a href="/about" className="text-gray-600 hover:text-blue-600">About Us</a>
-              <a href="/services" className="text-gray-600 hover:text-blue-600">Services</a>
-              <a href="/faq" className="text-gray-600 hover:text-blue-600">FAQs</a>
-              <a href="/partners" className="text-gray-600 hover:text-blue-600">Partners</a>
-              <a href="/rent" className="text-gray-600 hover:text-blue-600">Rent a Car</a>
-              <a href="/destinations" className="text-gray-600 hover:text-blue-600">Destinations</a>
-              <a href="/contact" className="text-gray-600 hover:text-blue-600">Contact</a>
+              <a href="/" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.home')}</a>
+              <a href="/about" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.about')}</a>
+              <a href="/services" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.services')}</a>
+              <a href="/faq" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.faqs')}</a>
+              <a href="/partners" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.partners')}</a>
+              <a href="/rent" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.rentacar')}</a>
+              <a href="/destinations" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.destinations')}</a>
+              <a href="/contact" className="text-gray-600 hover:text-blue-600">{t('sitemap.quicklinks.contact')}</a>
             </div>
           </div>
 
           {/* Contact Information - Center aligned on mobile */}
           <div className="flex flex-col col-span-2 md:col-span-4 order-last md:order-none">
-            <h3 className="text-lg mb-4 text-center">Contact Information</h3>
+            <h3 className="text-lg mb-4 text-center">{t('sitemap.contact.head')}</h3>
             <ul className="space-y-4 max-w-[250px] mx-auto md:max-w-none">
               <li className="flex items-start md:justify-center">
-                <MapPin className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <MapPin className="h-5 w-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" aria-hidden="true" />
                 <span className="text-gray-600 text-left">123 Transfer Street, EU 12345</span>
               </li>
               <li className="flex items-center md:justify-center">
-                <Phone className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" aria-hidden="true" />
+                <Phone className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" aria-hidden="true" />
                 <span className="text-gray-600 text-left">24/7: +39 351 748 22 44</span>
               </li>
               <li className="flex items-center md:justify-center">
-                <Mail className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" aria-hidden="true" />
+                <Mail className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" aria-hidden="true" />
                 <span className="text-gray-600 text-left">contact@royaltransfer.eu</span>
               </li>
             </ul>
@@ -128,12 +130,12 @@ const Sitemap = () => {
 
           {/* Get Help - Original layout preserved */}
           <div className="flex flex-col md:col-span-4 md:pl-32">
-            <h3 className="text-lg mb-4">Get Help</h3>
+            <h3 className="text-lg mb-4">{t('sitemap.gethelp.head')}</h3>
             <ul className="space-y-2">
-              <li><a href="/booking-support" className="text-gray-600 hover:text-blue-600">Booking Support</a></li>
-              <li><a href="/payment-info" className="text-gray-600 hover:text-blue-600">Payment Information</a></li>
-              <li><a href="/terms" className="text-gray-600 hover:text-blue-600">Terms & Conditions</a></li>
-              <li><a href="/privacy" className="text-gray-600 hover:text-blue-600">Privacy Policy</a></li>
+              <li><a href="/booking-support" className="text-gray-600 hover:text-blue-600">{t('sitemap.gethelp.bookingsupport')}</a></li>
+              <li><a href="/payment-info" className="text-gray-600 hover:text-blue-600">{t('sitemap.gethelp.payment')}</a></li>
+              <li><a href="/terms" className="text-gray-600 hover:text-blue-600">{t('sitemap.gethelp.terms')}</a></li>
+              <li><a href="/privacy" className="text-gray-600 hover:text-blue-600">{t('sitemap.gethelp.privacy')}</a></li>
               <li>
                 <button 
                   id="cookie-settings"
@@ -142,7 +144,7 @@ const Sitemap = () => {
                   aria-label="Manage cookie settings"
                 >
                   <Settings className="h-4 w-4 mr-1" aria-hidden="true" />
-                  Cookie Settings
+                  {t('sitemap.gethelp.cookies')}
                 </button>
               </li>
             </ul>
@@ -177,7 +179,7 @@ const Sitemap = () => {
           </div>
 
           {/* Copyright */}
-          <p className="text-sm text-gray-500">© 2025 Royal Transfer EU. All rights reserved.</p>
+          <p className="text-sm text-gray-500">{t('footer.copyright')}</p>
         </div>
       </div>
 

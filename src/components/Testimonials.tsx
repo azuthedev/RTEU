@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-
-const testimonials = [
-  {
-    text: "Outstanding service, polite drivers, and perfect timing! Our transfers were smooth and stress-free. Highly recommend Royal Transfer!",
-    author: "Sarah P.",
-    location: "UK"
-  },
-  {
-    text: "Excellent experience from start to finish. The driver was professional and the vehicle was immaculate. Will definitely use again!",
-    author: "Marco R.",
-    location: "Italy"
-  },
-  {
-    text: "Reliable and punctual service. The booking process was simple and the driver was very helpful with our luggage.",
-    author: "John D.",
-    location: "USA"
-  }
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Testimonials = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { t } = useLanguage();
+
+  const testimonials = [
+    {
+      text: t('testimonials.quote1'),
+      author: t('testimonials.author1'),
+      location: t('testimonials.location1')
+    },
+    {
+      text: t('testimonials.quote2'),
+      author: t('testimonials.author2'),
+      location: t('testimonials.location2')
+    },
+    {
+      text: t('testimonials.quote3'),
+      author: t('testimonials.author3'),
+      location: t('testimonials.location3')
+    }
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -30,7 +32,7 @@ const Testimonials = () => {
     }, 5000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [testimonials.length]);
 
   const nextTestimonial = () => {
     setCurrentIndex((prevIndex) => 
@@ -47,7 +49,7 @@ const Testimonials = () => {
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl text-center mb-12">Hear from our Happy Travelers</h2>
+        <h2 className="text-3xl text-center mb-12">{t('testimonials.head')}</h2>
         <div className="relative max-w-3xl mx-auto px-8">
           <button 
             onClick={prevTestimonial}

@@ -8,7 +8,7 @@ import { DateRange } from 'react-day-picker';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { GooglePlacesAutocomplete } from './ui/GooglePlacesAutocomplete';
 import { useBooking } from '../contexts/BookingContext';
-import { useToast } from './ui/use-toast';
+import { useToast } from '../components/ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
 import LoadingAnimation from './LoadingAnimation';
 import { withRetry } from '../utils/retryHelper';
@@ -16,6 +16,7 @@ import { sanitizeInput } from '../utils/dataValidator';
 import { errorTracker, ErrorContext, ErrorSeverity } from '../utils/errorTracker';
 import { requestTracker } from '../utils/requestTracker';
 import { geocodeAddress, formatDateForUrl, parseDateFromUrl, validateTransferAddress } from '../utils/searchFormHelpers';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Interface for API price response
 interface PricingResponse {
@@ -45,6 +46,7 @@ const SearchForm = () => {
   const { trackEvent } = useAnalytics();
   const { bookingState, setBookingState } = useBooking();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Store original values for comparison and restoration
   const originalValuesRef = useRef({
@@ -936,7 +938,7 @@ const SearchForm = () => {
             }`}
             onClick={() => handleTripTypeChange(true)}
           >
-            One Way
+            {t('searchform.oneway')}
           </button>
           <button
             className={`flex-1 py-2 text-center rounded-lg transition-colors ${
@@ -944,7 +946,7 @@ const SearchForm = () => {
             }`}
             onClick={() => handleTripTypeChange(false)}
           >
-            Round Trip
+            {t('searchform.roundtrip')}
           </button>
         </div>
 
@@ -965,7 +967,7 @@ const SearchForm = () => {
               setGeocodingErrorField(null);
             }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
-            placeholder="Pickup location"
+            placeholder={t('searchform.pickup')}
             className="w-full"
             required={true}
             onValidation={handlePickupValidation}
@@ -987,7 +989,7 @@ const SearchForm = () => {
               setGeocodingErrorField(null);
             }}
             onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
-            placeholder="Dropoff location"
+            placeholder={t('searchform.dropoff')}
             className="w-full"
             required={true}
             onValidation={handleDropoffValidation}
@@ -1009,7 +1011,7 @@ const SearchForm = () => {
                     `${dateRange.from.toISOString()} to ${dateRange.to.toISOString()}`);
                 }
               }}
-              placeholder="Select departure & return dates"
+              placeholder={t('searchform.dates')}
             />
           ) : (
             <DatePicker
@@ -1025,7 +1027,7 @@ const SearchForm = () => {
                   trackEvent('Search Form', 'Select Date', date.toISOString());
                 }
               }}
-              placeholder="Select departure date"
+              placeholder={t('searchform.date')}
             />
           )}
 
@@ -1033,7 +1035,7 @@ const SearchForm = () => {
           <div className="relative flex items-center">
             <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <div className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md flex justify-between items-center">
-              <span className="text-gray-700">{passengers} Passenger{passengers !== 1 ? 's' : ''}</span>
+              <span className="text-gray-700">{passengers} {passengers === 1 ? t('searchform.passenger') : t('searchform.passengers')}</span>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handlePassengerChange(false)}
@@ -1072,11 +1074,11 @@ const SearchForm = () => {
           {isLoadingPrices ? (
             <>
               <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              <span>Fetching Prices...</span>
+              <span>{t('common.loading')}</span>
             </>
           ) : (
             <>
-              <span>See Prices</span>
+              <span>{t('searchform.cta')}</span>
               <ArrowRight className="h-5 w-5" />
             </>
           )}

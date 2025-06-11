@@ -7,6 +7,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { initGoogleMaps, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
 import { reportWebVitals } from './utils/webVitals.ts';
 import { initializeAnalytics } from './utils/optimizeAnalytics.ts';
+import { LanguageProvider } from './contexts/LanguageContext.tsx';
 
 // Create a fallback component for the error boundary
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -111,7 +112,9 @@ createRoot(document.getElementById('root')!).render(
       }}
     >
       <HelmetProvider>
-        <App />
+        <LanguageProvider>
+          <App />
+        </LanguageProvider>
       </HelmetProvider>
     </ErrorBoundary>
   </StrictMode>

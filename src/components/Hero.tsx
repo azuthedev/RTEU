@@ -3,8 +3,11 @@ import SearchForm from './SearchForm';
 import { motion } from 'framer-motion';
 import { getFallbackImageUrl, getPrimaryDomainUrl } from '../utils/imageFallbacks';
 import OptimizedImage from './OptimizedImage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Hero = () => {
+  const { t } = useLanguage();
+  console.log("Hero Headline String:", t('hero.headline'));
   return (
     <div id="booking-form" className="relative h-[800px] md:h-auto md:min-h-[700px]">
       {/* Background Image Container */}
@@ -60,8 +63,8 @@ const Hero = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
+                dangerouslySetInnerHTML={{ __html: t('hero.headline') }}
               >
-                The road is part of<br />the adventure
               </motion.h1>
               <motion.p 
                 className="text-[18px] mb-8"
@@ -69,7 +72,7 @@ const Hero = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
-                Enjoy the trip — we'll handle the rest
+                {t('hero.subhead')}
               </motion.p>
             </div>
           </div>

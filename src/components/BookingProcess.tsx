@@ -1,25 +1,27 @@
 import React from 'react';
 import { BookOpen, UserCheck, ThumbsUp } from 'lucide-react';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BookingProcess = () => {
   const { trackEvent } = useAnalytics();
+  const { t } = useLanguage();
   
   const steps = [
     {
       icon: BookOpen,
-      title: 'Book a Ride',
-      description: 'Get instant confirmation. Free adjustments, flexible terms—always stress-free.'
+      title: t('booking.book.head'),
+      description: t('booking.book.sub')
     },
     {
       icon: UserCheck,
-      title: 'Meet Your Driver',
-      description: 'Upon arrival, be personally greeted and escorted to your vehicle. Drivers monitor your flight to accommodate any changes and delays, providing ultimate peace of mind.'
+      title: t('booking.driver.head'),
+      description: t('booking.driver.sub')
     },
     {
       icon: ThumbsUp,
-      title: 'Enjoy the Comfort',
-      description: 'Relax as your professional driver takes you to your chosen location, starting your adventure on the right note.'
+      title: t('booking.comfort.head'),
+      description: t('booking.comfort.sub')
     }
   ];
 
@@ -30,7 +32,7 @@ const BookingProcess = () => {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl text-center mb-12">Booking Process Explained</h2>
+        <h2 className="text-3xl text-center mb-12">{t('booking.head')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
             <div 

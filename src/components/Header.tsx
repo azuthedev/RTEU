@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 import OptimizedImage from './OptimizedImage';
+import LanguageSelector from './LanguageSelector';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HeaderProps {
   isAboutPage?: boolean;
@@ -17,9 +19,10 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userData, loading, signOut } = useAuth();
+  const { user, userData, loading: authLoading, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { trackEvent } = useAnalytics();
+  const { t } = useLanguage();
   const isAdmin = userData?.user_role === 'admin';
   const isPartner = userData?.user_role === 'partner';
 
@@ -164,65 +167,68 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
           <nav className="hidden md:flex space-x-6 lg:space-x-8">
             <a 
               href="/" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Home')}
             >
-              Home
+              {t('nav.home')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/about" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'About Us')}
             >
-              About Us
+              {t('nav.about')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/services" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Services')}
             >
-              Services
+              {t('nav.services')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/blogs/destinations" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Destinations')}
             >
-              Destinations
+              {t('nav.destinations')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/faq" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'FAQs')}
             >
-              FAQs
+              {t('nav.faqs')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/partners" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Partners')}
             >
-              Partners
+              {t('nav.partners')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
               href="/contact" 
-              className="relative py-2 text-gray-700 group font-sans"
+              className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'Contact')}
             >
-              Contact
+              {t('nav.contact')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
           </nav>
 
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <LanguageSelector variant="minimal" />
+            
             {!hideSignIn && (
-              loading ? (
+              authLoading ? (
                 <div className="w-10 h-10 flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-blue-600 animate-spin" aria-hidden="true" />
                 </div>
@@ -265,7 +271,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           role="menuitem"
                         >
                           <Crown className="w-4 h-4 mr-2" aria-hidden="true" />
-                          Admin Portal
+                          {t('nav.adminPortal')}
                         </a>
                       )}
                       {isPartner && (
@@ -276,7 +282,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           role="menuitem"
                         >
                           <Suitcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                          Partner Portal
+                          {t('nav.partnerPortal')}
                         </a>
                       )}
                       <Link 
@@ -288,7 +294,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         }}
                         role="menuitem"
                       >
-                        Your Profile
+                        {t('nav.profile')}
                       </Link>
                       <Link 
                         to="/bookings" 
@@ -299,14 +305,14 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         }}
                         role="menuitem"
                       >
-                        Your Bookings
+                        {t('nav.bookings')}
                       </Link>
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-sans"
                         role="menuitem"
                       >
-                        Sign out
+                        {t('nav.signOut')}
                       </button>
                     </div>
                   )}
@@ -317,7 +323,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   className="hidden md:inline-flex border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 box-border font-sans font-bold"
                   onClick={() => trackEvent('Navigation', 'Sign In Click', 'Header')}
                 >
-                  Sign In
+                  {t('nav.login')}
                 </a>
               )
             )}
@@ -325,7 +331,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               onClick={handleCTAClick}
               className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 font-sans font-bold"
             >
-              Book Now
+              {t('nav.bookNow')}
             </button>
           </div>
         </div>
@@ -373,19 +379,24 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                     width={150}
                     height={48}
                     loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
 
                 <nav className="flex-1 overflow-y-auto p-4">
+                  <div className="flex justify-center mb-4">
+                    <LanguageSelector variant="horizontal" />
+                  </div>
+                
                   <div className="flex flex-col space-y-4">
                     {[
-                      { href: '/', label: 'Home' },
-                      { href: '/about', label: 'About Us' },
-                      { href: '/services', label: 'Services' },
-                      { href: '/blogs/destinations', label: 'Destinations' },
-                      { href: '/faq', label: 'FAQs' },
-                      { href: '/partners', label: 'Partners' },
-                      { href: '/contact', label: 'Contact' }
+                      { href: '/', label: t('nav.home') },
+                      { href: '/about', label: t('nav.about') },
+                      { href: '/services', label: t('nav.services') },
+                      { href: '/blogs/destinations', label: t('nav.destinations') },
+                      { href: '/faq', label: t('nav.faqs') },
+                      { href: '/partners', label: t('nav.partners') },
+                      { href: '/contact', label: t('nav.contact') }
                     ].map((link) => (
                       <div key={link.href} className="flex">
                         <a
@@ -415,7 +426,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                                 trackEvent('Navigation', 'Mobile Menu Click', 'Admin Portal');
                               }}
                             >
-                              <span>Admin Portal</span>
+                              <span>{t('nav.adminPortal')}</span>
                               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                             </a>
                           </div>
@@ -431,7 +442,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                                 trackEvent('Navigation', 'Mobile Menu Click', 'Partner Portal');
                               }}
                             >
-                              <span>Partner Portal</span>
+                              <span>{t('nav.partnerPortal')}</span>
                               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                             </a>
                           </div>
@@ -445,7 +456,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                               trackEvent('Navigation', 'Mobile Menu Click', 'Your Profile');
                             }}
                           >
-                            <span>Your Profile</span>
+                            <span>{t('nav.profile')}</span>
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                           </a>
                         </div>
@@ -458,7 +469,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                               trackEvent('Navigation', 'Mobile Menu Click', 'Your Bookings');
                             }}
                           >
-                            <span>Your Bookings</span>
+                            <span>{t('nav.bookings')}</span>
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
                           </a>
                         </div>
@@ -469,7 +480,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
 
                 <div className="p-4 border-t space-y-3">
                   {!hideSignIn && (
-                    loading ? (
+                    authLoading ? (
                       <div className="flex justify-center">
                         <Loader2 className="w-5 h-5 text-blue-600 animate-spin" aria-hidden="true" />
                       </div>
@@ -478,7 +489,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         onClick={handleLogout}
                         className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
                       >
-                        Sign Out
+                        {t('nav.signOut')}
                       </button>
                     ) : (
                       <a
@@ -489,7 +500,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         }}
                         className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
                       >
-                        Sign In
+                        {t('nav.login')}
                       </a>
                     )
                   )}
@@ -497,7 +508,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                     onClick={handleCTAClick}
                     className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 font-sans font-bold"
                   >
-                    Book Now
+                    {t('nav.bookNow')}
                   </button>
                 </div>
               </div>
