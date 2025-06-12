@@ -57,7 +57,7 @@ const Hero = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 md:pt-40 pb-12 md:pb-16">
         <div className="grid md:grid-cols-2 gap-8">
           <div className="text-white text-center md:text-right">
-            <div className="md:absolute md:right-[50%] md:translate-x-[-2rem] md:top-[200px]">
+            <div className="md:absolute md:right-[50%] md:translate-x-[-2rem] md:top-[200px] w-full">
               <motion.h1 
                 className="text-[32px] md:text-6xl mb-4 font-serif"
                 initial={{ opacity: 0 }}
