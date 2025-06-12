@@ -42,7 +42,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     
     // Create a global callback for when Maps loads
     const callbackName = `initGoogleMaps_${Date.now()}`;
-    window[callbackName] = () => {
+    window[callbackName] = function() {
       console.log('Google Maps API loaded successfully');
       googleMapsLoaded = true;
       googleMapsLoading = false;
@@ -66,7 +66,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     script.async = true; // Ensure async attribute is set
     
     // Handle loading errors
-    script.onerror = () => {
+    script.onerror = function() {
       console.error('Failed to load Google Maps API');
       
       // Remove the script element that failed
@@ -82,10 +82,10 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
         loadInitiated = false;
         
         // Retry with exponential backoff
-        setTimeout(() => {
+        setTimeout(function() {
           initGoogleMaps(apiKey, libraries)
             .then(resolve)
-            .catch(() => {
+            .catch(function() {
               googleMapsLoading = false;
               googleMapsLoaded = false;
               googleMapsPromise = null;
@@ -107,7 +107,7 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
     document.head.appendChild(script);
     
     // Set a timeout to prevent hanging
-    setTimeout(() => {
+    setTimeout(function() {
       if (!googleMapsLoaded) {
         console.warn('Google Maps API loading timed out');
         
@@ -124,10 +124,10 @@ export const initGoogleMaps = (apiKey: string, libraries: string[] = ['places'])
           loadInitiated = false;
           
           // Retry with exponential backoff
-          setTimeout(() => {
+          setTimeout(function() {
             initGoogleMaps(apiKey, libraries)
               .then(resolve)
-              .catch(() => {
+              .catch(function() {
                 googleMapsLoading = false;
                 googleMapsLoaded = false;
                 googleMapsPromise = null;
@@ -172,7 +172,7 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
   });
   
   // Load the actual script with delay if specified
-  const loadAnalyticsScript = () => {
+  const loadAnalyticsScript = function() {
     if (document.getElementById('ga-script')) return;
     
     const script = document.createElement('script');
@@ -185,9 +185,9 @@ export const initGoogleAnalytics = (measurementId: string, options = { delayLoad
   
   // Use requestIdleCallback with fallback to setTimeout
   if (options.delayLoad) {
-    const loadWithIdleCallback = () => {
+    const loadWithIdleCallback = function() {
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => loadAnalyticsScript(), { timeout: 5000 });
+        window.requestIdleCallback(function() { loadAnalyticsScript(); }, { timeout: 5000 });
       } else {
         // Fallback for browsers that don't support requestIdleCallback
         setTimeout(loadAnalyticsScript, 3000);
@@ -227,7 +227,7 @@ export const initVoiceflowChat = (
     waitForInteraction = false 
   } = options;
   
-  const loadVoiceflow = () => {
+  const loadVoiceflow = function() {
     const script = document.createElement('script');
     script.id = 'voiceflow-script';
     script.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
@@ -235,8 +235,8 @@ export const initVoiceflowChat = (
     script.async = true;
     script.defer = true;
     
-    script.onload = () => {
-      setTimeout(() => {
+    script.onload = function() {
+      setTimeout(function() {
         if (window.voiceflow?.chat) {
           window.voiceflow.chat.load({
             verify: { projectID: projectId },
@@ -257,33 +257,33 @@ export const initVoiceflowChat = (
   if (waitForInteraction) {
     // Load after user interaction
     const interactionEvents = ['click', 'scroll', 'touchstart'];
-    const interactionHandler = throttle(() => {
-      interactionEvents.forEach(event => {
+    const interactionHandler = throttle(function() {
+      interactionEvents.forEach(function(event) {
         document.removeEventListener(event, interactionHandler);
       });
       loadVoiceflow();
     }, 1000, { leading: true });
     
-    interactionEvents.forEach(event => {
+    interactionEvents.forEach(function(event) {
       document.addEventListener(event, interactionHandler, { passive: true });
     });
     
     // Fallback: Load after 15 seconds anyway
-    setTimeout(() => {
-      interactionEvents.forEach(event => {
+    setTimeout(function() {
+      interactionEvents.forEach(function(event) {
         document.removeEventListener(event, interactionHandler);
       });
       loadVoiceflow();
     }, 15000);
   } else if (waitForIdle && 'requestIdleCallback' in window) {
     // Load when browser is idle
-    window.requestIdleCallback(() => loadVoiceflow(), { timeout: 5000 });
+    window.requestIdleCallback(function() { loadVoiceflow(); }, { timeout: 5000 });
   } else {
     // Load after specified delay
     if (document.readyState === 'complete') {
       setTimeout(loadVoiceflow, delay);
     } else {
-      window.addEventListener('load', () => {
+      window.addEventListener('load', function() {
         setTimeout(loadVoiceflow, delay);
       });
     }

@@ -50,8 +50,9 @@ export const initializeAnalytics = (config: Partial<AnalyticsConfig> = {}): void
   // Create dataLayer if it doesn't exist
   window.dataLayer = window.dataLayer || [];
   
-  // Define gtag function
-  function gtag(...args: any[]) {
+  // Define gtag function (use function declaration instead of arrow function for better compatibility)
+  function gtag() {
+    // Using arguments object directly rather than string eval
     window.dataLayer.push(arguments);
   }
   window.gtag = gtag;
@@ -158,7 +159,7 @@ export const updateConsent = (consentOptions: {
   });
   
   // Update opt-out flag for GA
-  if (window['ga-disable-' + import.meta.env.VITE_GA_MEASUREMENT_ID]) {
+  if (typeof window['ga-disable-' + import.meta.env.VITE_GA_MEASUREMENT_ID] !== 'undefined') {
     window['ga-disable-' + import.meta.env.VITE_GA_MEASUREMENT_ID] = !consentOptions.analytics;
   }
 };
@@ -216,5 +217,6 @@ declare global {
     dataLayer: any[];
     gtag: (...args: any[]) => void;
     requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+    [key: string]: any; // For GA disable property
   }
 }
