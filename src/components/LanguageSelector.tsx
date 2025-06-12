@@ -3,15 +3,15 @@ import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 
-// Language display names and flags
-const languages: Record<Language, { name: string; flag: string; localName: string }> = {
-  en: { name: 'English', flag: '🇬🇧', localName: 'English' },
-  es: { name: 'Spanish', flag: '🇪🇸', localName: 'Español' },
-  fr: { name: 'French', flag: '🇫🇷', localName: 'Français' },
-  it: { name: 'Italian', flag: '🇮🇹', localName: 'Italiano' },
-  de: { name: 'German', flag: '🇩🇪', localName: 'Deutsch' },
-  ru: { name: 'Russian', flag: '🇷🇺', localName: 'Русский' },
-  se: { name: 'Swedish', flag: '🇸🇪', localName: 'Svenska' }
+// Language display names and image paths
+const languages: Record<Language, { name: string; localName: string; code: string }> = {
+  en: { name: 'English', localName: 'English', code: 'english' },
+  es: { name: 'Spanish', localName: 'Español', code: 'spanish' },
+  fr: { name: 'French', localName: 'Français', code: 'french' },
+  it: { name: 'Italian', localName: 'Italiano', code: 'italian' },
+  de: { name: 'German', localName: 'Deutsch', code: 'german' },
+  ru: { name: 'Russian', localName: 'Русский', code: 'russian' },
+  se: { name: 'Swedish', localName: 'Svenska', code: 'swedish' }
 };
 
 const LanguageSelector: React.FC<{
@@ -45,11 +45,24 @@ const LanguageSelector: React.FC<{
     };
   }, [isOpen]);
 
+  // Flag image component with WebP and fallback - rectangular shape
+  const FlagImage = ({ code, alt }: { code: string; alt: string }) => (
+    <picture className="inline-flex overflow-hidden rounded-sm border border-gray-200">
+      <source srcSet={`https://files.royaltransfereu.com/assets/flags/${code}.webp`} type="image/webp" />
+      <img 
+        src={`https://files.royaltransfereu.com/assets/flags/${code}.jpg`} 
+        alt={alt} 
+        className="w-7 h-5 object-cover" // 16:9 aspect ratio for flags
+        loading="lazy"
+      />
+    </picture>
+  );
+
   // Render horizontal selector (for footer or expanded views)
   if (variant === 'horizontal') {
     return (
-      <div className={`flex space-x-3 items-center ${className}`}>
-        {Object.entries(languages).map(([code, { flag, localName }]) => (
+      <div className={`flex flex-wrap justify-center gap-2 items-center ${className}`}>
+        {Object.entries(languages).map(([code, { localName, name }]) => (
           <button
             key={code}
             onClick={() => selectLanguage(code as Language)}
@@ -59,8 +72,11 @@ const LanguageSelector: React.FC<{
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
             aria-label={`Change language to ${localName}`}
+            type="button"
           >
-            <span className="mr-2">{flag}</span>
+            <span className="mr-2">
+              <FlagImage code={languages[code as Language].code} alt={name} />
+            </span>
             <span className="text-sm">{localName}</span>
           </button>
         ))}
@@ -74,12 +90,13 @@ const LanguageSelector: React.FC<{
       <div className={`relative language-selector ${className}`}>
         <button
           onClick={toggleDropdown}
-          className="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none"
+          className="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none p-1"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-label="Select language"
+          type="button"
         >
-          <span className="text-xl">{languages[language].flag}</span>
+          <FlagImage code={languages[language].code} alt={languages[language].name} />
         </button>
         
         <AnimatePresence>
@@ -92,7 +109,7 @@ const LanguageSelector: React.FC<{
               className="absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-lg z-50"
               role="listbox"
             >
-              {Object.entries(languages).map(([code, { name, flag, localName }]) => (
+              {Object.entries(languages).map(([code, { name, localName }]) => (
                 <button
                   key={code}
                   onClick={() => selectLanguage(code as Language)}
@@ -101,8 +118,11 @@ const LanguageSelector: React.FC<{
                   }`}
                   role="option"
                   aria-selected={language === code}
+                  type="button"
                 >
-                  <span className="mr-2">{flag}</span>
+                  <span className="mr-2">
+                    <FlagImage code={languages[code as Language].code} alt={name} />
+                  </span>
                   <span>{localName}</span>
                 </button>
               ))}
@@ -118,12 +138,15 @@ const LanguageSelector: React.FC<{
     <div className={`relative language-selector ${className}`}>
       <button
         onClick={toggleDropdown}
-        className="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none"
+        className="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none p-1"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label="Select language"
+        type="button"
       >
-        <span className="mr-1">{languages[language].flag}</span>
+        <span className="mr-1">
+          <FlagImage code={languages[language].code} alt={languages[language].name} />
+        </span>
         <span className="hidden sm:inline-block">{languages[language].localName}</span>
         <ChevronDown className="ml-1 h-4 w-4" />
       </button>
@@ -138,7 +161,7 @@ const LanguageSelector: React.FC<{
             className="absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-lg z-50"
             role="listbox"
           >
-            {Object.entries(languages).map(([code, { name, flag, localName }]) => (
+            {Object.entries(languages).map(([code, { name, localName }]) => (
               <button
                 key={code}
                 onClick={() => selectLanguage(code as Language)}
@@ -147,8 +170,11 @@ const LanguageSelector: React.FC<{
                 }`}
                 role="option"
                 aria-selected={language === code}
+                type="button"
               >
-                <span className="mr-2">{flag}</span>
+                <span className="mr-2">
+                  <FlagImage code={languages[code as Language].code} alt={name} />
+                </span>
                 <span>{localName}</span>
               </button>
             ))}
