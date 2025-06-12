@@ -5,7 +5,6 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { useAnalytics } from '../hooks/useAnalytics';
 import OptimizedImage from './OptimizedImage';
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,9 +18,8 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userData, loading: authLoading, signOut } = useAuth();
+  const { user, userData, loading: authLoading, signOut, trackEvent } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { trackEvent } = useAnalytics();
   const { t } = useLanguage();
   const isAdmin = userData?.user_role === 'admin';
   const isPartner = userData?.user_role === 'partner';
@@ -224,7 +222,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
           </nav>
 
           <div className="flex items-center space-x-4">
-            {/* Language Selector */}
+            {/* Language Selector in desktop header */}
             <LanguageSelector variant="minimal" />
             
             {!hideSignIn && (
@@ -354,7 +352,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className="fixed top-0 left-0 h-full w-[280px] bg-white z-40 md:hidden"
+              className="fixed top-0 left-0 h-full w-[280px] bg-white z-50 md:hidden flex flex-col overflow-hidden"
             >
               <motion.button
                 initial={{ opacity: 0 }}
@@ -383,11 +381,8 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   />
                 </div>
 
+                {/* Main navigation - NO LANGUAGE SELECTOR HERE */}
                 <nav className="flex-1 overflow-y-auto p-4">
-                  <div className="flex justify-center mb-4">
-                    <LanguageSelector variant="horizontal" />
-                  </div>
-                
                   <div className="flex flex-col space-y-4">
                     {[
                       { href: '/', label: t('nav.home') },
@@ -478,16 +473,23 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                   </div>
                 </nav>
 
-                <div className="p-4 border-t space-y-3">
+                {/* Bottom area with buttons */}
+                <div className="p-4 border-t">
+                  {/* Language selector dropdown - ADDED HERE */}
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-500 mb-2">{t('nav.language')}</p>
+                    <LanguageSelector variant="mobile-dropdown" dropDirection="up" />
+                  </div>
+                
                   {!hideSignIn && (
                     authLoading ? (
-                      <div className="flex justify-center">
+                      <div className="flex justify-center mb-3">
                         <Loader2 className="w-5 h-5 text-blue-600 animate-spin" aria-hidden="true" />
                       </div>
                     ) : user ? (
                       <button
                         onClick={handleLogout}
-                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold mb-3"
                       >
                         {t('nav.signOut')}
                       </button>
@@ -498,14 +500,17 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                           setIsMenuOpen(false);
                           trackEvent('Navigation', 'Mobile Menu Click', 'Sign In');
                         }}
-                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold"
+                        className="block w-full border border-blue-600 text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 text-center box-border font-sans font-bold mb-3"
                       >
                         {t('nav.login')}
                       </a>
                     )
                   )}
                   <button 
-                    onClick={handleCTAClick}
+                    onClick={() => {
+                      handleCTAClick();
+                      setIsMenuOpen(false);
+                    }}
                     className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 font-sans font-bold"
                   >
                     {t('nav.bookNow')}
@@ -517,6 +522,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
         )}
       </AnimatePresence>
 
+      {/* Mobile menu button */}
       <button 
         className="md:hidden fixed top-[22px] left-4 z-50 w-12 h-12 flex items-center justify-center"
         onClick={() => {

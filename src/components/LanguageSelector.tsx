@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 
@@ -16,7 +16,8 @@ const languages: Record<Language, { name: string; localName: string; code: strin
 
 interface LanguageSelectorProps {
   className?: string;
-  variant?: 'dropdown' | 'horizontal' | 'minimal';
+  variant?: 'dropdown' | 'horizontal' | 'minimal' | 'mobile-dropdown';
+  dropDirection?: 'down' | 'up';
 }
 
 // Memoized flag image component to prevent unnecessary re-renders
@@ -36,7 +37,8 @@ FlagImage.displayName = 'FlagImage';
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = memo(({ 
   className = '', 
-  variant = 'dropdown' 
+  variant = 'dropdown',
+  dropDirection = 'down'
 }) => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -46,6 +48,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = memo(({
   }, []);
 
   const selectLanguage = useCallback((lang: Language) => {
+    // Don't do anything if selecting the same language
     if (lang === language) {
       setIsOpen(false);
       return;
@@ -92,6 +95,56 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = memo(({
             <span className="text-sm">{localName}</span>
           </button>
         ))}
+      </div>
+    );
+  }
+  
+  // Special mobile dropdown (customized for mobile view)
+  if (variant === 'mobile-dropdown') {
+    return (
+      <div className={`relative language-selector ${className}`} data-testid="mobile-language-selector">
+        <button
+          onClick={toggleDropdown}
+          className="flex items-center justify-between w-full px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label="Select language"
+          type="button"
+        >
+          <div className="flex items-center">
+            <FlagImage code={languages[language].code} alt={languages[language].name} />
+            <span className="ml-2 text-sm">{languages[language].localName}</span>
+          </div>
+          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: dropDirection === 'up' ? 10 : -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: dropDirection === 'up' ? 10 : -10 }}
+              transition={{ duration: 0.2 }}
+              className={`absolute ${dropDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'} left-0 right-0 py-1 bg-white rounded-md shadow-lg z-50 border border-gray-200 max-h-64 overflow-y-auto`}
+              role="listbox"
+            >
+              {Object.entries(languages).map(([code, { localName, name }]) => (
+                <button
+                  key={code}
+                  onClick={() => selectLanguage(code as Language)}
+                  className={`w-full text-left px-3 py-2 flex items-center hover:bg-gray-50 ${
+                    language === code ? 'bg-blue-50 text-blue-700 font-medium' : ''
+                  }`}
+                  role="option"
+                  aria-selected={language === code}
+                >
+                  <FlagImage code={languages[code as Language].code} alt={name} />
+                  <span className="ml-2 text-sm">{localName}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }

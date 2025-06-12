@@ -4,6 +4,7 @@ import CookieSettings from './CookieSettings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { getCookie } from '../utils/cookieUtils';
 import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 const Sitemap = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
@@ -148,6 +149,12 @@ const Sitemap = () => {
                 </button>
               </li>
             </ul>
+            
+            {/* Language Selector in Footer (Mobile Only) */}
+            <div className="md:hidden mt-6 border-t pt-4">
+              <h4 className="text-sm font-medium mb-3 text-center">{t('nav.language') || 'Language'}</h4>
+              <LanguageSelector variant="mobile-dropdown" dropDirection="up" className="w-full" />
+            </div>
           </div>
         </div>
 
@@ -176,6 +183,11 @@ const Sitemap = () => {
             >
               <MessageCircle className="w-5 h-5 text-white" aria-hidden="true" />
             </a>
+          </div>
+
+          {/* Language selector in desktop footer */}
+          <div className="hidden md:block mb-6">
+            <LanguageSelector variant="horizontal" className="justify-center" />
           </div>
 
           {/* Copyright */}
