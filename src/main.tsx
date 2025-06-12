@@ -7,6 +7,7 @@ import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { initGoogleMaps, initVoiceflowChat } from './utils/optimizeThirdParty.ts';
 import { reportWebVitals } from './utils/webVitals.ts';
 import { initializeAnalytics } from './utils/optimizeAnalytics.ts';
+import { LanguageProvider } from './contexts/LanguageContext.tsx';
 
 // Create a fallback component for the error boundary
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -88,41 +89,43 @@ const loadThirdPartyScripts = () => {
 // Start loading third-party scripts
 loadThirdPartyScripts();
 
-// We're using a regular div element for the root instead of createRoot on a non-existent element
-// This prevents errors if the element isn't immediately available
+// Make sure we have a root element before rendering
 const rootElement = document.getElementById('root');
 
-// Only create the root if the element exists
 if (rootElement) {
   createRoot(rootElement).render(
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => {
-        // Reset application state here if needed
-        window.location.href = '/';
-      }}
-      onError={(error, info) => {
-        // Log to error reporting service
-        console.error("Global error caught:", error);
-        console.error("Component stack:", info.componentStack);
-        
-        // Track in GA
-        if (window.gtag) {
-          window.gtag('event', 'exception', {
-            description: error.toString(),
-            fatal: true
-          });
-        }
-      }}
-    >
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </ErrorBoundary>
+    <StrictMode>
+      <ErrorBoundary
+        FallbackComponent={ErrorFallback}
+        onReset={() => {
+          // Reset application state here if needed
+          window.location.href = '/';
+        }}
+        onError={(error, info) => {
+          // Log to error reporting service
+          console.error("Global error caught:", error);
+          console.error("Component stack:", info.componentStack);
+          
+          // Track in GA
+          if (window.gtag) {
+            window.gtag('event', 'exception', {
+              description: error.toString(),
+              fatal: true
+            });
+          }
+        }}
+      >
+        <HelmetProvider>
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
+        </HelmetProvider>
+      </ErrorBoundary>
+    </StrictMode>
   );
 
   // Report web vitals if GA is configured
   reportWebVitals();
 } else {
-  console.error("Root element not found in the document");
+  console.error("Root element not found. Unable to render application.");
 }

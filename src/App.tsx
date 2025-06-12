@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy, useState, useRef, memo } from 'react';
+import React, { useEffect, Suspense, lazy, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from './components/ui/toaster';
@@ -13,13 +13,15 @@ import { preloadImagesForRoute } from './utils/imagePreloader';
 // Import contexts providers only (not their implementations)
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
-import { useAnalytics } from './hooks/useAnalytics';
+import { createAnalytics } from './hooks/useAnalytics';
 import { FeatureFlagProvider, useFeatureFlags } from './components/FeatureFlagProvider';
 import OTPVerificationModal from './components/OTPVerificationModal';
 
 // Import BookingProvider
 import { BookingProvider } from './contexts/BookingContext';
-import { LanguageProvider } from './contexts/LanguageContext';
+
+// Create analytics outside of the component to avoid Router context dependency
+const globalAnalytics = createAnalytics();
 
 // Lazily load all pages to improve initial load time
 const Home = lazy(() => import('./pages/Home'));
@@ -50,50 +52,42 @@ const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPromp
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 // Optimized loading fallback component
-const PageLoader = memo(() => (
+const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
       <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" aria-hidden="true" />
       <p className="text-gray-600">Loading...</p>
     </div>
   </div>
-));
+);
 
 // Route observer component to handle page-specific classes and SEO updates
-const RouteObserver = memo(() => {
+const RouteObserver = () => {
   const location = useLocation();
-  const { trackEvent } = useAnalytics();
-  const previousPathRef = useRef(location.pathname);
+  const { trackEvent } = useAuth();
 
   useEffect(() => {
-    // Only run if the path actually changed
-    if (location.pathname !== previousPathRef.current) {
-      // Update page-specific classes
-      const isBookingPage = location.pathname.startsWith('/transfer/');
-      document.documentElement.classList.toggle('booking-page', isBookingPage);
-      
-      // Track page transitions as events
-      trackEvent('Navigation', 'Page Transition', location.pathname);
-      
-      // Preload images for the current route
-      preloadImagesForRoute(location.pathname);
-      
-      // Update reference
-      previousPathRef.current = location.pathname;
-    }
+    // Update page-specific classes
+    const isBookingPage = location.pathname.startsWith('/transfer/');
+    document.documentElement.classList.toggle('booking-page', isBookingPage);
+    
+    // Track page transitions as events
+    trackEvent('Navigation', 'Page Transition', location.pathname);
+    
+    // Preload images for the current route
+    preloadImagesForRoute(location.pathname);
 
     return () => {
       document.documentElement.classList.remove('booking-page');
     };
-  }, [location.pathname, trackEvent]);
+  }, [location, trackEvent]);
 
   return null;
-});
+};
 
 // Updated ProtectedRoute to handle unverified users
-const ProtectedRoute = memo(({ children }: { children: React.ReactNode }) => {
-  const { user, loading, emailVerified, emailVerificationChecked } = useAuth();
-  const { trackEvent } = useAnalytics();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, emailVerified, emailVerificationChecked, trackEvent } = useAuth();
   const location = useLocation();
   const [showUnverifiedPrompt, setShowUnverifiedPrompt] = useState(false);
 
@@ -138,16 +132,16 @@ const ProtectedRoute = memo(({ children }: { children: React.ReactNode }) => {
   
   // User is authenticated and verified, render children
   return <>{children}</>;
-});
+};
 
-// Memoize AppRoutes to prevent unnecessary re-renders
-const AppRoutes = memo(function AppRoutes() {
+function AppRoutes() {
   // Use feature flags to determine if we should show the cookie banner
   const { flags } = useFeatureFlags();
   
   return (
     <>
       <RouteObserver />
+      <Header />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -211,29 +205,27 @@ const AppRoutes = memo(function AppRoutes() {
       <Toaster />
     </>
   );
-});
+}
 
 // Wrapper component to provide analytics within Router context
-const AppWithProviders = () => {
-  const analytics = useAnalytics();
-  
+const AppWithAuth = () => {
   return (
-    <BrowserRouter>
-      <FeatureFlagProvider>
-        <LanguageProvider>
-          <AuthProvider trackEvent={analytics.trackEvent} setUserId={analytics.setUserId}>
-            <BookingProvider>
-              <AppRoutes />
-            </BookingProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </FeatureFlagProvider>
-    </BrowserRouter>
+    <AuthProvider trackEvent={globalAnalytics.trackEvent} setUserId={globalAnalytics.setUserId}>
+      <BookingProvider>
+        <AppRoutes />
+      </BookingProvider>
+    </AuthProvider>
   );
 };
 
 function App() {
-  return <AppWithProviders />;
+  return (
+    <BrowserRouter>
+      <FeatureFlagProvider>
+        <AppWithAuth />
+      </FeatureFlagProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;

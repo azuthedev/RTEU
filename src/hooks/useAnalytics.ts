@@ -15,6 +15,39 @@ const initializeGA = (measurementId: string) => {
   }
 };
 
+// Create a version of useAnalytics that works outside Router context
+export const createAnalytics = () => {
+  // Track events without location information
+  const trackEvent = (
+    category: string, 
+    action: string,
+    label?: string,
+    value?: number,
+    nonInteraction: boolean = false
+  ) => {
+    trackGlobalEvent(category, action, label, value, nonInteraction);
+    
+    ReactGA.event({
+      category,
+      action,
+      label,
+      value,
+      nonInteraction
+    });
+  };
+
+  // Set user ID
+  const setUserId = (id: string) => {
+    if (!id) return;
+    
+    setGlobalUserId(id);
+    ReactGA.set({ userId: id });
+  };
+
+  return { trackEvent, setUserId };
+};
+
+// Hook for use within Router context
 export const useAnalytics = () => {
   const location = useLocation();
 

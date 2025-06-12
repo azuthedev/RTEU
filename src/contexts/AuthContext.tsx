@@ -14,6 +14,8 @@ interface AuthContextType {
   loading: boolean;
   emailVerified: boolean;
   emailVerificationChecked: boolean;
+  trackEvent: (category: string, action: string, label?: string, value?: number, nonInteraction?: boolean) => void;
+  setUserId: (id: string) => void;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: Error | null, data?: { user: User | null } }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null, session: Session | null }>;
   signOut: () => Promise<void>;
@@ -901,6 +903,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     loading,
     emailVerified,
     emailVerificationChecked,
+    trackEvent,
+    setUserId,
     signUp,
     signIn,
     signOut,
