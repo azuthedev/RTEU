@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // Define available languages
 export type Language = 'en' | 'es' | 'fr' | 'it' | 'de' | 'ru' | 'se';
@@ -29,7 +29,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       : 'en';
   };
   
-  const [language, setLanguage] = useState<Language>(
+  const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem('language') as Language) || getBrowserLanguage()
   );
   
@@ -39,11 +39,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [isLoading, setIsLoading] = useState(true);
   const loadedPagesRef = useRef<Set<string>>(new Set());
   
-  // Merge global and page translations for the final translations object
-  const translations = {
-    ...globalTranslations,
-    ...pageTranslations
-  };
+  // Memoize the translations object to avoid unnecessary re-renders
+  const translations = useMemo(() => {
+    return {
+      ...globalTranslations,
+      ...pageTranslations
+    };
+  }, [globalTranslations, pageTranslations]);
 
   // Fallback translations for common elements if regular translations fail
   const fallbackTranslations = {
@@ -77,28 +79,16 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     'footer.copyright': '© 2025 Royal Transfer EU. All rights reserved.',
   };
 
-  // Determine current page for loading page-specific translations
-  const getPageName = (): string => {
-    const pathname = window.location.pathname;
-    // Remove leading '/' and get the first segment of the path
-    const path = pathname.substring(1).split('/')[0];
-    
-    // If we're at root, return 'index'
-    if (path === '') return 'index';
-    
-    // Map path to known pages
-    const pageMap: Record<string, string> = {
-      'transfer': 'bookingFlow', // Special case for booking flow pages
-      'booking-success': 'bookingSuccess',
-      'booking-cancelled': 'bookingCancelled',
-      'blogs': 'blogs'
-    };
-    
-    return pageMap[path] || path;
-  };
+  // Create a memoized setLanguage function
+  const setLanguage = useCallback((newLanguage: Language) => {
+    // Update localStorage first
+    localStorage.setItem('language', newLanguage);
+    // Then update state
+    setLanguageState(newLanguage);
+  }, []);
 
-  // Function to load global translations
-  const loadGlobalTranslations = async (lang: Language) => {
+  // Function to load global translations - memoized
+  const loadGlobalTranslations = useCallback(async (lang: Language) => {
     console.log(`Loading global translations for ${lang}`);
     
     try {
@@ -124,10 +114,10 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       // Set minimal translations to avoid breaking UI
       setGlobalTranslations(fallbackTranslations);
     }
-  };
+  }, []);
 
-  // Function to load page-specific translations
-  const loadPageTranslations = async (lang: Language, page: string) => {
+  // Function to load page-specific translations - memoized
+  const loadPageTranslations = useCallback(async (lang: Language, page: string) => {
     console.log(`Loading page translations for ${lang}/${page}`);
     setIsLoading(true);
     
@@ -171,12 +161,30 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       // Always set loading to false after attempting to load, whether successful or not
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Determine current page for loading page-specific translations
+  const getPageName = useCallback((): string => {
+    const pathname = window.location.pathname;
+    // Remove leading '/' and get the first segment of the path
+    const path = pathname.substring(1).split('/')[0];
+    
+    // If we're at root, return 'index'
+    if (path === '') return 'index';
+    
+    // Map path to known pages
+    const pageMap: Record<string, string> = {
+      'transfer': 'bookingFlow', // Special case for booking flow pages
+      'booking-success': 'bookingSuccess',
+      'booking-cancelled': 'bookingCancelled',
+      'blogs': 'blogs'
+    };
+    
+    return pageMap[path] || path;
+  }, []);
 
   // Update localStorage when language changes and load translations
   useEffect(() => {
-    localStorage.setItem('language', language);
-    
     // Reset loaded pages when language changes
     loadedPagesRef.current = new Set();
     
@@ -189,7 +197,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     
     // Update HTML lang attribute
     document.documentElement.setAttribute('lang', language);
-  }, [language]);
+  }, [language, loadGlobalTranslations, loadPageTranslations, getPageName]);
 
   // Listen for route changes to update translations
   useEffect(() => {
@@ -205,10 +213,10 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return () => {
       window.removeEventListener('popstate', handleRouteChange);
     };
-  }, [language]);
+  }, [language, loadPageTranslations, getPageName]);
 
-  // Fixed translation function to handle flat key structure
-  const t = (key: string, params?: Record<string, string>): string => {
+  // Fixed translation function to handle flat key structure - memoized
+  const t = useCallback((key: string, params?: Record<string, string>): string => {
     try {
       // First try direct lookup (for flat keys in the translation files)
       if (key in translations && typeof translations[key] === 'string') {
@@ -260,10 +268,19 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       console.error(`Translation error for key "${key}":`, error);
       return fallbackTranslations[key] || key;
     }
-  };
+  }, [translations]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ 
+    language, 
+    setLanguage, 
+    translations, 
+    t, 
+    isLoading 
+  }), [language, setLanguage, translations, t, isLoading]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, translations, t, isLoading }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );

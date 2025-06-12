@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage, Language } from '../contexts/LanguageContext';
@@ -14,24 +14,49 @@ const languages: Record<Language, { name: string; localName: string; code: strin
   se: { name: 'Swedish', localName: 'Svenska', code: 'swedish' }
 };
 
-const LanguageSelector: React.FC<{
+interface LanguageSelectorProps {
   className?: string;
   variant?: 'dropdown' | 'horizontal' | 'minimal';
-}> = ({ className = '', variant = 'dropdown' }) => {
+}
+
+// Memoized flag image component to prevent unnecessary re-renders
+const FlagImage = memo(({ code, alt }: { code: string; alt: string }) => (
+  <picture className="inline-flex overflow-hidden rounded-sm border border-gray-200">
+    <source srcSet={`https://files.royaltransfereu.com/assets/flags/${code}.webp`} type="image/webp" />
+    <img 
+      src={`https://files.royaltransfereu.com/assets/flags/${code}.jpg`} 
+      alt={alt} 
+      className="w-7 h-5 object-cover" // 16:9 aspect ratio for flags
+      loading="lazy"
+    />
+  </picture>
+));
+
+FlagImage.displayName = 'FlagImage';
+
+const LanguageSelector: React.FC<LanguageSelectorProps> = memo(({ 
+  className = '', 
+  variant = 'dropdown' 
+}) => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleDropdown = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
 
-  const selectLanguage = (lang: Language) => {
+  const selectLanguage = useCallback((lang: Language) => {
+    if (lang === language) {
+      setIsOpen(false);
+      return;
+    }
+    
     setLanguage(lang);
     setIsOpen(false);
-  };
+  }, [language, setLanguage]);
   
   // Close dropdown when clicking outside
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && !(event.target as Element).closest('.language-selector')) {
         setIsOpen(false);
@@ -45,23 +70,10 @@ const LanguageSelector: React.FC<{
     };
   }, [isOpen]);
 
-  // Flag image component with WebP and fallback - rectangular shape
-  const FlagImage = ({ code, alt }: { code: string; alt: string }) => (
-    <picture className="inline-flex overflow-hidden rounded-sm border border-gray-200">
-      <source srcSet={`https://files.royaltransfereu.com/assets/flags/${code}.webp`} type="image/webp" />
-      <img 
-        src={`https://files.royaltransfereu.com/assets/flags/${code}.jpg`} 
-        alt={alt} 
-        className="w-7 h-5 object-cover" // 16:9 aspect ratio for flags
-        loading="lazy"
-      />
-    </picture>
-  );
-
   // Render horizontal selector (for footer or expanded views)
   if (variant === 'horizontal') {
     return (
-      <div className={`flex flex-wrap justify-center gap-2 items-center ${className}`}>
+      <div className={`flex flex-wrap justify-center gap-2 items-center language-selector ${className}`}>
         {Object.entries(languages).map(([code, { localName, name }]) => (
           <button
             key={code}
@@ -183,6 +195,8 @@ const LanguageSelector: React.FC<{
       </AnimatePresence>
     </div>
   );
-};
+});
+
+LanguageSelector.displayName = 'LanguageSelector';
 
 export default LanguageSelector;

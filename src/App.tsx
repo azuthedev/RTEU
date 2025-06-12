@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy, useState, useRef } from 'react';
+import React, { useEffect, Suspense, lazy, useState, useRef, memo } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from './components/ui/toaster';
@@ -19,6 +19,7 @@ import OTPVerificationModal from './components/OTPVerificationModal';
 
 // Import BookingProvider
 import { BookingProvider } from './contexts/BookingContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 // Lazily load all pages to improve initial load time
 const Home = lazy(() => import('./pages/Home'));
@@ -49,41 +50,48 @@ const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPromp
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 // Optimized loading fallback component
-const PageLoader = () => (
+const PageLoader = memo(() => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
       <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" aria-hidden="true" />
       <p className="text-gray-600">Loading...</p>
     </div>
   </div>
-);
+));
 
 // Route observer component to handle page-specific classes and SEO updates
-const RouteObserver = () => {
+const RouteObserver = memo(() => {
   const location = useLocation();
   const { trackEvent } = useAnalytics();
+  const previousPathRef = useRef(location.pathname);
 
   useEffect(() => {
-    // Update page-specific classes
-    const isBookingPage = location.pathname.startsWith('/transfer/');
-    document.documentElement.classList.toggle('booking-page', isBookingPage);
-    
-    // Track page transitions as events
-    trackEvent('Navigation', 'Page Transition', location.pathname);
-    
-    // Preload images for the current route
-    preloadImagesForRoute(location.pathname);
+    // Only run if the path actually changed
+    if (location.pathname !== previousPathRef.current) {
+      // Update page-specific classes
+      const isBookingPage = location.pathname.startsWith('/transfer/');
+      document.documentElement.classList.toggle('booking-page', isBookingPage);
+      
+      // Track page transitions as events
+      trackEvent('Navigation', 'Page Transition', location.pathname);
+      
+      // Preload images for the current route
+      preloadImagesForRoute(location.pathname);
+      
+      // Update reference
+      previousPathRef.current = location.pathname;
+    }
 
     return () => {
       document.documentElement.classList.remove('booking-page');
     };
-  }, [location, trackEvent]);
+  }, [location.pathname, trackEvent]);
 
   return null;
-};
+});
 
 // Updated ProtectedRoute to handle unverified users
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = memo(({ children }: { children: React.ReactNode }) => {
   const { user, loading, emailVerified, emailVerificationChecked } = useAuth();
   const { trackEvent } = useAnalytics();
   const location = useLocation();
@@ -130,16 +138,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   // User is authenticated and verified, render children
   return <>{children}</>;
-};
+});
 
-function AppRoutes() {
+// Memoize AppRoutes to prevent unnecessary re-renders
+const AppRoutes = memo(function AppRoutes() {
   // Use feature flags to determine if we should show the cookie banner
   const { flags } = useFeatureFlags();
   
   return (
     <>
       <RouteObserver />
-      <Header />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -203,29 +211,29 @@ function AppRoutes() {
       <Toaster />
     </>
   );
-}
+});
 
 // Wrapper component to provide analytics within Router context
-const AppWithAuth = () => {
+const AppWithProviders = () => {
   const analytics = useAnalytics();
   
   return (
-    <AuthProvider trackEvent={analytics.trackEvent} setUserId={analytics.setUserId}>
-      <BookingProvider>
-        <AppRoutes />
-      </BookingProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <FeatureFlagProvider>
+        <LanguageProvider>
+          <AuthProvider trackEvent={analytics.trackEvent} setUserId={analytics.setUserId}>
+            <BookingProvider>
+              <AppRoutes />
+            </BookingProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </FeatureFlagProvider>
+    </BrowserRouter>
   );
 };
 
 function App() {
-  return (
-    <BrowserRouter>
-      <FeatureFlagProvider>
-        <AppWithAuth />
-      </FeatureFlagProvider>
-    </BrowserRouter>
-  );
+  return <AppWithProviders />;
 }
 
 export default App;

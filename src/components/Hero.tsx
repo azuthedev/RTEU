@@ -6,7 +6,7 @@ import OptimizedImage from './OptimizedImage';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Hero = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();  // Extract language from context
   
   return (
     <div id="booking-form" className="relative h-[800px] md:h-auto md:min-h-[700px]">
@@ -59,6 +59,7 @@ const Hero = () => {
           <div className="text-white text-center md:text-right">
             <div className="md:absolute md:right-[50%] md:translate-x-[-2rem] md:top-[200px] w-full">
               <motion.h1 
+                key={`headline-${language}`}  // Add language to key prop to force re-render
                 className="text-[32px] md:text-6xl mb-4 font-serif"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -68,6 +69,7 @@ const Hero = () => {
                 <span className="block">{t('hero.headline1')}</span>
               </motion.h1>
               <motion.p 
+                key={`subhead-${language}`}  // Add language to key prop to force re-render
                 className="text-[18px] mb-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
