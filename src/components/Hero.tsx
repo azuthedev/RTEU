@@ -6,7 +6,14 @@ import OptimizedImage from './OptimizedImage';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Hero = () => {
-  const { t, language } = useLanguage();  // Extract language from context
+  const { t, language } = useLanguage();
+  
+  // Force re-render on language change
+  useEffect(() => {
+    // This effect will run whenever the language changes
+    // The key props on motion components will cause them to re-render
+    console.log(`Language changed to ${language} in Hero component`);
+  }, [language]);
   
   return (
     <div id="booking-form" className="relative h-[800px] md:h-auto md:min-h-[700px]">
@@ -59,21 +66,22 @@ const Hero = () => {
           <div className="text-white text-center md:text-right">
             <div className="md:absolute md:right-[50%] md:translate-x-[-2rem] md:top-[200px] w-full">
               <motion.h1 
-                key={`headline-${language}`}  // Add language to key prop to force re-render
+                key={`headline-${language}`} // Force re-render on language change
                 className="text-[32px] md:text-6xl mb-4 font-serif"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="block">{t('hero.headline')}</span>
-                <span className="block">{t('hero.headline1')}</span>
+                <span className="block" data-testid="hero-headline">{t('hero.headline')}</span>
+                <span className="block" data-testid="hero-headline1">{t('hero.headline1')}</span>
               </motion.h1>
               <motion.p 
-                key={`subhead-${language}`}  // Add language to key prop to force re-render
+                key={`subhead-${language}`} // Force re-render on language change
                 className="text-[18px] mb-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
+                data-testid="hero-subhead"
               >
                 {t('hero.subhead')}
               </motion.p>

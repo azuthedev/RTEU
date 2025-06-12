@@ -39,6 +39,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [isLoading, setIsLoading] = useState(true);
   const loadedPagesRef = useRef<Set<string>>(new Set());
   
+  // Cache to store loaded translations by language
+  const translationsCache = useRef<Record<string, Record<string, any>>>({});
+  
   // Memoize the translations object to avoid unnecessary re-renders
   const translations = useMemo(() => {
     return {
@@ -81,10 +84,35 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   // Create a memoized setLanguage function
   const setLanguage = useCallback((newLanguage: Language) => {
+    console.log(`Switching language from ${language} to ${newLanguage}`);
     // Update localStorage first
     localStorage.setItem('language', newLanguage);
+    
+    // Clear the translations cache when switching languages
+    setPageTranslations({});
+    
     // Then update state
     setLanguageState(newLanguage);
+  }, [language]);
+
+  // Determine current page for loading page-specific translations
+  const getPageName = useCallback((): string => {
+    const pathname = window.location.pathname;
+    // Remove leading '/' and get the first segment of the path
+    const path = pathname.substring(1).split('/')[0];
+    
+    // If we're at root, return 'index'
+    if (path === '') return 'index';
+    
+    // Map path to known pages
+    const pageMap: Record<string, string> = {
+      'transfer': 'bookingFlow', // Special case for booking flow pages
+      'booking-success': 'bookingSuccess',
+      'booking-cancelled': 'bookingCancelled',
+      'blogs': 'blogs'
+    };
+    
+    return pageMap[path] || path;
   }, []);
 
   // Function to load global translations - memoized
@@ -92,6 +120,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     console.log(`Loading global translations for ${lang}`);
     
     try {
+      // First check cache
+      if (translationsCache.current[`${lang}:global`]) {
+        console.log(`Using cached global translations for ${lang}`);
+        setGlobalTranslations(translationsCache.current[`${lang}:global`]);
+        return;
+      }
+      
       let globalModule: Record<string, any> = {};
       try {
         globalModule = await import(`../../locales/${lang}/global.json`);
@@ -107,8 +142,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         }
       }
       
+      // Store in cache
+      const translations = globalModule.default || globalModule;
+      translationsCache.current[`${lang}:global`] = translations;
+      
       // Set global translations
-      setGlobalTranslations(globalModule.default || globalModule);
+      setGlobalTranslations(translations);
     } catch (error) {
       console.error(`Critical failure loading global translations for ${lang}`, error);
       // Set minimal translations to avoid breaking UI
@@ -122,10 +161,19 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setIsLoading(true);
     
     try {
-      // Only load each page once per language change to avoid unnecessary loads
+      // Check if the page has already been loaded for this language
       const pageKey = `${lang}:${page}`;
       if (loadedPagesRef.current.has(pageKey)) {
         console.log(`Already loaded ${pageKey}`);
+        
+        // If we have cached translations for this page, use them
+        if (translationsCache.current[pageKey]) {
+          setPageTranslations(prev => ({
+            ...prev,
+            ...translationsCache.current[pageKey]
+          }));
+        }
+        
         setIsLoading(false);
         return;
       }
@@ -148,10 +196,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         }
       }
       
+      // Store translations in cache
+      const translations = pageModule.default || pageModule;
+      translationsCache.current[pageKey] = translations;
+      
       // Set page translations
       setPageTranslations(prev => ({
         ...prev,
-        ...(pageModule.default || pageModule)
+        ...translations
       }));
       
       loadedPagesRef.current.add(pageKey);
@@ -163,28 +215,10 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Determine current page for loading page-specific translations
-  const getPageName = useCallback((): string => {
-    const pathname = window.location.pathname;
-    // Remove leading '/' and get the first segment of the path
-    const path = pathname.substring(1).split('/')[0];
-    
-    // If we're at root, return 'index'
-    if (path === '') return 'index';
-    
-    // Map path to known pages
-    const pageMap: Record<string, string> = {
-      'transfer': 'bookingFlow', // Special case for booking flow pages
-      'booking-success': 'bookingSuccess',
-      'booking-cancelled': 'bookingCancelled',
-      'blogs': 'blogs'
-    };
-    
-    return pageMap[path] || path;
-  }, []);
-
   // Update localStorage when language changes and load translations
   useEffect(() => {
+    console.log(`Language changed to ${language}, loading translations`);
+    
     // Reset loaded pages when language changes
     loadedPagesRef.current = new Set();
     
@@ -197,6 +231,11 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     
     // Update HTML lang attribute
     document.documentElement.setAttribute('lang', language);
+    
+    // Force document re-render by triggering a small body class change
+    document.body.classList.add('language-updated');
+    setTimeout(() => document.body.classList.remove('language-updated'), 10);
+    
   }, [language, loadGlobalTranslations, loadPageTranslations, getPageName]);
 
   // Listen for route changes to update translations
@@ -261,14 +300,21 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         return fallbackTranslations[key];
       }
       
+      // Check if key exists in English fallback in cache
+      const englishKey = `en:global`;
+      if (translationsCache.current[englishKey] && 
+          key in translationsCache.current[englishKey]) {
+        return translationsCache.current[englishKey][key];
+      }
+      
       // As last resort, return the key itself
-      console.warn(`Translation key not found: ${key}`);
+      console.warn(`Translation key not found: ${key}, language: ${language}`);
       return key;
     } catch (error) {
       console.error(`Translation error for key "${key}":`, error);
       return fallbackTranslations[key] || key;
     }
-  }, [translations]);
+  }, [translations, language]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({ 
