@@ -65,12 +65,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     'searchform.roundtrip': 'Round Trip',
     'searchform.pickup': 'Pickup location',
     'searchform.dropoff': 'Dropoff location',
-    'searchform.date': 'Select date',
-    'searchform.dates': 'Select dates',
+    'searchform.date': 'Select departure date',
+    'searchform.dates': 'Select departure & return dates',
     'searchform.passenger': 'Passenger',
     'searchform.passengers': 'Passengers',
     'searchform.cta': 'See Prices',
-    'hero.headline': 'The road is part of the adventure',
+    'hero.headline': 'The road is part of',
+    'hero.headline1': 'the adventure',
     'hero.subhead': 'Enjoy the trip — we\'ll handle the rest',
     'common.loading': 'Loading...',
     'footer.copyright': '© 2025 Royal Transfer EU. All rights reserved.',
@@ -82,7 +83,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     // Remove leading '/' and get the first segment of the path
     const path = pathname.substring(1).split('/')[0];
     
-    // If we're at root, return 'index' (previously 'home')
+    // If we're at root, return 'index'
     if (path === '') return 'index';
     
     // Map path to known pages
@@ -206,49 +207,58 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     };
   }, [language]);
 
-  // Translation function with better fallbacks
+  // Fixed translation function to handle flat key structure
   const t = (key: string, params?: Record<string, string>): string => {
-    // During loading, check for fallbacks first
-    if (isLoading && fallbackTranslations[key]) {
-      return fallbackTranslations[key];
-    }
-    
     try {
+      // First try direct lookup (for flat keys in the translation files)
+      if (key in translations && typeof translations[key] === 'string') {
+        let value = translations[key];
+        
+        // Process parameters if any
+        if (params) {
+          Object.entries(params).forEach(([paramKey, paramValue]) => {
+            value = value.replace(`{{${paramKey}}}`, paramValue);
+          });
+        }
+        return value;
+      }
+      
+      // If direct lookup fails, try nested lookup
       const keyParts = key.split('.');
       let value: any = translations;
       
-      // Navigate through nested objects
       for (const part of keyParts) {
         if (value && typeof value === 'object' && part in value) {
           value = value[part];
         } else {
-          // Check if fallback exists
-          if (fallbackTranslations[key]) {
-            return fallbackTranslations[key];
-          }
-          
-          console.warn(`Translation key not found: ${key}`);
-          return key; // Return the key as fallback
+          // Key not found in main translations
+          value = undefined;
+          break;
         }
       }
       
-      // If the value is not a string, return the key
-      if (typeof value !== 'string') {
-        console.warn(`Translation key does not resolve to a string: ${key}`);
-        return key;
+      // If a valid string translation was found, return it
+      if (typeof value === 'string') {
+        // Process parameters if any
+        if (params) {
+          Object.entries(params).forEach(([paramKey, paramValue]) => {
+            value = value.replace(`{{${paramKey}}}`, paramValue);
+          });
+        }
+        return value;
       }
       
-      // Replace any parameters in the translation string
-      if (params) {
-        Object.entries(params).forEach(([paramKey, paramValue]) => {
-          value = value.replace(`{{${paramKey}}}`, paramValue);
-        });
+      // If not found in main translations, try fallback
+      if (key in fallbackTranslations) {
+        return fallbackTranslations[key];
       }
       
-      return value;
+      // As last resort, return the key itself
+      console.warn(`Translation key not found: ${key}`);
+      return key;
     } catch (error) {
       console.error(`Translation error for key "${key}":`, error);
-      return key;
+      return fallbackTranslations[key] || key;
     }
   };
 
