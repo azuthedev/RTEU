@@ -529,7 +529,8 @@ const VehicleSelection = () => {
   const isWaitingForData = bookingState.isPricingLoading || 
     (!bookingState.fromDisplay && !bookingState.from) || 
     (!bookingState.toDisplay && !bookingState.to) ||
-    !bookingState.pickupDateTime;
+    !bookingState.pickupDateTime ||
+    !bookingState.pricingResponse;
 
   return (
     <BookingLayout
