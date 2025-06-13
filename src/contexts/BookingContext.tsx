@@ -3,11 +3,11 @@ import { vehicles } from '../data/vehicles';
 
 // Interface for API price response
 interface PricingResponse {
-  prices: {
+  prices: Array<{
     category: string;
     price: number;
     currency: string;
-  }[];
+  }>;
   selected_category: string | null;
   details: {
     pickup_time: string;
@@ -75,6 +75,7 @@ export interface BookingState {
   pricingResponse?: PricingResponse; // Store pricing data from API
   pricingError?: string | null; // Added to track pricing fetch errors
   validationErrors: ValidationError[]; // Added to track validation errors
+  isPricingLoading: boolean; // Added to track global pricing loading state
 }
 
 interface BookingContextType {
@@ -222,7 +223,8 @@ const getDefaultBookingState = (): BookingState => ({
   fromCoords: null,
   toCoords: null,
   pricingError: null, // Initialize with null
-  validationErrors: []
+  validationErrors: [],
+  isPricingLoading: false // Initialize loading state as false
 });
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -261,11 +263,12 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       pickupDateTime: bookingState.pickupDateTime,
       dropoffDateTime: bookingState.dropoffDateTime,
       pricingData: bookingState.pricingResponse ? 'Available' : 'None',
-      pricingError: bookingState.pricingError
+      pricingError: bookingState.pricingError,
+      isPricingLoading: bookingState.isPricingLoading
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
       bookingState.pickupDateTime, bookingState.dropoffDateTime, 
-      bookingState.pricingResponse, bookingState.pricingError]);
+      bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading]);
 
   // Function to clear booking state
   const clearBookingState = () => {
