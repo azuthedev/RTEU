@@ -100,6 +100,12 @@ const BookingFlow = () => {
     }
     
     try {
+      // Clear any existing pricing error before making a new request
+      setBookingState(prev => ({
+        ...prev,
+        pricingError: null
+      }));
+      
       // We need to geocode the addresses first
       const fromDecoded = decodeURIComponent(from).replace(/-/g, ' ');
       const toDecoded = decodeURIComponent(to).replace(/-/g, ' ');
@@ -107,9 +113,15 @@ const BookingFlow = () => {
       // Use Google Maps Geocoding API
       if (!window.google?.maps?.Geocoder) {
         if (isMountedRef.current) {
+          const errorMsg = "Google Maps could not be loaded. Please try again later.";
+          setBookingState(prev => ({
+            ...prev,
+            pricingError: errorMsg
+          }));
+          
           toast({
             title: "Geocoding Not Available",
-            description: "Google Maps could not be loaded. Please try again later.",
+            description: errorMsg,
             variant: "destructive"
           });
         }
@@ -179,10 +191,16 @@ const BookingFlow = () => {
       }
       
       if (!pickupCoords || !dropoffCoords) {
+        const errorMsg = "Could not determine location coordinates. Please try entering more specific addresses.";
         if (isMountedRef.current) {
+          setBookingState(prev => ({
+            ...prev,
+            pricingError: errorMsg
+          }));
+          
           toast({
             title: "Geocoding Failed",
-            description: "Could not determine location coordinates. Please try entering more specific addresses.",
+            description: errorMsg,
             variant: "destructive"
           });
         }
@@ -192,10 +210,16 @@ const BookingFlow = () => {
       // Format the pickup time
       const pickupTimeISO = formatDateForApi(date);
       if (!pickupTimeISO) {
+        const errorMsg = "The selected date is invalid. Please choose a different date.";
         if (isMountedRef.current) {
+          setBookingState(prev => ({
+            ...prev,
+            pricingError: errorMsg
+          }));
+          
           toast({
             title: "Invalid Date",
-            description: "The selected date is invalid. Please choose a different date.",
+            description: errorMsg,
             variant: "destructive"
           });
         }
@@ -241,15 +265,54 @@ const BookingFlow = () => {
         const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
         console.error('API Error:', errorDetail);
         
+        const errorMsg = `Failed to get pricing information: ${errorDetail}`;
+        
+        if (isMountedRef.current) {
+          setBookingState(prev => ({
+            ...prev,
+            pricingError: errorMsg
+          }));
+          
+          toast({
+            title: "Pricing Error",
+            description: "Failed to get pricing information. Please try again later.",
+            variant: "destructive"
+          });
+        }
+        
         throw new Error(`API Error: ${errorDetail}`);
       }
       
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
+      if (!data.prices || data.prices.length === 0) {
+        const errorMsg = "No pricing data available for this route. Please try a different route or contact support.";
+        if (isMountedRef.current) {
+          setBookingState(prev => ({
+            ...prev,
+            pricingError: errorMsg
+          }));
+          
+          toast({
+            title: "Pricing Unavailable",
+            description: errorMsg,
+            variant: "destructive"
+          });
+        }
+        
+        return null;
+      }
+      
       // Track successful price fetch
       if (isMountedRef.current) {
         trackEvent('Booking', 'Price Fetched', `${from} to ${to}`);
+        
+        // Clear any pricing error
+        setBookingState(prev => ({
+          ...prev,
+          pricingError: null
+        }));
       }
       
       return data;
@@ -262,10 +325,18 @@ const BookingFlow = () => {
       
       console.error('Error fetching prices:', error);
       
+      const errorMsg = error.message || "Failed to get pricing information. Please try again later.";
+      
       if (isMountedRef.current) {
+        // Update booking state with error
+        setBookingState(prev => ({
+          ...prev,
+          pricingError: errorMsg
+        }));
+        
         toast({
           title: "Pricing Error",
-          description: error.message || "Failed to get pricing information. Please try again later.",
+          description: errorMsg,
           variant: "destructive"
         });
       }
@@ -286,7 +357,8 @@ const BookingFlow = () => {
       bookingState.departureDate === date &&
       bookingState.returnDate === (returnDate === '0' ? undefined : returnDate) &&
       bookingState.passengers === Number(passengers) &&
-      bookingState.pricingResponse
+      bookingState.pricingResponse &&
+      !bookingState.pricingError
     ) {
       console.log("Using existing state and prices");
       initialFetchDone.current = true;
@@ -324,6 +396,8 @@ const BookingFlow = () => {
         updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
         updatedState.passengers = passengers ? parseInt(passengers, 10) : 1;
         updatedState.isReturn = type === '2';
+        // Clear any pricing error from previous attempts
+        updatedState.pricingError = null;
         
         return updatedState;
       });
@@ -344,7 +418,9 @@ const BookingFlow = () => {
           // Update booking state with pricing data
           setBookingState(prev => ({
             ...prev,
-            pricingResponse
+            pricingResponse,
+            // Clear pricing error if successful
+            pricingError: null
           }));
         }
         
