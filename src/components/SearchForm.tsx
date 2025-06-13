@@ -84,7 +84,6 @@ const SearchForm = () => {
   const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
   const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
   
-  // State for loading prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
@@ -803,15 +802,22 @@ const SearchForm = () => {
     setApiError(null);
     setGeocodingErrorField(null);
     
-    // Clear existing pricing data in the context to prevent stale data usage
+    // Update global loading state
     setBookingState(prev => ({
       ...prev,
+      isPricingLoading: true,
       pricingResponse: null,
       pricingError: null
     }));
     
     // Fetch updated prices
     const pricingResponse = await fetchPrices();
+    
+    // Update global loading state
+    setBookingState(prev => ({
+      ...prev,
+      isPricingLoading: false
+    }));
     
     // If component unmounted during the fetch, don't continue
     if (!isMountedRef.current) {
@@ -978,12 +984,24 @@ const SearchForm = () => {
     
     setIsLoadingPrices(false);
     setGeocodingErrorField(null);
+    
+    // Update global loading state
+    setBookingState(prev => ({
+      ...prev,
+      isPricingLoading: false
+    }));
   };
   
   // Function to try a different route (for geocoding errors)
   const handleTryDifferentRoute = () => {
     setGeocodingErrorField(null);
     setIsLoadingPrices(false);
+    
+    // Update global loading state
+    setBookingState(prev => ({
+      ...prev,
+      isPricingLoading: false
+    }));
     
     // Focus the appropriate field
     setTimeout(() => {
