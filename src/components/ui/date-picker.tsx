@@ -8,21 +8,26 @@ import { format } from "date-fns"
 import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react"
 import { useState } from "react"
 import { useLanguage } from "../../contexts/LanguageContext"
+import { getMinimumBookingTime } from "../../utils/searchFormHelpers"
 
 interface DatePickerProps {
   date?: Date
   onDateChange: (date: Date | undefined) => void
   className?: string
   placeholder?: string
+  minDate?: Date
 }
 
-export function DatePicker({ date, onDateChange, className, placeholder }: DatePickerProps) {
+export function DatePicker({ date, onDateChange, className, placeholder, minDate }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date)
   const [hours, setHours] = useState<number>(date ? date.getHours() : 12)
   const [minutes, setMinutes] = useState<number>(date ? date.getMinutes() : 0)
   const [step, setStep] = useState<'date' | 'time'>('date')
   const { t } = useLanguage();
+
+  // Get the minimum booking date if not provided
+  const minimumDate = minDate || getMinimumBookingTime();
 
   const handleSelect = (date: Date | undefined) => {
     setSelectedDate(date)
@@ -44,7 +49,17 @@ export function DatePicker({ date, onDateChange, className, placeholder }: DateP
       const dateWithTime = new Date(selectedDate)
       dateWithTime.setHours(hours)
       dateWithTime.setMinutes(minutes)
-      onDateChange(dateWithTime)
+      
+      // Validate against minimum booking time
+      const minTime = minimumDate;
+      
+      if (dateWithTime < minTime) {
+        // If selected time is before minimum, use minimum time
+        const adjustedDate = new Date(Math.max(dateWithTime.getTime(), minTime.getTime()));
+        onDateChange(adjustedDate);
+      } else {
+        onDateChange(dateWithTime)
+      }
     } else {
       onDateChange(undefined)
     }
@@ -69,55 +84,57 @@ export function DatePicker({ date, onDateChange, className, placeholder }: DateP
 
   // Function to check if a date is in the past
   const isPastDate = (date: Date) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to beginning of day for accurate comparison
-    return date < today
+    const minDate = minimumDate;
+    minDate.setHours(0, 0, 0, 0); // Reset to beginning of day for date comparison
+    return date < minDate;
   }
   
   // If today is selected, check if the selected time is in the past
   const isTimeInPast = () => {
-    if (!selectedDate) return false
+    if (!selectedDate) return false;
     
-    const now = new Date()
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     // Only validate time if the selected date is today
     if (selectedDate.getTime() === today.getTime()) {
-      const selectedTime = new Date(today)
-      selectedTime.setHours(hours)
-      selectedTime.setMinutes(minutes)
-      return selectedTime < now
+      const selectedTime = new Date(today);
+      selectedTime.setHours(hours);
+      selectedTime.setMinutes(minutes);
+      
+      const minTime = minimumDate;
+      return selectedTime < minTime;
     }
     
-    return false
+    return false;
   }
   
   // Generate hour options (24-hour format)
-  const hourOptions = Array.from({ length: 24 }, (_, i) => i)
+  const hourOptions = Array.from({ length: 24 }, (_, i) => i);
   
   // Generate minute options (every 15 minutes)
-  const minuteOptions = [0, 15, 30, 45]
+  const minuteOptions = [0, 15, 30, 45];
   
   // Format the display date with time
   const formattedDate = date 
     ? `${format(date, "PPP")} at ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-    : placeholder || t('searchform.date')
+    : placeholder || t('searchform.date');
 
   // Handle popover opening
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       // Initialize with the current date or step
       if (date) {
-        setSelectedDate(date)
-        setHours(date.getHours())
-        setMinutes(date.getMinutes())
+        setSelectedDate(date);
+        setHours(date.getHours());
+        setMinutes(date.getMinutes());
       }
     } else {
       // Reset to date step when closing
-      setStep('date')
+      setStep('date');
     }
-    setOpen(newOpen)
+    setOpen(newOpen);
   }
 
   return (
@@ -153,7 +170,8 @@ export function DatePicker({ date, onDateChange, className, placeholder }: DateP
                 selected={selectedDate}
                 onSelect={handleSelect}
                 initialFocus
-                disabled={isPastDate}
+                disabled={(date) => isPastDate(date)}
+                fromDate={minimumDate}
                 classNames={{
                   day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
                   day_today: "text-black font-semibold",
@@ -247,7 +265,7 @@ export function DatePicker({ date, onDateChange, className, placeholder }: DateP
                   {/* Show warning if time is in the past */}
                   {isTimeInPast() && (
                     <p className="text-xs text-red-500 mt-1">
-                      Please select a future time
+                      Please select a future time (at least 4 hours from now)
                     </p>
                   )}
                 </div>

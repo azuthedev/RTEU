@@ -9,19 +9,22 @@ import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react"
 import { useState } from "react"
 import { DateRange } from "react-day-picker"
 import { useLanguage } from "../../contexts/LanguageContext"
+import { getMinimumBookingTime } from "../../utils/searchFormHelpers"
 
 interface DateRangePickerProps {
   dateRange?: DateRange
   onDateRangeChange: (dateRange: DateRange | undefined) => void
   className?: string
   placeholder?: string
+  minDate?: Date
 }
 
 export function DateRangePicker({ 
   dateRange, 
   onDateRangeChange, 
   className,
-  placeholder
+  placeholder,
+  minDate
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(dateRange)
@@ -35,6 +38,9 @@ export function DateRangePicker({
   
   // Step tracking: 'from-date' → 'from-time' → 'to-date' → 'to-time'
   const [step, setStep] = useState<'from-date' | 'from-time' | 'to-date' | 'to-time'>('from-date')
+
+  // Get the minimum booking date if not provided
+  const minimumDate = minDate || getMinimumBookingTime();
 
   const handleRangeSelect = (range: DateRange | undefined) => {
     // In a step-by-step flow, we handle what happens based on the current step
@@ -63,12 +69,6 @@ export function DateRangePicker({
     }
   }
 
-  const handleNextAfterFromTime = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    // After setting the first time, move to selecting the second date
-    setStep('to-date')
-  }
-
   const handleConfirmTime = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (step === 'from-time' && selectedRange?.from) {
@@ -77,10 +77,27 @@ export function DateRangePicker({
       fromWithTime.setHours(fromHours)
       fromWithTime.setMinutes(fromMinutes)
       
-      setSelectedRange({
-        from: fromWithTime,
-        to: selectedRange.to
-      })
+      // Validate against minimum booking time
+      const minTime = minimumDate;
+      
+      if (fromWithTime < minTime) {
+        // If selected time is before minimum, use minimum time
+        const adjustedFromTime = new Date(minTime);
+        setFromHours(adjustedFromTime.getHours());
+        setFromMinutes(adjustedFromTime.getMinutes());
+        
+        // Update selected range with adjusted time
+        setSelectedRange({
+          from: new Date(adjustedFromTime),
+          to: selectedRange.to
+        });
+      } else {
+        // Use the selected time
+        setSelectedRange({
+          from: fromWithTime,
+          to: selectedRange.to
+        });
+      }
       
       setStep('to-date')
     } else if (step === 'to-time' && selectedRange?.from && selectedRange?.to) {
@@ -92,6 +109,14 @@ export function DateRangePicker({
       const toWithTime = new Date(selectedRange.to)
       toWithTime.setHours(toHours)
       toWithTime.setMinutes(toMinutes)
+      
+      // Ensure return time is after pickup time
+      if (toWithTime <= fromWithTime) {
+        // Set return time to 6 hours after pickup
+        const minReturnTime = new Date(fromWithTime.getTime() + 6 * 60 * 60 * 1000);
+        toWithTime.setHours(minReturnTime.getHours());
+        toWithTime.setMinutes(minReturnTime.getMinutes());
+      }
       
       // Create the final range
       const rangeWithTime: DateRange = {
@@ -120,96 +145,86 @@ export function DateRangePicker({
     e.stopPropagation()
   }
 
-  // Function to check if a date is in the past
-  const isPastDate = (date: Date) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to beginning of day for accurate comparison
-    return date < today
+  // Function to check if a date is before the minimum allowed date
+  const isBeforeMinDate = (date: Date): boolean => {
+    return date < minimumDate;
   }
   
   // Check if the selected time is in the past for today's date
   const isTimeInPast = (date: Date | undefined, hours: number, minutes: number) => {
-    if (!date) return false
+    if (!date) return false;
     
-    const now = new Date()
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const selectedTime = new Date(date);
+    selectedTime.setHours(hours);
+    selectedTime.setMinutes(minutes);
     
-    // Only validate time if the selected date is today
-    if (date.toDateString() === today.toDateString()) {
-      const selectedTime = new Date(today)
-      selectedTime.setHours(hours)
-      selectedTime.setMinutes(minutes)
-      return selectedTime < now
-    }
-    
-    return false
+    return selectedTime < minimumDate;
   }
   
   // Is the "from" time in the past?
-  const isFromTimeInPast = () => isTimeInPast(selectedRange?.from, fromHours, fromMinutes)
-  
-  // Is the "to" date earlier than "from" date? 
-  const isToDateBeforeFromDate = () => {
-    if (selectedRange?.from && selectedRange?.to) {
-      const fromDate = new Date(selectedRange.from)
-      fromDate.setHours(0, 0, 0, 0)
-      
-      const toDate = new Date(selectedRange.to)
-      toDate.setHours(0, 0, 0, 0)
-      
-      return toDate < fromDate
-    }
-    return false
+  const isFromTimeInPast = () => {
+    if (!selectedRange?.from) return false;
+    return isTimeInPast(selectedRange.from, fromHours, fromMinutes);
   }
   
   // Is any validation error present?
   const hasValidationError = isFromTimeInPast() ||
                             (step === 'to-time' && selectedRange?.from && selectedRange?.to && 
                               new Date(selectedRange.from).setHours(fromHours, fromMinutes) >= 
-                              new Date(selectedRange.to).setHours(toHours, toMinutes))
+                              new Date(selectedRange.to).setHours(toHours, toMinutes));
 
   // Generate hour options (24-hour format)
-  const hourOptions = Array.from({ length: 24 }, (_, i) => i)
+  const hourOptions = Array.from({ length: 24 }, (_, i) => i);
   
   // Generate minute options (every 15 minutes)
-  const minuteOptions = [0, 15, 30, 45]
+  const minuteOptions = [0, 15, 30, 45];
   
   // Format the display text for the date range with time
   const getFormattedDateRange = () => {
     if (dateRange?.from) {
       const fromText = format(dateRange.from, "PPP") + 
-                      ` at ${dateRange.from.getHours().toString().padStart(2, '0')}:${dateRange.from.getMinutes().toString().padStart(2, '0')}`
+                      ` at ${dateRange.from.getHours().toString().padStart(2, '0')}:${dateRange.from.getMinutes().toString().padStart(2, '0')}`;
       
       if (dateRange.to) {
         const toText = format(dateRange.to, "PPP") +
-                      ` at ${dateRange.to.getHours().toString().padStart(2, '0')}:${dateRange.to.getMinutes().toString().padStart(2, '0')}`
-        return `${fromText} - ${toText}`
+                      ` at ${dateRange.to.getHours().toString().padStart(2, '0')}:${dateRange.to.getMinutes().toString().padStart(2, '0')}`;
+        return `${fromText} - ${toText}`;
       }
-      return fromText
+      return fromText;
     }
     
-    return placeholder || t('searchform.dates')
+    return placeholder || t('searchform.dates');
   }
 
   // Handle popover open change
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       // Initialize state from props
-      setSelectedRange(dateRange)
+      setSelectedRange(dateRange);
       if (dateRange?.from) {
-        setFromHours(dateRange.from.getHours())
-        setFromMinutes(dateRange.from.getMinutes())
+        setFromHours(dateRange.from.getHours());
+        setFromMinutes(dateRange.from.getMinutes());
+      } else {
+        // Default to sensible hours
+        const defaultDate = new Date();
+        defaultDate.setHours(defaultDate.getHours() + 5); // 5 hours from now
+        setFromHours(defaultDate.getHours());
+        setFromMinutes(Math.floor(defaultDate.getMinutes() / 15) * 15); // Round to nearest 15 min
       }
+      
       if (dateRange?.to) {
-        setToHours(dateRange.to.getHours())
-        setToMinutes(dateRange.to.getMinutes())
+        setToHours(dateRange.to.getHours());
+        setToMinutes(dateRange.to.getMinutes());
+      } else {
+        // Default to next day, same time
+        setToHours(fromHours);
+        setToMinutes(fromMinutes);
       }
     } else {
       // Reset step when closing
-      setStep('from-date')
+      setStep('from-date');
     }
-    setOpen(newOpen)
+    setOpen(newOpen);
   }
 
   return (
@@ -254,7 +269,8 @@ export function DateRangePicker({
                   to: selectedRange?.to
                 })}
                 initialFocus
-                disabled={isPastDate}
+                disabled={(date) => isBeforeMinDate(date)}
+                fromDate={minimumDate}
                 classNames={{
                   day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
                   day_today: "text-black font-semibold",
@@ -340,7 +356,7 @@ export function DateRangePicker({
                   {/* Show warning if time is in the past */}
                   {isFromTimeInPast() && (
                     <p className="text-xs text-red-500 mt-1">
-                      Please select a future time
+                      Please select a time at least 4 hours from now
                     </p>
                   )}
                 </div>
@@ -384,7 +400,30 @@ export function DateRangePicker({
                   to: date
                 })}
                 initialFocus
-                disabled={(date) => isPastDate(date) || (selectedRange?.from ? date < selectedRange.from : false)}
+                disabled={(date) => {
+                  // Disable dates before the pickup date (minimum 4 hours later)
+                  if (!selectedRange?.from) return true;
+                  
+                  const minReturnDate = new Date(selectedRange.from);
+                  // For same-day returns, ensure at least 6 hours between pickup and return
+                  // For future dates, allow any time
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  const pickupDate = new Date(selectedRange.from);
+                  pickupDate.setHours(0, 0, 0, 0);
+                  
+                  const checkDate = new Date(date);
+                  checkDate.setHours(0, 0, 0, 0);
+                  
+                  if (pickupDate.getTime() === checkDate.getTime()) {
+                    // For same-day returns, ensure at least 6 hours between
+                    // This will be further validated in the time picker
+                    return false;
+                  }
+                  
+                  return date < selectedRange.from;
+                }}
                 defaultMonth={selectedRange?.from}
                 classNames={{
                   day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
