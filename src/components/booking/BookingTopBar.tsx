@@ -686,9 +686,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setIsLoadingPrices(true);
     setApiError(null);
     
-    // Clear existing pricing data before fetching new prices
+    // Set global loading state
     setBookingState(prev => ({
       ...prev,
+      isPricingLoading: true,
       pricingResponse: null,
       pricingError: null
     }));
@@ -699,6 +700,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     // If price fetching failed, stop here
     if (!pricingResponse) {
       setIsLoadingPrices(false);
+      
+      // Update global loading state
+      setBookingState(prev => ({
+        ...prev,
+        isPricingLoading: false
+      }));
       return;
     }
     
@@ -716,8 +723,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       departureDate: formattedDepartureDate,
       returnDate: formattedReturnDate !== '0' ? formattedReturnDate : undefined,
       passengers: formData.passengers,
+      fromCoords: pickupCoords,
+      toCoords: dropoffCoords,
       pricingResponse: pricingResponse, // Store the pricing data
-      pricingError: null // Clear any pricing error
+      pricingError: null, // Clear any pricing error
+      isPricingLoading: false // Set loading to false
     }));
     
     // Reset change detection before navigation
@@ -735,6 +745,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const handleCancelGeocoding = () => {
     setGeocodingErrorField(null);
     setIsLoadingPrices(false);
+    
+    // Update global loading state
+    setBookingState(prev => ({
+      ...prev,
+      isPricingLoading: false
+    }));
   };
 
   const handlePickupValidation = (isValid: boolean) => {
