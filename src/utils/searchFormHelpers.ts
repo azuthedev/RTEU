@@ -24,7 +24,7 @@ export const parseDateFromUrl = (dateStr: string): Date | undefined => {
   
   try {
     const year = parseInt(`20${dateStr.slice(0, 2)}`);
-    const month = parseInt(dateStr.slice(2, 4)) - 1;
+    const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
     const day = parseInt(dateStr.slice(4, 6));
     
     // Check if we're parsing today's date
