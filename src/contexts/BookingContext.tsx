@@ -26,6 +26,8 @@ interface PricingResponse {
       lng: number;
     };
   };
+  version?: string;
+  checksum?: string;
 }
 
 export interface ValidationError {
