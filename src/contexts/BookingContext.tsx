@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { vehicles } from '../data/vehicles';
 import { useLocation } from 'react-router-dom';
+import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
+import { requestTracker } from '../utils/requestTracker';
+import { errorTracker, ErrorContext, ErrorSeverity } from '../utils/errorTracker';
+import { geocodeAddress } from '../utils/searchFormHelpers';
+import { useToast } from '../components/ui/use-toast';
 
 // Interface for API price response
 interface PricingResponse {
@@ -86,6 +91,18 @@ interface BookingContextType {
   validateStep: (step: number) => ValidationError[];
   proceedToNextStep: () => boolean;
   scrollToError: (fieldId: string) => void;
+  fetchPricingData: (params: {
+    from: string;
+    to: string;
+    fromCoords?: {lat: number, lng: number} | null;
+    toCoords?: {lat: number, lng: number} | null;
+    pickupDateTime: Date;
+    dropoffDateTime?: Date;
+    isReturn: boolean;
+    fromDisplay?: string;
+    toDisplay?: string;
+    passengers: number;
+  }) => Promise<PricingResponse | null>;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -194,6 +211,14 @@ const loadBookingState = (): BookingState | null => {
   }
 };
 
+export const useBooking = () => {
+  const context = useContext(BookingContext);
+  if (!context) {
+    throw new Error('useBooking must be used within a BookingProvider');
+  }
+  return context;
+};
+
 // Helper function to parse URL parameters for booking flow
 const initializeFromUrlParams = (pathname: string): Partial<BookingState> | null => {
   // Match pattern like /transfer/rome/milan/1/230415/0/2/form
@@ -245,14 +270,6 @@ const initializeFromUrlParams = (pathname: string): Partial<BookingState> | null
   };
 };
 
-export const useBooking = () => {
-  const context = useContext(BookingContext);
-  if (!context) {
-    throw new Error('useBooking must be used within a BookingProvider');
-  }
-  return context;
-};
-
 // Get default booking state
 const getDefaultBookingState = (pathname?: string): BookingState => {
   // First try to initialize from URL parameters if we're on a booking page
@@ -292,6 +309,7 @@ const getDefaultBookingState = (pathname?: string): BookingState => {
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const { toast } = useToast();
   
   // Initialize with default state or loaded state from sessionStorage
   const [bookingState, setBookingState] = useState<BookingState>(() => {
@@ -369,6 +387,243 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     console.log("Clearing booking state");
     sessionStorage.removeItem(BOOKING_STORAGE_KEY);
     setBookingState(getDefaultBookingState());
+  };
+
+  // Function to fetch pricing data
+  const fetchPricingData = async (params: {
+    from: string;
+    to: string;
+    fromCoords?: {lat: number, lng: number} | null;
+    toCoords?: {lat: number, lng: number} | null;
+    pickupDateTime: Date;
+    dropoffDateTime?: Date;
+    isReturn: boolean;
+    fromDisplay?: string;
+    toDisplay?: string;
+    passengers: number;
+  }): Promise<PricingResponse | null> => {
+    // Extract params
+    const {
+      from,
+      to,
+      fromCoords,
+      toCoords,
+      pickupDateTime,
+      dropoffDateTime,
+      isReturn,
+      fromDisplay,
+      toDisplay,
+      passengers
+    } = params;
+
+    // Update loading state immediately
+    setBookingState(prev => ({
+      ...prev,
+      isPricingLoading: true,
+      pricingError: null
+    }));
+
+    try {
+      console.log("📡 Fetching prices for route:", { from, to, isReturn });
+      const { requestId, signal } = requestTracker.startRequest('fetch-prices');
+
+      requestTracker.updateStage(requestId, 'geocoding');
+      
+      // Use stored coordinates when available for more reliable geocoding
+      let pickup = fromCoords;
+      let dropoff = toCoords;
+      
+      if (!pickup) {
+        try {
+          pickup = await geocodeAddress(from, 'pickup');
+          console.log("🌎 Geocoded pickup:", pickup);
+        } catch (error) {
+          console.error("❌ Geocoding failed for pickup:", error);
+          
+          setBookingState(prev => ({
+            ...prev,
+            isPricingLoading: false,
+            pricingError: `Could not locate pickup address. Please try a different address.`
+          }));
+          
+          toast({
+            title: "Location Error",
+            description: "Unable to find coordinates for pickup location. Please select a more specific address.",
+            variant: "destructive"
+          });
+          
+          requestTracker.updateStage(requestId, 'failed', {
+            error: `Geocoding failed for pickup location: ${error.message}`
+          });
+          
+          return null;
+        }
+      }
+      
+      if (!dropoff) {
+        try {
+          dropoff = await geocodeAddress(to, 'dropoff');
+          console.log("🌎 Geocoded dropoff:", dropoff);
+        } catch (error) {
+          console.error("❌ Geocoding failed for dropoff:", error);
+          
+          setBookingState(prev => ({
+            ...prev,
+            isPricingLoading: false,
+            pricingError: `Could not locate dropoff address. Please try a different address.`
+          }));
+          
+          toast({
+            title: "Location Error",
+            description: "Unable to find coordinates for dropoff location. Please select a more specific address.",
+            variant: "destructive"
+          });
+          
+          requestTracker.updateStage(requestId, 'failed', {
+            error: `Geocoding failed for dropoff location: ${error.message}`
+          });
+          
+          return null;
+        }
+      }
+      
+      if (!pickup || !dropoff) {
+        setBookingState(prev => ({
+          ...prev,
+          isPricingLoading: false,
+          pricingError: `Missing location coordinates. Please try again.`
+        }));
+        
+        requestTracker.updateStage(requestId, 'failed', {
+          error: `Missing coordinates for ${!pickup ? 'pickup' : 'dropoff'} location`
+        });
+        
+        return null;
+      }
+
+      // Format date to ISO8601 - preserve exact time
+      const pickupTimeISO = pickupDateTime.toISOString();
+      
+      // Prepare request payload with trip_type parameter
+      const payload = {
+        pickup_lat: pickup.lat,
+        pickup_lng: pickup.lng,
+        dropoff_lat: dropoff.lat,
+        dropoff_lng: dropoff.lng,
+        pickup_time: pickupTimeISO,
+        trip_type: isReturn ? "2" : "1" // Add trip_type parameter
+      };
+      
+      console.log('Sending price request with payload:', payload);
+      requestTracker.updateStage(requestId, 'network');
+      
+      // Use our CORS-aware fetch utility
+      const apiEndpoint = getApiUrl('/check-price');
+      console.log('API Endpoint:', apiEndpoint);
+      
+      const response = await fetchWithCors(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        signal
+      });
+      
+      requestTracker.updateStage(requestId, 'processing');
+      
+      if (!response.ok) {
+        // Try to get detailed error text from response
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = 'Could not read error details';
+        }
+        
+        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
+        console.error('API Error:', errorDetail);
+        
+        setBookingState(prev => ({
+          ...prev,
+          isPricingLoading: false,
+          pricingError: `Failed to get pricing: ${response.status} ${response.statusText}`
+        }));
+        
+        requestTracker.updateStage(requestId, 'failed', {
+          error: errorDetail,
+          status: response.status
+        });
+        
+        throw new Error(`API Error: ${errorDetail}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorMessage = `Expected JSON response but got: ${contentType}`;
+        console.error(errorMessage);
+        
+        setBookingState(prev => ({
+          ...prev,
+          isPricingLoading: false,
+          pricingError: errorMessage
+        }));
+        
+        requestTracker.updateStage(requestId, 'failed', {
+          error: errorMessage
+        });
+        
+        throw new Error(errorMessage);
+      }
+      
+      const data: PricingResponse = await response.json();
+      console.log('Pricing data received:', data);
+      
+      requestTracker.updateStage(requestId, 'complete');
+      
+      // Update state with all necessary data, using display names from params or URL-decoded versions
+      setBookingState(prev => ({
+        ...prev,
+        isPricingLoading: false,
+        pricingResponse: data,
+        from: from, 
+        to: to,
+        fromDisplay: fromDisplay || from, 
+        toDisplay: toDisplay || to,
+        isReturn: isReturn,
+        fromCoords: pickup,
+        toCoords: dropoff,
+        pickupDateTime: pickupDateTime,
+        dropoffDateTime: isReturn ? dropoffDateTime : undefined,
+        passengers: passengers,
+        pricingError: null
+      }));
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching prices:', error);
+      
+      // Update state with error
+      setBookingState(prev => ({
+        ...prev,
+        isPricingLoading: false,
+        pricingError: error.message || 'An unexpected error occurred'
+      }));
+      
+      // Track error
+      errorTracker.trackError(
+        error instanceof Error ? error : new Error(String(error)),
+        ErrorContext.PRICING,
+        ErrorSeverity.HIGH,
+        {
+          from: from,
+          to: to,
+          isReturn: isReturn
+        }
+      );
+      
+      return null;
+    }
   };
 
   // Function to validate a specific step of the booking process
@@ -531,7 +786,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       clearBookingState,
       validateStep,
       proceedToNextStep,
-      scrollToError
+      scrollToError,
+      fetchPricingData
     }}>
       {children}
     </BookingContext.Provider>
