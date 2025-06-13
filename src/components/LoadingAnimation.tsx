@@ -1,29 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, XCircle, AlertTriangle, XSquare, Clock, MapPin, MapPinOff, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const loadingMessages = [
-  "Mapping optimal routes...",
-  "Analyzing traffic conditions...",
-  "Calculating distance and duration...",
-  "Sourcing available premium vehicles...",
-  "Matching you with the most efficient transfer...",
-  "Securing the best real-time rate...",
-  "Finalizing your tailored quote..."
-];
-
-interface LoadingAnimationProps {
-  className?: string;
-  loadingComplete?: boolean;
-  onCancel?: () => void;
-  onTryDifferentRoute?: () => void;
-  error?: string | null;
-  startTime?: number;
-  isSlowConnection?: boolean;
-  geocodingErrorField?: 'pickup' | 'dropoff' | null;
-}
-
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
+const LoadingAnimation = ({
   className = '',
   loadingComplete = false,
   onCancel,
@@ -37,21 +17,33 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   const [messageIndex, setMessageIndex] = useState(0);
   const [showCancelButton, setShowCancelButton] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
-  const [networkQuality, setNetworkQuality] = useState<'good' | 'fair' | 'poor'>('good');
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(null);
+  const [networkQuality, setNetworkQuality] = useState('good');
+  const { t } = useLanguage();
+
+  // Translated loading messages
+  const loadingMessages = [
+    t('loading.mapping_routes', 'Mapping optimal routes...'),
+    t('loading.analyzing_traffic', 'Analyzing traffic conditions...'),
+    t('loading.calculating_distance', 'Calculating distance and duration...'),
+    t('loading.sourcing_vehicles', 'Sourcing available premium vehicles...'),
+    t('loading.matching_transfer', 'Matching you with the most efficient transfer...'),
+    t('loading.securing_rate', 'Securing the best real-time rate...'),
+    t('loading.finalizing_quote', 'Finalizing your tailored quote...')
+  ];
 
   // Refs for cleanup
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const cancelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef(null);
+  const messageIntervalRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const cancelTimeoutRef = useRef(null);
 
   // Use a ref to track if component is mounted
   const isMountedRef = useRef(true);
 
   // Ref for focus management
-  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
-  const tryDifferentRouteButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelButtonRef = useRef(null);
+  const tryDifferentRouteButtonRef = useRef(null);
 
   // Clean up all intervals and timeouts when unmounting
   useEffect(() => {
@@ -166,7 +158,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
         clearInterval(messageIntervalRef.current);
       }
     };
-  }, [loadingComplete, error]);
+  }, [loadingComplete, error, loadingMessages.length]);
 
   // Show cancel button after 10 seconds
   useEffect(() => {
@@ -210,16 +202,16 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   let statusIcon = <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-6" aria-hidden="true" />;
 
   if (error) {
-    currentMessage = `Error: ${error}`;
+    currentMessage = `${t('loading.error', 'Error')}: ${error}`;
     statusIcon = <XCircle className="w-12 h-12 text-red-600 mb-6\" aria-hidden="true" />;
   } else if (geocodingErrorField) {
     // Show geocoding-specific error message
     currentMessage = geocodingErrorField === 'pickup'
-      ? "Could not locate your pickup address. Please try a different address."
-      : "Could not locate your dropoff address. Please try a different address.";
+      ? t('loading.geocoding_error_pickup', "Could not locate your pickup address. Please try a different address.")
+      : t('loading.geocoding_error_dropoff', "Could not locate your dropoff address. Please try a different address.");
     statusIcon = <MapPinOff className="w-12 h-12 text-amber-600 mb-6\" aria-hidden="true" />;
   } else if (loadingComplete) {
-    currentMessage = "All set! Redirecting...";
+    currentMessage = t('loading.complete', "All set! Redirecting...");
   } else {
     currentMessage = loadingMessages[messageIndex];
   }
@@ -232,7 +224,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
         <div className="min-h-20 flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.div
-              key={currentMessage} // Key on message to trigger re-animation
+              key={currentMessage}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -252,9 +244,9 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             >
               <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
               <span>
-                {elapsedTime}s elapsed
+                {t('loading.elapsed', '{{time}}s elapsed', { time: elapsedTime })}
                 {estimatedTimeRemaining !== null && estimatedTimeRemaining > 0 && (
-                  <span> • ~{estimatedTimeRemaining}s remaining</span>
+                  <span> • {t('loading.remaining', '~{{time}}s remaining', { time: estimatedTimeRemaining })}</span>
                 )}
               </span>
             </div>
@@ -264,7 +256,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
           {isSlowConnection && !loadingComplete && !error && (
             <div className="flex items-center text-xs text-amber-700 mt-2">
               <AlertTriangle className="w-3 h-3 mr-1" aria-hidden="true" />
-              <span>Slow connection detected</span>
+              <span>{t('loading.slow_connection', 'Slow connection detected')}</span>
             </div>
           )}
           
@@ -273,7 +265,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             <div className={`flex items-center text-xs mt-1 ${
               networkQuality === 'poor' ? 'text-red-600' : 'text-amber-600'
             }`}>
-              <span>Network quality: {networkQuality}</span>
+              <span>{t('loading.network_quality', 'Network quality: {{quality}}', { quality: t(`loading.${networkQuality}`, networkQuality) })}</span>
             </div>
           )}
         </div>
@@ -309,10 +301,10 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
                   ref={tryDifferentRouteButtonRef}
                   onClick={onTryDifferentRoute}
                   className="px-4 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors flex items-center mx-auto"
-                  aria-label="Enter a different address"
+                  aria-label={t('loading.try_different_address', 'Enter a different address')}
                 >
                   <RefreshCcw className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Try Different Address
+                  {t('loading.try_different_address_button', 'Try Different Address')}
                 </button>
               </motion.div>
             )}
@@ -328,10 +320,10 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
                   ref={cancelButtonRef}
                   onClick={onCancel}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center mx-auto"
-                  aria-label="Cancel loading process"
+                  aria-label={t('loading.cancel_loading', 'Cancel loading process')}
                 >
                   <XSquare className="w-4 h-4 mr-1" aria-hidden="true" />
-                  {error || geocodingErrorField ? "Go Back" : "Cancel"}
+                  {error || geocodingErrorField ? t('loading.go_back', 'Go Back') : t('common.cancel', 'Cancel')}
                 </button>
               </motion.div>
             )}

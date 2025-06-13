@@ -11,6 +11,7 @@ import { initGoogleMaps } from '../../utils/optimizeThirdParty';
 import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
 import { formatDateForUrl, parseDateFromUrl, geocodeAddress } from '../../utils/searchFormHelpers';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Interface for API price response
 interface PricingResponse {
@@ -56,6 +57,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const location = useLocation();
   const { bookingState, setBookingState } = useBooking();
   const { toast } = useToast();
+  const { t } = useLanguage();
   
   // Flag to track component initialization
   const isInitializedRef = useRef(false);
@@ -582,7 +584,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 rounded-xl">
           <div className="flex flex-col items-center">
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
-            <p className="text-blue-800">Fetching prices...</p>
+            <p className="text-blue-800">{t('searchform.fetching_prices', 'Fetching prices...')}</p>
           </div>
         </div>
       )}
@@ -593,13 +595,13 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           <div className="flex items-start">
             <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-2" />
             <div>
-              <p className="font-medium text-red-800">API Error</p>
+              <p className="font-medium text-red-800">{t('common.api_error', 'API Error')}</p>
               <p className="text-red-700 text-sm mt-1">{apiError}</p>
               <button 
                 onClick={() => setApiError(null)}
                 className="text-xs text-blue-600 mt-2 hover:underline"
               >
-                Dismiss
+                {t('common.dismiss', 'Dismiss')}
               </button>
             </div>
           </div>
@@ -615,7 +617,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               }`}
               onClick={() => handleTripTypeChange(true)}
             >
-              One Way
+              {t('searchform.oneway', 'One Way')}
             </button>
             <button
               className={`w-32 relative z-10 transition-colors ${
@@ -623,7 +625,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               }`}
               onClick={() => handleTripTypeChange(false)}
             >
-              Round Trip
+              {t('searchform.roundtrip', 'Round Trip')}
             </button>
             <div 
               className={`absolute inset-y-0 w-32 bg-blue-600 transition-transform duration-300 ${
@@ -648,7 +650,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 setPickupCoords(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
-              placeholder="From"
+              placeholder={t('searchform.pickup', 'Pickup location')}
               className="w-full"
               required={true}
               onValidation={handlePickupValidation}
@@ -665,7 +667,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 setDropoffCoords(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
-              placeholder="To"
+              placeholder={t('searchform.dropoff', 'Dropoff location')}
               className="w-full"
               required={true}
               onValidation={handleDropoffValidation}
@@ -682,7 +684,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                     dateRange: undefined
                   }));
                 }}
-                placeholder="Select date"
+                placeholder={t('searchform.date', 'Select departure date')}
               />
             ) : (
               <DateRangePicker
@@ -695,7 +697,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                     departureDate: undefined
                   }));
                 }}
-                placeholder="Select dates"
+                placeholder={t('searchform.dates', 'Select departure & return dates')}
                 className="w-full"
               />
             )}
@@ -704,7 +706,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg bg-white flex justify-between items-center">
                 <span className="text-gray-700 text-[12px]">
                   {displayPassengers} {' '}
-                  Passenger{displayPassengers !== 1 ? 's' : ''}
+                  {displayPassengers !== 1 ? t('searchform.passengers', 'Passengers') : t('searchform.passenger', 'Passenger')}
                 </span>
                 <div className="flex items-center space-x-2">
                   <button
@@ -741,10 +743,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               {isLoadingPrices ? (
                 <div className="flex items-center justify-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
+                  {t('searchform.updating', 'Updating...')}
                 </div>
               ) : (
-                'Update Route'
+                t('searchform.update_route', 'Update Route')
               )}
             </motion.button>
           </div>
@@ -762,7 +764,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   setPickupCoords(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
-                placeholder="From"
+                placeholder={t('searchform.pickup', 'Pickup location')}
                 className="w-full"
                 required={true}
                 onValidation={handlePickupValidation}
@@ -779,7 +781,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   setDropoffCoords(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
-                placeholder="To"
+                placeholder={t('searchform.dropoff', 'Dropoff location')}
                 className="w-full"
                 required={true}
                 onValidation={handleDropoffValidation}
@@ -796,7 +798,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                       dateRange: undefined
                     }));
                   }}
-                  placeholder="Select date"
+                  placeholder={t('searchform.date', 'Select departure date')}
                 />
               ) : (
                 <DateRangePicker
@@ -809,7 +811,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                       departureDate: undefined
                     }));
                   }}
-                  placeholder="Select dates"
+                  placeholder={t('searchform.dates', 'Select departure & return dates')}
                   className="col-span-1"
                 />
               )}
@@ -818,7 +820,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg bg-white flex justify-between items-center">
                   <span className="text-gray-700 text-[12px]">
                     {displayPassengers} {' '}
-                    Passenger{displayPassengers !== 1 ? 's' : ''}
+                    {displayPassengers !== 1 ? t('searchform.passengers', 'Passengers') : t('searchform.passenger', 'Passenger')}
                   </span>
                   <div className="flex items-center space-x-2">
                     <button
@@ -856,10 +858,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               {isLoadingPrices ? (
                 <div className="flex items-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating
+                  {t('searchform.updating', 'Updating')}
                 </div>
               ) : (
-                'Update Route'
+                t('searchform.update_route', 'Update Route')
               )}
             </motion.button>
           </div>

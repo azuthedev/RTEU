@@ -64,10 +64,10 @@ const apiCategoryMap: Record<string, string> = {
   'standard_minivan': 'standard-minivan',
   'xl_minivan': 'xl-minivan',
   'vip_minivan': 'vip-minivan',
-  'sprinter_8_pax': 'sprinter-8',  // Updated to match the API response
-  'sprinter_16_pax': 'sprinter-16',  // Updated to match the API response
-  'sprinter_21_pax': 'sprinter-21',  // Updated to match the API response
-  'coach_51_pax': 'bus-51'  // Updated to match the API response
+  'sprinter_8_pax': 'sprinter-8',
+  'sprinter_16_pax': 'sprinter-16',
+  'sprinter_21_pax': 'sprinter-21',
+  'coach_51_pax': 'bus-51'
 };
 
 // Reverse mapping - from our vehicle IDs to API category names
@@ -78,10 +78,10 @@ const reverseApiCategoryMap: Record<string, string> = {
   'standard-minivan': 'standard_minivan',
   'xl-minivan': 'xl_minivan',
   'vip-minivan': 'vip_minivan',
-  'sprinter-8': 'sprinter_8_pax',  // Updated to match the API response
-  'sprinter-16': 'sprinter_16_pax',  // Updated to match the API response
-  'sprinter-21': 'sprinter_21_pax',  // Updated to match the API response
-  'bus-51': 'coach_51_pax'  // Updated to match the API response
+  'sprinter-8': 'sprinter_8_pax',
+  'sprinter-16': 'sprinter_16_pax',
+  'sprinter-21': 'sprinter_21_pax',
+  'bus-51': 'coach_51_pax'
 };
 
 // Function to get user-friendly category name
@@ -343,6 +343,7 @@ const VehicleSelection = () => {
       console.warn(`No API category mapping found for vehicle ID: ${vehicleId}`);
       return null;
     }
+    
     const priceInfo = bookingState.pricingResponse.prices.find(p => p.category === apiCategory);
     if (priceInfo) {
       console.log(`Found price for ${vehicleId} (${apiCategory}): ${priceInfo.price}`);
@@ -461,7 +462,7 @@ const VehicleSelection = () => {
             role="list"
           >
             {activeVehicles.length > 0 ? (
-              activeVehicles.map((vehicle, idx) => {
+              activeVehicles.map((vehicle) => {
                 // Get API price if available
                 const apiPrice = getVehiclePrice(vehicle.id);
                 const finalPrice = apiPrice !== null ? apiPrice : vehicle.price;
