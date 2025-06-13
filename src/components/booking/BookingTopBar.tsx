@@ -1,23 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Header from '../Header';
-import BookingTopBar from './BookingTopBar';
-import ProgressBar from './ProgressBar';
-import { useBooking } from '../../contexts/BookingContext';
-import { useAnalytics } from '../../hooks/useAnalytics';
-import Newsletter from '../Newsletter';
-import { useToast } from '../ui/use-toast';
-import { ChevronDown, CreditCard, Banknote, Tag, AlertCircle } from 'lucide-react';
-import { MapPin, Users, Plus, Minus, Loader2 } from 'lucide-react';
-import { throttle } from 'lodash-es';
+import { MapPin, Users, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { DatePicker } from '../ui/date-picker';
 import { DateRangePicker } from '../ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
+import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
+import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
+import { requestTracker } from '../../utils/requestTracker';
 import { 
   formatDateForUrl, 
   geocodeAddress,
@@ -25,6 +18,7 @@ import {
   isValidBookingTime 
 } from '../../utils/searchFormHelpers';
 import { useLanguage } from '../../contexts/LanguageContext';
+import LoadingAnimation from '../LoadingAnimation';
 
 // Interface for API price response
 interface PricingResponse {
@@ -100,6 +94,16 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   // Track validation state for addresses
   const [pickupIsValid, setPickupIsValid] = useState(true); // Default to true for initial values
   const [dropoffIsValid, setDropoffIsValid] = useState(true); // Default to true for initial values
+  
+  // Add component mount tracking
+  const isMountedRef = useRef(true);
+  
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   // Get minimum booking time (4 hours from now)
   const minPickupDateTime = getMinimumBookingTime();
@@ -279,121 +283,135 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
 
   // Function to fetch prices from the API
   const fetchPrices = async (): Promise<PricingResponse | null> => {
-    // Use stored place_ids when available for more reliable geocoding
-    let pickup = pickupCoords;
-    let dropoff = dropoffCoords;
-    
-    if (!pickup) {
-      try {
-        pickup = await geocodeAddress(pickupValue, 'pickup', pickupPlaceId);
-      } catch (error) {
-        // Handle geocoding error - specific to pickup
-        setGeocodingErrorField('pickup');
-        setIsLoadingPrices(false);
-        return null;
-      }
-    }
-    
-    if (!dropoff) {
-      try {
-        dropoff = await geocodeAddress(dropoffValue, 'dropoff', dropoffPlaceId);
-      } catch (error) {
-        // Handle geocoding error - specific to dropoff
-        setGeocodingErrorField('dropoff');
-        setIsLoadingPrices(false);
-        return null;
-      }
-    }
-    
-    if (!pickup || !dropoff) {
-      // Set appropriate geocoding error field if not already set
-      if (isMountedRef.current) {
-        if (!pickup && !dropoff) {
-          setGeocodingErrorField('pickup'); // Default to pickup if both failed
-        } else if (!pickup) {
-          setGeocodingErrorField('pickup');
-        } else if (!dropoff) {
-          setGeocodingErrorField('dropoff');
-        }
-        
-        toast({
-          title: "Location Error",
-          description: !pickup 
-            ? "Unable to find coordinates for pickup location. Please select a more specific address." 
-            : "Unable to find coordinates for dropoff location. Please select a more specific address.",
-          variant: "destructive"
-        });
-        
-        setIsLoadingPrices(false);
-      }
-      return null;
-    }
-    
-    // Get pickup date/time - use full date objects with proper time
-    let pickupDateTime: Date;
-    
-    if (isOneWay) {
-      if (!formData.pickupDateTime) {
-        toast({
-          title: "Time Error",
-          description: "Please select a pickup date and time.",
-          variant: "destructive"
-        });
-        return null;
-      }
-      pickupDateTime = formData.pickupDateTime;
-    } else {
-      if (!formData.dateRange?.from) {
-        toast({
-          title: "Time Error",
-          description: "Please select a pickup date and time.",
-          variant: "destructive"
-        });
-        return null;
-      }
-      pickupDateTime = formData.dateRange.from;
-    }
-    
-    // Ensure pickup time meets minimum booking time
-    if (!isValidBookingTime(pickupDateTime)) {
-      toast({
-        title: "Time Error",
-        description: "Pickup time must be at least 4 hours from now.",
-        variant: "destructive"
-      });
-      return null;
-    }
-    
-    // For return trips, validate dropoff time is after pickup time
-    if (!isOneWay && formData.dateRange?.to) {
-      if (formData.dateRange.to.getTime() <= pickupDateTime.getTime()) {
-        toast({
-          title: "Time Error",
-          description: "Return time must be after pickup time.",
-          variant: "destructive"
-        });
-        return null;
-      }
-    }
-    
-    // Format date to ISO8601 - preserve exact time
-    const pickupTimeISO = pickupDateTime.toISOString();
-    
-    // Prepare request payload with trip_type parameter
-    const payload = {
-      pickup_lat: pickup.lat,
-      pickup_lng: pickup.lng,
-      dropoff_lat: dropoff.lat,
-      dropoff_lng: dropoff.lng,
-      pickup_time: pickupTimeISO,
-      trip_type: isOneWay ? "1" : "2" // Add trip_type parameter
-    };
-    
-    console.log('Sending price request with payload:', payload);
-    setIsLoadingPrices(true);
-    setApiError(null);
+    // Start request tracking
+    const { requestId, signal } = requestTracker.startRequest('fetch-prices-topbar');
     
     try {
+      requestTracker.updateStage(requestId, 'geocoding');
+      
+      // Use stored place_ids when available for more reliable geocoding
+      let pickup = pickupCoords;
+      let dropoff = dropoffCoords;
+      
+      if (!pickup) {
+        try {
+          pickup = await geocodeAddress(pickupValue, 'pickup', pickupPlaceId);
+        } catch (error) {
+          // Handle geocoding error - specific to pickup
+          setGeocodingErrorField('pickup');
+          setIsLoadingPrices(false);
+          requestTracker.updateStage(requestId, 'failed');
+          return null;
+        }
+      }
+      
+      if (!dropoff) {
+        try {
+          dropoff = await geocodeAddress(dropoffValue, 'dropoff', dropoffPlaceId);
+        } catch (error) {
+          // Handle geocoding error - specific to dropoff
+          setGeocodingErrorField('dropoff');
+          setIsLoadingPrices(false);
+          requestTracker.updateStage(requestId, 'failed');
+          return null;
+        }
+      }
+      
+      if (!pickup || !dropoff) {
+        // Set appropriate geocoding error field if not already set
+        if (isMountedRef.current) {
+          if (!pickup && !dropoff) {
+            setGeocodingErrorField('pickup'); // Default to pickup if both failed
+          } else if (!pickup) {
+            setGeocodingErrorField('pickup');
+          } else if (!dropoff) {
+            setGeocodingErrorField('dropoff');
+          }
+          
+          toast({
+            title: "Location Error",
+            description: !pickup 
+              ? "Unable to find coordinates for pickup location. Please select a more specific address." 
+              : "Unable to find coordinates for dropoff location. Please select a more specific address.",
+            variant: "destructive"
+          });
+          
+          setIsLoadingPrices(false);
+        }
+        requestTracker.updateStage(requestId, 'failed');
+        return null;
+      }
+      
+      // Get pickup date/time - use full date objects with proper time
+      let pickupDateTime: Date;
+      
+      if (isOneWay) {
+        if (!formData.pickupDateTime) {
+          toast({
+            title: "Time Error",
+            description: "Please select a pickup date and time.",
+            variant: "destructive"
+          });
+          requestTracker.updateStage(requestId, 'failed');
+          return null;
+        }
+        pickupDateTime = formData.pickupDateTime;
+      } else {
+        if (!formData.dateRange?.from) {
+          toast({
+            title: "Time Error",
+            description: "Please select a pickup date and time.",
+            variant: "destructive"
+          });
+          requestTracker.updateStage(requestId, 'failed');
+          return null;
+        }
+        pickupDateTime = formData.dateRange.from;
+      }
+      
+      // Ensure pickup time meets minimum booking time
+      if (!isValidBookingTime(pickupDateTime)) {
+        toast({
+          title: "Time Error",
+          description: "Pickup time must be at least 4 hours from now.",
+          variant: "destructive"
+        });
+        requestTracker.updateStage(requestId, 'failed');
+        return null;
+      }
+      
+      // For return trips, validate dropoff time is after pickup time
+      if (!isOneWay && formData.dateRange?.to) {
+        if (formData.dateRange.to.getTime() <= pickupDateTime.getTime()) {
+          toast({
+            title: "Time Error",
+            description: "Return time must be after pickup time.",
+            variant: "destructive"
+          });
+          requestTracker.updateStage(requestId, 'failed');
+          return null;
+        }
+      }
+      
+      // Format date to ISO8601 - preserve exact time
+      const pickupTimeISO = pickupDateTime.toISOString();
+      
+      // Prepare request payload with trip_type parameter
+      const payload = {
+        pickup_lat: pickup.lat,
+        pickup_lng: pickup.lng,
+        dropoff_lat: dropoff.lat,
+        dropoff_lng: dropoff.lng,
+        pickup_time: pickupTimeISO,
+        trip_type: isOneWay ? "1" : "2" // Add trip_type parameter
+      };
+      
+      console.log('Sending price request with payload:', payload);
+      setIsLoadingPrices(true);
+      setApiError(null);
+      
+      requestTracker.updateStage(requestId, 'network');
+      
       // Use our CORS-aware fetch utility
       const apiEndpoint = getApiUrl('/check-price');
       console.log('API Endpoint:', apiEndpoint);
@@ -412,13 +430,16 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal // Pass the abort signal from requestTracker
       });
       
       // Log response status and headers for debugging
       console.log('Response Status:', response.status);
       console.log('Response Status Text:', response.statusText);
       console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
+      
+      requestTracker.updateStage(requestId, 'processing');
       
       if (!response.ok) {
         // Try to get detailed error text from response
@@ -432,27 +453,33 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
         console.error('API Error:', errorDetail);
         
+        requestTracker.updateStage(requestId, 'failed');
         throw new Error(`API Error: ${errorDetail}`);
       }
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('Response is not JSON:', contentType);
-        const text = await response.text();
-        console.log('Response Text:', text);
+        let text = '';
+        try {
+          text = await response.text();
+          console.log('Response Text:', text);
+        } catch (e) {
+          console.error('Error reading response text:', e);
+        }
         
+        requestTracker.updateStage(requestId, 'failed');
         throw new Error(`Expected JSON response but got: ${contentType}`);
       }
       
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
+      requestTracker.updateStage(requestId, 'complete');
       return data;
-      
     } catch (error) {
       console.error('Error fetching prices:', error);
       
-      // Create detailed error message
       let errorMessage = 'Failed to get pricing information. ';
       
       if (error.message) {
@@ -471,13 +498,13 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         });
       }
       
+      requestTracker.updateStage(requestId, 'failed');
       return null;
     } finally {
       setIsLoadingPrices(false);
     }
   };
 
-  // Handle place selection from autocomplete
   const handlePlaceSelect = (field: 'pickup' | 'dropoff', displayName: string, placeData?: google.maps.places.PlaceResult) => {
     userInteractedRef.current = true;
     console.log(`Place selected for ${field}:`, displayName);
@@ -784,10 +811,14 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     <div className="relative">
       {/* Loading overlay */}
       {isLoadingPrices && (
-        <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 rounded-xl">
-          <div className="flex flex-col items-center">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
-            <p className="text-blue-800">{t('searchform.fetching_prices', 'Fetching prices...')}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-6">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <LoadingAnimation 
+              onCancel={handleCancelGeocoding}
+              onTryDifferentRoute={() => setGeocodingErrorField(null)}
+              geocodingErrorField={geocodingErrorField}
+              isSlowConnection={false}
+            />
           </div>
         </div>
       )}
@@ -851,6 +882,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 setPickupValue(value);
                 // Clear coordinates when manually editing
                 setPickupCoords(null);
+                setGeocodingErrorField(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
               placeholder={t('searchform.pickup', 'Pickup location')}
@@ -869,6 +901,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 setDropoffValue(value);
                 // Clear coordinates when manually editing
                 setDropoffCoords(null);
+                setGeocodingErrorField(null);
               }}
               onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
               placeholder={t('searchform.dropoff', 'Dropoff location')}
@@ -1000,6 +1033,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   setPickupValue(value);
                   // Clear coordinates when manually editing
                   setPickupCoords(null);
+                  setGeocodingErrorField(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('pickup', displayName, placeData)}
                 placeholder={t('searchform.pickup', 'Pickup location')}
@@ -1018,6 +1052,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   setDropoffValue(value);
                   // Clear coordinates when manually editing
                   setDropoffCoords(null);
+                  setGeocodingErrorField(null);
                 }}
                 onPlaceSelect={(displayName, placeData) => handlePlaceSelect('dropoff', displayName, placeData)}
                 placeholder={t('searchform.dropoff', 'Dropoff location')}

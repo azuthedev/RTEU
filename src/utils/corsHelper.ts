@@ -1,3 +1,7 @@
+/**
+ * Utilities for CORS-aware fetching and API endpoint management
+ */
+
 // Helper function to check if we're running in production environment
 export const isProduction = (): boolean => {
   // Check for netlify or other production indicators
@@ -31,7 +35,7 @@ export const fetchWithCors = async (
     ...options.headers
   };
   
-  // Log detailed request information
+  // Log request information
   console.log('CORS-aware fetch request:', {
     url,
     method: options.method || 'GET',
@@ -48,7 +52,7 @@ export const fetchWithCors = async (
       mode: 'cors' // Explicitly set CORS mode
     });
     
-    // Log detailed response information
+    // Log response information
     console.log('CORS-aware fetch response:', {
       status: response.status,
       statusText: response.statusText,

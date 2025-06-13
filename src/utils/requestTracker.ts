@@ -10,7 +10,7 @@ interface RequestMetadata {
   url: string;
   method: string;
   startTime: number;
-  stage: 'preparing' | 'geocoding' | 'network' | 'processing' | 'complete' | 'failed';
+  stage: 'preparing' | 'geocoding' | 'network' | 'processing' | 'complete' | 'failed' | 'cancelled';
   controller?: AbortController;
   timeout?: NodeJS.Timeout;
   geocodingTime?: number;
@@ -29,23 +29,94 @@ class RequestTracker {
   private requests = new Map<string, RequestMetadata>();
   private DEBUG_MODE = process.env.NODE_ENV === 'development' || localStorage.getItem('DEBUG_API_CALLS') === 'true';
   private MAX_CACHE_SIZE = 10; // Store only the last 10 requests
+  
+  // Track the last request time for each request type to implement cooldown
+  private lastRequestTimes = new Map<string, number>();
+  private requestCooldowns = new Map<string, number>();
+  
+  constructor() {
+    // Initialize standard cooldown periods (in milliseconds)
+    this.requestCooldowns.set('fetch-prices', 2000);  // 2 second cooldown for price fetching
+    this.requestCooldowns.set('geocoding', 1000);     // 1 second cooldown for geocoding
+    this.requestCooldowns.set('default', 500);        // 500ms default cooldown
+  }
 
   /**
    * Start tracking a new request
+   * @returns Object with requestId and AbortSignal
    */
-  startRequest(url: string, method: string = 'GET'): string {
-    const id = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  startRequest(requestType: string, method: string = 'GET'): { 
+    requestId: string, 
+    signal: AbortSignal,
+    cooldownRemaining: number
+  } {
+    // Check cooldown period
+    const cooldown = this.requestCooldowns.get(requestType) || this.requestCooldowns.get('default') || 0;
+    const lastRequestTime = this.lastRequestTimes.get(requestType) || 0;
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    
+    // If we're in cooldown period, return info with remaining cooldown time
+    if (timeSinceLastRequest < cooldown) {
+      const cooldownRemaining = cooldown - timeSinceLastRequest;
+      
+      // Find any existing active request of this type
+      let existingRequestId: string | null = null;
+      for (const [id, request] of this.requests.entries()) {
+        if (request.url.includes(requestType) && 
+            (request.stage === 'preparing' || 
+             request.stage === 'geocoding' || 
+             request.stage === 'network' || 
+             request.stage === 'processing')) {
+          existingRequestId = id;
+          break;
+        }
+      }
+      
+      // If we have an existing request, return its controller
+      if (existingRequestId) {
+        const existingRequest = this.requests.get(existingRequestId)!;
+        const controller = existingRequest.controller || new AbortController();
+        
+        if (this.DEBUG_MODE) {
+          console.warn(`🚫 Request for ${requestType} blocked by cooldown. Previous request still active. Reusing request ID: ${existingRequestId}`);
+        }
+        
+        return { 
+          requestId: existingRequestId, 
+          signal: controller.signal, 
+          cooldownRemaining 
+        };
+      }
+      
+      // Otherwise create a throwaway controller just for the signal
+      const controller = new AbortController();
+      
+      if (this.DEBUG_MODE) {
+        console.warn(`🚫 Request for ${requestType} blocked by cooldown. Cooldown remaining: ${cooldownRemaining}ms`);
+      }
+      
+      // Use a fake ID for the cooldown case
+      const cooldownId = `cooldown_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      return { requestId: cooldownId, signal: controller.signal, cooldownRemaining };
+    }
+    
+    // Update the last request time for this type
+    this.lastRequestTimes.set(requestType, now);
+    
+    // Normal request starting logic
+    const id = `req_${requestType}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const controller = new AbortController();
     
     // Create request metadata
     const request: RequestMetadata = {
       id,
-      url,
+      url: requestType,
       method,
       startTime: performance.now(),
       stage: 'preparing',
       controller,
-      timestamp: Date.now()
+      timestamp: now
     };
     
     // Set a timeout of 30 seconds
@@ -60,10 +131,10 @@ class RequestTracker {
     this.requests.set(id, request);
     
     if (this.DEBUG_MODE) {
-      console.log(`🚀 [API] Request started: ${method} ${url} [${id}]`);
+      console.log(`🚀 [API] Request started: ${method} ${requestType} [${id}]`);
     }
     
-    return id;
+    return { requestId: id, signal: controller.signal, cooldownRemaining: 0 };
   }
 
   /**
@@ -88,7 +159,7 @@ class RequestTracker {
     } else if (stage === 'processing') {
       // Finished network request, starting processing
       request.networkTime = elapsed - (request.geocodingTime || 0);
-    } else if (stage === 'complete' || stage === 'failed') {
+    } else if (stage === 'complete' || stage === 'failed' || stage === 'cancelled') {
       // Request completed or failed
       request.totalTime = elapsed;
       request.processingTime = elapsed - (request.networkTime || 0) - (request.geocodingTime || 0);
@@ -100,7 +171,7 @@ class RequestTracker {
       
       // Log performance metrics
       if (this.DEBUG_MODE) {
-        console.log(`✅ [API] Request ${stage === 'complete' ? 'completed' : 'failed'}: ${request.method} ${request.url} [${id}]`);
+        console.log(`${stage === 'complete' ? '✅' : stage === 'cancelled' ? '⚠️' : '❌'} [API] Request ${stage}: ${request.method} ${request.url} [${id}]`);
         console.log(`⏱️ [API] Performance metrics for [${id}]:`);
         console.log(`   - Total time: ${request.totalTime.toFixed(2)}ms`);
         if (request.geocodingTime) console.log(`   - Geocoding: ${request.geocodingTime.toFixed(2)}ms`);
@@ -115,8 +186,10 @@ class RequestTracker {
       // Track performance in analytics
       if (stage === 'complete') {
         trackEvent('API Performance', 'Request Complete', request.url, Math.round(request.totalTime));
-      } else {
+      } else if (stage === 'failed') {
         trackEvent('API Performance', 'Request Failed', `${request.url} - ${request.error || 'Unknown error'}`, Math.round(request.totalTime), true);
+      } else if (stage === 'cancelled') {
+        trackEvent('API Performance', 'Request Cancelled', `${request.url}`, Math.round(request.totalTime), true);
       }
       
       // Update the request timestamp to ensure it's seen as fresh
@@ -151,7 +224,7 @@ class RequestTracker {
     }
     
     // Mark as failed
-    this.updateStage(id, 'failed', { error: reason });
+    this.updateStage(id, 'cancelled', { error: reason });
     
     // Track abandonment
     trackEvent('User Behavior', 'Request Abandoned', `${request.url} - ${reason}`, Math.round(performance.now() - request.startTime), true);
@@ -165,6 +238,57 @@ class RequestTracker {
    */
   getSignal(id: string): AbortSignal | undefined {
     return this.requests.get(id)?.controller?.signal;
+  }
+  
+  /**
+   * Check if a request of a specific type is in progress
+   */
+  isRequestInProgress(requestType: string): boolean {
+    for (const [_, request] of this.requests.entries()) {
+      if (request.url.includes(requestType) && 
+          (request.stage === 'preparing' || 
+           request.stage === 'geocoding' || 
+           request.stage === 'network' || 
+           request.stage === 'processing')) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  /**
+   * Get the cooldown period for a request type
+   */
+  getCooldownPeriod(requestType: string): number {
+    return this.requestCooldowns.get(requestType) || 
+           this.requestCooldowns.get('default') || 
+           0;
+  }
+  
+  /**
+   * Check if a request type is in cooldown
+   */
+  isInCooldown(requestType: string): { inCooldown: boolean, remainingTime: number } {
+    const cooldown = this.requestCooldowns.get(requestType) || this.requestCooldowns.get('default') || 0;
+    const lastRequestTime = this.lastRequestTimes.get(requestType) || 0;
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    
+    if (timeSinceLastRequest < cooldown) {
+      return { 
+        inCooldown: true, 
+        remainingTime: cooldown - timeSinceLastRequest 
+      };
+    }
+    
+    return { inCooldown: false, remainingTime: 0 };
+  }
+  
+  /**
+   * Set a custom cooldown period for a request type
+   */
+  setCooldownPeriod(requestType: string, cooldownMs: number): void {
+    this.requestCooldowns.set(requestType, cooldownMs);
   }
 
   /**
@@ -187,7 +311,7 @@ class RequestTracker {
    */
   abortAll(reason: string = 'All requests aborted'): void {
     this.requests.forEach(request => {
-      if (request.stage !== 'complete' && request.stage !== 'failed') {
+      if (request.stage !== 'complete' && request.stage !== 'failed' && request.stage !== 'cancelled') {
         this.abortRequest(request.id, reason);
       }
     });
@@ -209,7 +333,7 @@ class RequestTracker {
       const [id, request] = sortedRequests[i];
       
       // Clean up any resources before removing
-      if (request.controller && request.stage !== 'complete' && request.stage !== 'failed') {
+      if (request.controller && request.stage !== 'complete' && request.stage !== 'failed' && request.stage !== 'cancelled') {
         request.controller.abort('Request cache pruned');
       }
       

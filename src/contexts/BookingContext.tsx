@@ -36,6 +36,9 @@ export interface BookingState {
   to?: string;
   fromDisplay?: string; // Store the display name for from location
   toDisplay?: string;   // Store the display name for to location
+  // Store coordinates to prevent repeated geocoding
+  fromCoords?: {lat: number, lng: number} | null;
+  toCoords?: {lat: number, lng: number} | null;
   isReturn?: boolean;
   // Full date objects with time information
   pickupDateTime?: Date;
@@ -216,6 +219,8 @@ const getDefaultBookingState = (): BookingState => ({
   paymentDetails: {
     method: 'card'
   },
+  fromCoords: null,
+  toCoords: null,
   pricingError: null, // Initialize with null
   validationErrors: []
 });
@@ -254,10 +259,13 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       to: bookingState.to, 
       toDisplay: bookingState.toDisplay,
       pickupDateTime: bookingState.pickupDateTime,
-      dropoffDateTime: bookingState.dropoffDateTime
+      dropoffDateTime: bookingState.dropoffDateTime,
+      pricingData: bookingState.pricingResponse ? 'Available' : 'None',
+      pricingError: bookingState.pricingError
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.pickupDateTime, bookingState.dropoffDateTime]);
+      bookingState.pickupDateTime, bookingState.dropoffDateTime, 
+      bookingState.pricingResponse, bookingState.pricingError]);
 
   // Function to clear booking state
   const clearBookingState = () => {
