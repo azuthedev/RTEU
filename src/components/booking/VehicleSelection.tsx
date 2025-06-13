@@ -173,6 +173,16 @@ const VehicleSelection = () => {
 
   // Apply API prices to vehicles when we have pricing data
   useEffect(() => {
+    // Show loading if we're waiting for essential context data
+    const isWaitingForData = bookingState.isPricingLoading || 
+      (!bookingState.fromDisplay && !bookingState.from) || 
+      (!bookingState.toDisplay && !bookingState.to) ||
+      !bookingState.pickupDateTime;
+      
+    if (isWaitingForData) {
+      return;
+    }
+    
     // Skip if we have a pricing error
     if (bookingState.pricingError) {
       return;
@@ -327,7 +337,9 @@ const VehicleSelection = () => {
     }
     
     console.log("✅ Applied API prices to vehicles");
-  }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.selectedVehicle]);
+  }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading,
+      bookingState.selectedVehicle, bookingState.fromDisplay, bookingState.toDisplay, 
+      bookingState.from, bookingState.to, bookingState.pickupDateTime]);
 
   // Handle modal open state
   const handleOpenModal = (vehicle: typeof vehicles[0]) => {
@@ -512,6 +524,12 @@ const VehicleSelection = () => {
   
   // No available vehicles in this category
   const noVehiclesAvailable = bookingState.pricingResponse && availableVehicles.length === 0;
+  
+  // Check if we're waiting for essential data to load
+  const isWaitingForData = bookingState.isPricingLoading || 
+    (!bookingState.fromDisplay && !bookingState.from) || 
+    (!bookingState.toDisplay && !bookingState.to) ||
+    !bookingState.pickupDateTime;
 
   return (
     <BookingLayout
@@ -548,7 +566,7 @@ const VehicleSelection = () => {
         )}
         
         {/* Loading State */}
-        {bookingState.isPricingLoading && !hasPricingError && (
+        {isWaitingForData && !hasPricingError && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
             <p className="text-lg text-gray-700">Loading vehicle options...</p>
@@ -559,7 +577,7 @@ const VehicleSelection = () => {
         )}
         
         {/* Main content - only show if not loading and no pricing error */}
-        {!bookingState.isPricingLoading && !hasPricingError && (
+        {!isWaitingForData && !hasPricingError && (
           <>
             {/* Category Tabs */}
             <div className="mb-8 sticky top-0 z-10 bg-white py-4 -mt-4 shadow-sm">
