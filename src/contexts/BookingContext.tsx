@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { vehicles } from '../data/vehicles';
+import { useLocation } from 'react-router-dom';
 
 // Interface for API price response
 interface PricingResponse {
@@ -193,6 +194,57 @@ const loadBookingState = (): BookingState | null => {
   }
 };
 
+// Helper function to parse URL parameters for booking flow
+const initializeFromUrlParams = (pathname: string): Partial<BookingState> | null => {
+  // Match pattern like /transfer/rome/milan/1/230415/0/2/form
+  const urlPattern = /\/transfer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)/;
+  const match = pathname.match(urlPattern);
+  
+  if (!match) return null;
+  
+  // Extract path parameters
+  const [, from, to, type, date, returnDate, passengers] = match;
+  
+  // Parse properly for display
+  const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
+  const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
+  
+  // Helper function to parse dates
+  const parseUrlDate = (dateStr: string): Date | undefined => {
+    if (!dateStr || dateStr === '0') return undefined;
+    
+    try {
+      // Format is YYMMDD
+      const year = parseInt(`20${dateStr.slice(0, 2)}`);
+      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
+      const day = parseInt(dateStr.slice(4, 6));
+      
+      // Create date with default time (noon)
+      return new Date(year, month, day, 12, 0, 0);
+    } catch (e) {
+      console.error('Error parsing URL date:', e);
+      return undefined;
+    }
+  };
+  
+  // Parse dates
+  const pickupDateTime = parseUrlDate(date);
+  const dropoffDateTime = returnDate !== '0' ? parseUrlDate(returnDate) : undefined;
+  
+  return {
+    from: decodedFrom,
+    to: decodedTo,
+    fromDisplay: decodedFrom,
+    toDisplay: decodedTo,
+    isReturn: type === '2',
+    pickupDateTime,
+    dropoffDateTime,
+    departureDate: date,
+    returnDate: returnDate !== '0' ? returnDate : undefined,
+    passengers: parseInt(passengers, 10)
+  };
+};
+
 export const useBooking = () => {
   const context = useContext(BookingContext);
   if (!context) {
@@ -202,38 +254,80 @@ export const useBooking = () => {
 };
 
 // Get default booking state
-const getDefaultBookingState = (): BookingState => ({
-  step: 1,
-  selectedVehicle: vehicles[0],
-  personalDetails: {
-    title: 'mr',
-    firstName: '',
-    lastName: '',
-    email: '',
-    country: '',
-    phone: '',
-    selectedExtras: new Set(),
-    extraStops: [], // Initialize extra stops array
-    childSeats: {}, // Initialize child seats object
-    luggageCount: 2 // Default to 2 luggage items
-  },
-  paymentDetails: {
-    method: 'card'
-  },
-  fromCoords: null,
-  toCoords: null,
-  pricingError: null, // Initialize with null
-  validationErrors: [],
-  isPricingLoading: false // Initialize loading state as false
-});
+const getDefaultBookingState = (pathname?: string): BookingState => {
+  // First try to initialize from URL parameters if we're on a booking page
+  const urlInitialization = pathname ? initializeFromUrlParams(pathname) : null;
+  
+  // Base default state
+  const baseState: BookingState = {
+    step: 1,
+    selectedVehicle: vehicles[0],
+    personalDetails: {
+      title: 'mr',
+      firstName: '',
+      lastName: '',
+      email: '',
+      country: '',
+      phone: '',
+      selectedExtras: new Set(),
+      extraStops: [], // Initialize extra stops array
+      childSeats: {}, // Initialize child seats object
+      luggageCount: 2 // Default to 2 luggage items
+    },
+    paymentDetails: {
+      method: 'card'
+    },
+    fromCoords: null,
+    toCoords: null,
+    pricingError: null, // Initialize with null
+    validationErrors: [],
+    isPricingLoading: false // Initialize loading state as false
+  };
+  
+  // Merge with URL parameters if available
+  return urlInitialization 
+    ? { ...baseState, ...urlInitialization }
+    : baseState;
+};
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  
   // Initialize with default state or loaded state from sessionStorage
   const [bookingState, setBookingState] = useState<BookingState>(() => {
+    // First try to load from sessionStorage
     const savedState = loadBookingState();
     
-    // Return saved state if available, otherwise use default state
-    return savedState || getDefaultBookingState();
+    // Then initialize from URL if we're on a booking page
+    const urlState = initializeFromUrlParams(location.pathname);
+    
+    // Return in priority order: saved state, URL state, or default state
+    if (savedState) {
+      // If saved state exists, enhance it with any URL parameters
+      if (urlState) {
+        // Prioritize display names from saved state but allow URL to update coordinates
+        return {
+          ...savedState,
+          // Only update these if they're undefined in saved state
+          from: savedState.from || urlState.from,
+          to: savedState.to || urlState.to,
+          // Preserve display names from saved state if they exist
+          fromDisplay: savedState.fromDisplay || urlState.fromDisplay,
+          toDisplay: savedState.toDisplay || urlState.toDisplay,
+          isReturn: savedState.isReturn !== undefined ? savedState.isReturn : urlState.isReturn,
+          passengers: savedState.passengers || urlState.passengers,
+          // Only update dates if they're not already set
+          pickupDateTime: savedState.pickupDateTime || urlState.pickupDateTime,
+          dropoffDateTime: savedState.dropoffDateTime || urlState.dropoffDateTime,
+        };
+      }
+      return savedState;
+    } 
+    
+    // If no saved state, use URL state or default
+    return urlState 
+      ? { ...getDefaultBookingState(), ...urlState }
+      : getDefaultBookingState(location.pathname);
   });
 
   // Track previous step for animation purposes
