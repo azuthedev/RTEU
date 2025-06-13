@@ -9,12 +9,10 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { GooglePlacesAutocomplete } from './ui/GooglePlacesAutocomplete';
 import { useBooking } from '../contexts/BookingContext';
 import { useToast } from '../components/ui/use-toast';
-import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
 import LoadingAnimation from './LoadingAnimation';
 import { errorTracker, ErrorContext, ErrorSeverity } from '../utils/errorTracker';
 import { requestTracker } from '../utils/requestTracker';
 import { 
-  geocodeAddress, 
   formatDateForUrl, 
   parseDateFromUrl, 
   validateTransferAddress,
@@ -23,32 +21,11 @@ import {
 } from '../utils/searchFormHelpers';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// Interface for API price response
-interface PricingResponse {
-  prices: Array<{
-    category: string;
-    price: number;
-    currency: string;
-  }>;
-  selected_category: string | null;
-  details: {
-    pickup_time: string;
-    pickup_location: {
-      lat: number;
-      lng: number;
-    };
-    dropoff_location: {
-      lat: number;
-      lng: number;
-    };
-  };
-}
-
 const SearchForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
-  const { bookingState, setBookingState } = useBooking();
+  const { bookingState, setBookingState, fetchPricingData } = useBooking();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -128,9 +105,9 @@ const SearchForm = () => {
     };
   }, []);
 
-  // First, check if we have display data from context (coming back from booking flow)
+  // Initialize form with existing data from context if available
   useEffect(() => {
-    // Only apply this if we haven't loaded initial state yet
+    // Only run this effect once during initialization
     if (!initialStateLoadedRef.current) {
       console.log("Checking for context data to initialize form", {
         fromDisplay: bookingState.fromDisplay,
@@ -187,16 +164,14 @@ const SearchForm = () => {
     }
   }, [bookingState]);
 
-  // Then initialize from URL if coming from booking flow
+  // Check if we're on the pre-filled home route
   useEffect(() => {
     // Skip if we've already loaded the initial state
     if (initialStateLoadedRef.current) {
       return;
     }
     
-    // Check if we're on the pre-filled home route
     if (location.pathname.startsWith('/home/transfer/')) {
-      const params = new URLSearchParams(location.search);
       // Parse URL parameters
       const urlPattern = /\/home\/transfer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/form/;
       const match = location.pathname.match(urlPattern);
@@ -323,371 +298,6 @@ const SearchForm = () => {
     }
   };
 
-  // Function to fetch prices from the API
-  const fetchPrices = async (): Promise<PricingResponse | null> => {
-    if (!formData.pickup || !formData.dropoff) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all required fields",
-          variant: "destructive"
-        });
-      }
-      return null;
-    }
-
-    // Check if there's already a pricing request in progress
-    if (requestTracker.isRequestInProgress('fetch-prices')) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Request In Progress",
-          description: "Please wait while we fetch prices for your route",
-          variant: "warning"
-        });
-      }
-      return null;
-    }
-    
-    // Check if we're in cooldown period
-    const { inCooldown, remainingTime } = requestTracker.isInCooldown('fetch-prices');
-    if (inCooldown) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Request Cooldown",
-          description: `Please wait ${Math.ceil(remainingTime / 1000)} seconds before trying again`,
-          variant: "warning"
-        });
-      }
-      return null;
-    }
-
-    // Start request tracking
-    const { requestId, signal, cooldownRemaining } = requestTracker.startRequest('fetch-prices', 'POST');
-    
-    // If we're in cooldown, don't proceed
-    if (cooldownRemaining > 0) {
-      if (isMountedRef.current) {
-        toast({
-          title: "Request Cooldown",
-          description: `Please wait ${Math.ceil(cooldownRemaining / 1000)} seconds before trying again`,
-          variant: "warning"
-        });
-      }
-      return null;
-    }
-    
-    activeRequestRef.current = requestId;
-    
-    try {
-      requestTracker.updateStage(requestId, 'geocoding');
-      
-      // Use stored place_ids when available for more reliable geocoding
-      let pickup = pickupCoords;
-      let dropoff = dropoffCoords;
-      
-      if (!pickup) {
-        try {
-          pickup = await geocodeAddress(formData.pickup, 'pickup', pickupPlaceId);
-        } catch (error) {
-          // Handle geocoding error - specific to pickup
-          if (isMountedRef.current) {
-            setGeocodingErrorField('pickup');
-            setIsLoadingPrices(false);
-          }
-          requestTracker.updateStage(requestId, 'failed', {
-            error: `Geocoding failed for pickup location: ${error.message}`
-          });
-          return null;
-        }
-      }
-      
-      if (!dropoff) {
-        try {
-          dropoff = await geocodeAddress(formData.dropoff, 'dropoff', dropoffPlaceId);
-        } catch (error) {
-          // Handle geocoding error - specific to dropoff
-          if (isMountedRef.current) {
-            setGeocodingErrorField('dropoff');
-            setIsLoadingPrices(false);
-          }
-          requestTracker.updateStage(requestId, 'failed', {
-            error: `Geocoding failed for dropoff location: ${error.message}`
-          });
-          return null;
-        }
-      }
-      
-      if (!pickup || !dropoff) {
-        // Set appropriate geocoding error field if not already set
-        if (isMountedRef.current) {
-          if (!pickup && !dropoff) {
-            setGeocodingErrorField('pickup'); // Default to pickup if both failed
-          } else if (!pickup) {
-            setGeocodingErrorField('pickup');
-          } else if (!dropoff) {
-            setGeocodingErrorField('dropoff');
-          }
-          
-          toast({
-            title: "Location Error",
-            description: !pickup 
-              ? "Unable to find coordinates for pickup location. Please select a more specific address." 
-              : "Unable to find coordinates for dropoff location. Please select a more specific address.",
-            variant: "destructive"
-          });
-          
-          setIsLoadingPrices(false);
-        }
-        requestTracker.updateStage(requestId, 'failed', {
-          error: `Missing coordinates for ${!pickup ? 'pickup' : 'dropoff'} location`
-        });
-        return null;
-      }
-      
-      // Get pickup date/time - use full Date objects with proper time
-      const pickupDateTime = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
-      
-      if (!pickupDateTime) {
-        if (isMountedRef.current) {
-          toast({
-            title: "Time Error",
-            description: "Please select a pickup date and time.",
-            variant: "destructive"
-          });
-          setIsLoadingPrices(false);
-        }
-        requestTracker.updateStage(requestId, 'failed', {
-          error: 'Missing pickup date and time'
-        });
-        return null;
-      }
-      
-      // Validate pickup time is at least 4 hours in the future
-      const minBookingTime = getMinimumBookingTime();
-      if (!isValidBookingTime(pickupDateTime)) {
-        if (isMountedRef.current) {
-          toast({
-            title: "Time Error",
-            description: "Pickup time must be at least 4 hours from now.",
-            variant: "destructive"
-          });
-          setIsLoadingPrices(false);
-        }
-        requestTracker.updateStage(requestId, 'failed', {
-          error: 'Pickup time must be at least 4 hours from now'
-        });
-        return null;
-      }
-      
-      // For return trips, validate return time is after pickup time
-      if (isReturn && formData.dateRange?.to) {
-        if (formData.dateRange.to.getTime() <= pickupDateTime.getTime()) {
-          if (isMountedRef.current) {
-            toast({
-              title: "Time Error",
-              description: "Return time must be after pickup time.",
-              variant: "destructive"
-            });
-            setIsLoadingPrices(false);
-          }
-          requestTracker.updateStage(requestId, 'failed', {
-            error: 'Return time must be after pickup time'
-          });
-          return null;
-        }
-      }
-      
-      // Format date to ISO8601 - preserve exact time
-      const pickupTimeISO = pickupDateTime.toISOString();
-      
-      // Prepare request payload with trip_type parameter
-      const payload = {
-        pickup_lat: pickup.lat,
-        pickup_lng: pickup.lng,
-        dropoff_lat: dropoff.lat,
-        dropoff_lng: dropoff.lng,
-        pickup_time: pickupTimeISO,
-        trip_type: isReturn ? "2" : "1" // Add trip_type parameter
-      };
-      
-      console.log('Sending price request with payload:', payload);
-      
-      requestTracker.updateStage(requestId, 'network');
-      
-      // Use our CORS-aware fetch utility
-      const apiEndpoint = getApiUrl('/check-price');
-      console.log('API Endpoint:', apiEndpoint);
-      
-      // Display the request details for debugging
-      console.log('Request URL:', apiEndpoint);
-      console.log('Request Method:', 'POST');
-      console.log('Request Headers:', {
-        'Content-Type': 'application/json',
-        'Origin': window.location.origin
-      });
-      console.log('Request Body:', JSON.stringify(payload));
-      
-      // Check if component is still mounted before continuing
-      if (!isMountedRef.current) {
-        console.log('Component unmounted, aborting fetchPrices');
-        requestTracker.updateStage(requestId, 'cancelled', {
-          error: 'Component unmounted'
-        });
-        return null;
-      }
-      
-      const response = await fetchWithCors(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
-        signal // Use the abort signal from requestTracker
-      });
-      
-      // Check if component is still mounted before processing response
-      if (!isMountedRef.current) {
-        console.log('Component unmounted, aborting fetchPrices after API request');
-        requestTracker.updateStage(requestId, 'cancelled', {
-          error: 'Component unmounted after API request'
-        });
-        return null;
-      }
-      
-      requestTracker.updateStage(requestId, 'processing');
-      
-      // Log response status and headers for debugging
-      console.log('Response Status:', response.status);
-      console.log('Response Status Text:', response.statusText);
-      console.log('Response Headers:', Object.fromEntries([...response.headers.entries()]));
-      
-      if (!response.ok) {
-        // Try to get detailed error text from response
-        let errorText = '';
-        try {
-          errorText = await response.text();
-        } catch (e) {
-          errorText = 'Could not read error details';
-        }
-        
-        const errorDetail = `Status: ${response.status}, Text: ${response.statusText}, Details: ${errorText}`;
-        console.error('API Error:', errorDetail);
-        
-        // Update request tracker
-        requestTracker.updateStage(requestId, 'failed', {
-          error: errorDetail,
-          status: response.status
-        });
-        
-        // Track API error
-        errorTracker.trackError(
-          new Error(`API Error: ${errorDetail}`),
-          ErrorContext.PRICING,
-          ErrorSeverity.HIGH,
-          { 
-            response: { status: response.status, statusText: response.statusText },
-            requestId
-          }
-        );
-        
-        throw new Error(`API Error: ${errorDetail}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.warn('Response is not JSON:', contentType);
-        const text = await response.text();
-        console.log('Response Text:', text);
-        
-        requestTracker.updateStage(requestId, 'failed', {
-          error: `Expected JSON response but got: ${contentType}`
-        });
-        
-        throw new Error(`Expected JSON response but got: ${contentType}`);
-      }
-      
-      const data: PricingResponse = await response.json();
-      console.log('Pricing data received:', data);
-      
-      // Track successful price fetch
-      if (isMountedRef.current) {
-        trackEvent('Search Form', 'Price Fetched', `${formData.pickup} to ${formData.dropoff}`);
-      }
-      
-      // Mark request as complete
-      requestTracker.updateStage(requestId, 'complete');
-      
-      // Set successful search flag to true
-      successfulSearchRef.current = true;
-      
-      // Clear active request ID
-      activeRequestRef.current = null;
-      
-      return data;
-    } catch (error) {
-      // If component is unmounted or we're navigating intentionally, don't show errors
-      if (!isMountedRef.current || navigatingIntentionallyRef.current || successfulSearchRef.current) {
-        console.log('Not showing error because component is unmounted or navigation was intentional');
-        return null;
-      }
-      
-      console.error('Error fetching prices:', error);
-      
-      // Create detailed error message
-      let errorMessage = 'Failed to get pricing information. ';
-      
-      if (error.message) {
-        // Don't show "Component unmounted" errors to the user
-        if (error.message.includes('unmounted') || error.message.includes('AbortError')) {
-          console.log('Suppressing unmount-related error message');
-          return null;
-        }
-        
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Please try again later.';
-      }
-      
-      if (isMountedRef.current) {
-        setApiError(errorMessage);
-        
-        toast({
-          title: "Pricing Error",
-          description: errorMessage,
-          variant: "destructive"
-        });
-      }
-      
-      // Update request as failed
-      requestTracker.updateStage(requestId, 'failed', {
-        error: errorMessage
-      });
-      
-      // Track error
-      errorTracker.trackError(
-        error instanceof Error ? error : new Error(String(error)),
-        ErrorContext.PRICING,
-        ErrorSeverity.HIGH,
-        { 
-          payload: {
-            from: formData.pickup,
-            to: formData.dropoff,
-            isReturn,
-            pickupDateTime: isReturn ? formData.dateRange?.from : formData.pickupDateTime
-          },
-          correlationId: requestId
-        }
-      );
-      
-      return null;
-    } finally {
-      // Only update loading state if component is still mounted
-      if (isMountedRef.current) {
-        setIsLoadingPrices(false);
-      }
-    }
-  };
-
   const handleSubmit = async () => {
     // Check for basic form validity
     if (!formData.pickup || !formData.dropoff) {
@@ -801,22 +411,21 @@ const SearchForm = () => {
     setApiError(null);
     setGeocodingErrorField(null);
     
-    // Update global loading state
-    setBookingState(prev => ({
-      ...prev,
-      isPricingLoading: true,
-      pricingResponse: null,
-      pricingError: null
-    }));
+    // Fetch prices using the context function
+    const dropoffDateTime = isReturn ? formData.dateRange?.to : undefined;
     
-    // Fetch updated prices
-    const pricingResponse = await fetchPrices();
-    
-    // Update global loading state
-    setBookingState(prev => ({
-      ...prev,
-      isPricingLoading: false
-    }));
+    const pricingResponse = await fetchPricingData({
+      from: formData.pickup,
+      to: formData.dropoff,
+      fromCoords: pickupCoords,
+      toCoords: dropoffCoords,
+      pickupDateTime: isReturn ? formData.dateRange!.from : formData.pickupDateTime!,
+      dropoffDateTime,
+      isReturn,
+      fromDisplay: formData.pickupDisplay,
+      toDisplay: formData.dropoffDisplay,
+      passengers
+    });
     
     // If component unmounted during the fetch, don't continue
     if (!isMountedRef.current) {
@@ -864,29 +473,6 @@ const SearchForm = () => {
       passengers
     };
     
-    // Store all information in context, including full dates with times and display names
-    setBookingState(prev => ({
-      ...prev,
-      from: formData.pickup, 
-      to: formData.dropoff,
-      fromDisplay: formData.pickupDisplay,
-      toDisplay: formData.dropoffDisplay,
-      pickupDateTime: pickupDateObj,
-      dropoffDateTime: isReturn && formData.dateRange?.to ? formData.dateRange.to : undefined,
-      isReturn,
-      // Store coordinates in context too
-      fromCoords: pickupCoords,
-      toCoords: dropoffCoords,
-      // Still keep these URL-format dates for backward compatibility
-      departureDate: formattedDepartureDate,
-      returnDate: returnDateParam !== '0' ? returnDateParam : undefined,
-      passengers,
-      // Store the pricing data
-      pricingResponse,
-      // Clear any pricing error
-      pricingError: null
-    }));
-    
     // Set navigating flag before navigation to prevent error toast
     navigatingIntentionallyRef.current = true;
     successfulSearchRef.current = true;
@@ -905,8 +491,8 @@ const SearchForm = () => {
     
     if (field === 'pickup') {
       console.log('Setting pickup value from place selection:', displayName);
-      setFormData(prev => ({
-        ...prev,
+      setFormData(prev => ({ 
+        ...prev, 
         pickup: displayName,
         pickupDisplay: displayName
       }));
@@ -918,8 +504,8 @@ const SearchForm = () => {
       }
     } else {
       console.log('Setting dropoff value from place selection:', displayName);
-      setFormData(prev => ({
-        ...prev,
+      setFormData(prev => ({ 
+        ...prev, 
         dropoff: displayName,
         dropoffDisplay: displayName
       }));
@@ -941,30 +527,20 @@ const SearchForm = () => {
       if (field === 'pickup') {
         setPickupCoords(location);
         console.log('Pickup coordinates from place selection:', location);
+        
+        // Clear any existing geocoding error
+        if (geocodingErrorField === 'pickup') {
+          setGeocodingErrorField(null);
+        }
       } else {
         setDropoffCoords(location);
         console.log('Dropoff coordinates from place selection:', location);
+        
+        // Clear any existing geocoding error
+        if (geocodingErrorField === 'dropoff') {
+          setGeocodingErrorField(null);
+        }
       }
-    } else if (placeData?.place_id) {
-      // If we have place_id but no geometry, fetch the coordinates
-      geocodeAddress(displayName, field, placeData.place_id)
-        .then(coords => {
-          if (coords) {
-            if (field === 'pickup') {
-              setPickupCoords(coords);
-            } else {
-              setDropoffCoords(coords);
-            }
-          }
-        })
-        .catch(error => {
-          console.error(`Error geocoding ${field} place:`, error);
-          toast({
-            title: "Geocoding Error",
-            description: `Unable to find coordinates for this ${field} location. Please try a different address.`,
-            variant: "destructive"
-          });
-        });
     }
   };
   
@@ -987,24 +563,12 @@ const SearchForm = () => {
     
     setIsLoadingPrices(false);
     setGeocodingErrorField(null);
-    
-    // Update global loading state
-    setBookingState(prev => ({
-      ...prev,
-      isPricingLoading: false
-    }));
   };
   
   // Function to try a different route (for geocoding errors)
   const handleTryDifferentRoute = () => {
     setGeocodingErrorField(null);
     setIsLoadingPrices(false);
-    
-    // Update global loading state
-    setBookingState(prev => ({
-      ...prev,
-      isPricingLoading: false
-    }));
     
     // Focus the appropriate field
     setTimeout(() => {
