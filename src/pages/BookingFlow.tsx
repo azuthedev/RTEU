@@ -16,13 +16,14 @@ const BookingFlow = () => {
   const { toast } = useToast();
   const { trackEvent } = useAnalytics();
   
-  const { bookingState, setBookingState, clearBookingState } = useBooking();
+  const { bookingState, setBookingState, clearBookingState, fetchPricingData } = useBooking();
   
   // Add component mount tracking to prevent updates on unmounted component
   const isMountedRef = useRef(true);
   
   // Flag to track initialization status
   const isInitializedRef = useRef(false);
+  const pricingRequestedRef = useRef(false);
 
   // Clean up booking state when component unmounts
   useEffect(() => {
@@ -127,6 +128,52 @@ const BookingFlow = () => {
       bookingState.fromDisplay, bookingState.toDisplay, 
       bookingState.pickupDateTime, bookingState.dropoffDateTime,
       bookingState.from, bookingState.to, bookingState.isReturn]);
+  
+  // Fetch pricing if needed
+  useEffect(() => {
+    // Skip if not initialized or already requested pricing
+    if (!isInitializedRef.current || pricingRequestedRef.current || !isMountedRef.current) {
+      return;
+    }
+    
+    // Check if we need to fetch pricing data
+    const needsPricing = 
+      !bookingState.isPricingLoading && 
+      !bookingState.pricingResponse && 
+      !bookingState.pricingError &&
+      bookingState.from && 
+      bookingState.to && 
+      bookingState.pickupDateTime;
+    
+    if (needsPricing) {
+      console.log("🔵 Need to fetch initial prices - none in context");
+      pricingRequestedRef.current = true;
+      
+      // Fetch prices using the context function
+      const fetchPrices = async () => {
+        await fetchPricingData({
+          from: bookingState.from,
+          to: bookingState.to,
+          fromCoords: bookingState.fromCoords,
+          toCoords: bookingState.toCoords,
+          pickupDateTime: bookingState.pickupDateTime!,
+          dropoffDateTime: bookingState.dropoffDateTime,
+          isReturn: !!bookingState.isReturn,
+          fromDisplay: bookingState.fromDisplay,
+          toDisplay: bookingState.toDisplay,
+          passengers: bookingState.passengers || 1
+        });
+      };
+      
+      fetchPrices();
+    } else {
+      console.log("✅ Skipping price fetch - already have data or in progress", {
+        isPricingLoading: bookingState.isPricingLoading,
+        hasPricingResponse: !!bookingState.pricingResponse,
+        hasPricingError: !!bookingState.pricingError
+      });
+    }
+  }, [bookingState, fetchPricingData, isInitializedRef.current]);
 
   // Handle step navigation based on context
   const currentStep = bookingState.step;
