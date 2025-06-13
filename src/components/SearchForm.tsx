@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Users, ArrowRight, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
 import { throttle } from 'lodash-es';
 import { DatePicker } from './ui/date-picker';
@@ -17,7 +17,7 @@ import {
   parseDateFromUrl, 
   validateTransferAddress,
   getMinimumBookingTime,
-  isValidBookingTime
+  isValidBookingTime 
 } from '../utils/searchFormHelpers';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -92,6 +92,9 @@ const SearchForm = () => {
   
   // Track geocoding error fields
   const [geocodingErrorField, setGeocodingErrorField] = useState<'pickup' | 'dropoff' | null>(null);
+  
+  // State for controlling the loading modal visibility
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -411,77 +414,95 @@ const SearchForm = () => {
     setApiError(null);
     setGeocodingErrorField(null);
     
-    // Fetch prices using the context function
+    // Show loading modal
+    setShowLoadingModal(true);
+    
+    // Prepare the dropoff date/time for round trips
     const dropoffDateTime = isReturn ? formData.dateRange?.to : undefined;
     
-    const pricingResponse = await fetchPricingData({
-      from: formData.pickup,
-      to: formData.dropoff,
-      fromCoords: pickupCoords,
-      toCoords: dropoffCoords,
-      pickupDateTime: isReturn ? formData.dateRange!.from : formData.pickupDateTime!,
-      dropoffDateTime,
-      isReturn,
-      fromDisplay: formData.pickupDisplay,
-      toDisplay: formData.dropoffDisplay,
-      passengers
-    });
-    
-    // If component unmounted during the fetch, don't continue
-    if (!isMountedRef.current) {
-      console.log('Component unmounted during price fetch, aborting navigation');
-      return;
-    }
-    
-    // If price fetching failed, stop here
-    if (!pricingResponse) {
+    try {
+      // Fetch prices using the fetchPricingData function from context
+      const pricingResponse = await fetchPricingData({
+        from: formData.pickup,
+        to: formData.dropoff,
+        fromCoords: pickupCoords,
+        toCoords: dropoffCoords,
+        pickupDateTime: isReturn ? formData.dateRange!.from : formData.pickupDateTime!,
+        dropoffDateTime,
+        isReturn,
+        fromDisplay: formData.pickupDisplay,
+        toDisplay: formData.dropoffDisplay,
+        passengers
+      });
+      
+      // If component unmounted during the fetch, don't continue
+      if (!isMountedRef.current) {
+        console.log('Component unmounted during price fetch, aborting navigation');
+        return;
+      }
+      
+      // Hide loading modal
+      setShowLoadingModal(false);
       setIsLoadingPrices(false);
-      return;
+      
+      // If price fetching failed, stop here
+      if (!pricingResponse) {
+        return;
+      }
+      
+      // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
+      const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
+      const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
+      
+      // Important: Type is '1' for One Way, '2' for Round Trip 
+      const type = isReturn ? '2' : '1';
+      
+      // Use pickupDateTime from form data
+      const pickupDateObj = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
+      const formattedDepartureDate = pickupDateObj ? formatDateForUrl(pickupDateObj) : '';
+      
+      // Always include returnDate parameter (use '0' for one-way trips)
+      const returnDateParam = isReturn && formData.dateRange?.to
+        ? formatDateForUrl(formData.dateRange.to)
+        : '0';
+      
+      const path = `/transfer/${encodedPickup}/${encodedDropoff}/${type}/${formattedDepartureDate}/${returnDateParam}/${passengers}/form`;
+      
+      // Track search form submission
+      trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
+      
+      // Set navigating flag before navigation to prevent error toast
+      navigatingIntentionallyRef.current = true;
+      successfulSearchRef.current = true;
+      
+      // Navigate to booking flow
+      navigate(path);
+      
+      // Scroll to top after navigation
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error("Error during search submission:", error);
+      setShowLoadingModal(false);
+      setIsLoadingPrices(false);
+      
+      // Display error to user
+      toast({
+        title: "Search Error",
+        description: "Something went wrong while processing your search. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Track error event
+      errorTracker.trackError(
+        error instanceof Error ? error : new Error(String(error)),
+        ErrorContext.PRICING,
+        ErrorSeverity.HIGH,
+        { 
+          from: formData.pickup,
+          to: formData.dropoff
+        }
+      );
     }
-    
-    // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
-    const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
-    const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
-    
-    // Important: Type is '1' for One Way, '2' for Round Trip 
-    const type = isReturn ? '2' : '1';
-    
-    // Use pickupDateTime from form data
-    const pickupDateObj = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
-    const formattedDepartureDate = pickupDateObj ? formatDateForUrl(pickupDateObj) : '';
-    
-    // Always include returnDate parameter (use '0' for one-way trips)
-    const returnDateParam = isReturn && formData.dateRange?.to
-      ? formatDateForUrl(formData.dateRange.to)
-      : '0';
-    
-    const path = `/transfer/${encodedPickup}/${encodedDropoff}/${type}/${formattedDepartureDate}/${returnDateParam}/${passengers}/form`;
-    
-    // Track search form submission
-    trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
-    
-    // Update original values to match the new route
-    originalValuesRef.current = {
-      isReturn,
-      pickup: formData.pickup,
-      dropoff: formData.dropoff,
-      pickupDisplay: formData.pickupDisplay,
-      dropoffDisplay: formData.dropoffDisplay,
-      pickupDateTime: pickupDateObj,
-      dropoffDateTime: isReturn && formData.dateRange?.to ? formData.dateRange.to : undefined,
-      dateRange: formData.dateRange,
-      passengers
-    };
-    
-    // Set navigating flag before navigation to prevent error toast
-    navigatingIntentionallyRef.current = true;
-    successfulSearchRef.current = true;
-    
-    // Navigate to booking flow
-    navigate(path);
-    
-    // Scroll to top after navigation
-    window.scrollTo(0, 0);
   };
   
   // Function to handle location coordinates selection
@@ -563,12 +584,14 @@ const SearchForm = () => {
     
     setIsLoadingPrices(false);
     setGeocodingErrorField(null);
+    setShowLoadingModal(false);
   };
   
   // Function to try a different route (for geocoding errors)
   const handleTryDifferentRoute = () => {
     setGeocodingErrorField(null);
     setIsLoadingPrices(false);
+    setShowLoadingModal(false);
     
     // Focus the appropriate field
     setTimeout(() => {
@@ -585,8 +608,8 @@ const SearchForm = () => {
 
   return (
     <div className="relative bg-white p-6 md:p-8 rounded-lg shadow-lg w-full">
-      {/* Loading Overlay */}
-      {isLoadingPrices && (
+      {/* Loading Modal Overlay */}
+      {showLoadingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-6">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <LoadingAnimation 
