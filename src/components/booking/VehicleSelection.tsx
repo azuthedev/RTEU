@@ -112,7 +112,6 @@ const VehicleSelection = () => {
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   
   const carouselRef = useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
@@ -124,7 +123,7 @@ const VehicleSelection = () => {
     console.log("Booking state updated:", { 
       hasPricingResponse: !!bookingState.pricingResponse,
       pricingError: bookingState.pricingError,
-      isLoadingPrices
+      isPricingLoading: bookingState.isPricingLoading
     });
     
     if (bookingState.pricingResponse) {
@@ -136,10 +135,8 @@ const VehicleSelection = () => {
     if (bookingState.pricingError) {
       console.error("Pricing Error:", bookingState.pricingError);
       setValidationError(`Pricing Error: ${bookingState.pricingError}`);
-      // Ensure we're not still loading if there's an error
-      setIsLoadingPrices(false);
     }
-  }, [bookingState.pricingResponse, bookingState.pricingError, isLoadingPrices]);
+  }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading]);
 
   // Set initial categorized vehicles
   useEffect(() => {
@@ -147,7 +144,6 @@ const VehicleSelection = () => {
     if (initializeAttemptRef.current) return;
     
     console.log("🔄 Starting initial vehicle categorization");
-    setIsLoadingPrices(true);
     initializeAttemptRef.current = true;
     
     // Get base vehicle categories
@@ -179,7 +175,6 @@ const VehicleSelection = () => {
   useEffect(() => {
     // Skip if we have a pricing error
     if (bookingState.pricingError) {
-      setIsLoadingPrices(false);
       return;
     }
     
@@ -190,7 +185,6 @@ const VehicleSelection = () => {
     }
     
     console.log("🔄 Applying API prices to vehicles");
-    setIsLoadingPrices(true);
     
     // Get base vehicle categories
     const vehiclesByCategory = categorizeVehicles();
@@ -201,7 +195,6 @@ const VehicleSelection = () => {
     // Check if pricing data is valid
     if (!bookingState.pricingResponse.prices || bookingState.pricingResponse.prices.length === 0) {
       console.warn("⚠️ API response has no valid prices");
-      setIsLoadingPrices(false);
       return;
     }
     
@@ -333,8 +326,6 @@ const VehicleSelection = () => {
       }
     }
     
-    // Finish loading
-    setIsLoadingPrices(false);
     console.log("✅ Applied API prices to vehicles");
   }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.selectedVehicle]);
 
@@ -557,7 +548,7 @@ const VehicleSelection = () => {
         )}
         
         {/* Loading State */}
-        {isLoadingPrices && !hasPricingError && (
+        {bookingState.isPricingLoading && !hasPricingError && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
             <p className="text-lg text-gray-700">Loading vehicle options...</p>
@@ -568,7 +559,7 @@ const VehicleSelection = () => {
         )}
         
         {/* Main content - only show if not loading and no pricing error */}
-        {!isLoadingPrices && !hasPricingError && (
+        {!bookingState.isPricingLoading && !hasPricingError && (
           <>
             {/* Category Tabs */}
             <div className="mb-8 sticky top-0 z-10 bg-white py-4 -mt-4 shadow-sm">
