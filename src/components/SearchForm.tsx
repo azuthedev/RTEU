@@ -25,11 +25,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 // Interface for API price response
 interface PricingResponse {
-  prices: {
+  prices: Array<{
     category: string;
     price: number;
     currency: string;
-  }[];
+  }>;
   selected_category: string | null;
   details: {
     pickup_time: string;
@@ -197,32 +197,31 @@ const SearchForm = () => {
     // Check if we're on the pre-filled home route
     if (location.pathname.startsWith('/home/transfer/')) {
       const params = new URLSearchParams(location.search);
-      const fromParam = params.get('from');
-      const toParam = params.get('to');
-      const typeParam = params.get('type');
-      const dateParam = params.get('date');
-      const returnDateParam = params.get('returnDate');
-      const passengersParam = params.get('passengers');
+      // Parse URL parameters
+      const urlPattern = /\/home\/transfer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/form/;
+      const match = location.pathname.match(urlPattern);
       
-      if (fromParam && toParam && typeParam && dateParam) {
+      if (match) {
+        const [, from, to, type, date, returnDate, passengers] = match;
+        
+        // Properly decode URL parameters
+        const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
+        const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
+        
         // Convert type to boolean flag - '1' means One Way (isReturn = false)
-        const isRoundTrip = typeParam === '2';
+        const isRoundTrip = type === '2';
         setIsReturn(isRoundTrip);
-        setPassengers(Math.max(1, parseInt(passengersParam || '1', 10)));
+        setPassengers(Math.max(1, parseInt(passengers || '1', 10)));
         
         // Parse dates with times (default time set in parseDateFromUrl)
-        const pickupDateTime = parseDateFromUrl(dateParam);
-        const dropoffDateTime = returnDateParam && returnDateParam !== '0' ? parseDateFromUrl(returnDateParam) : undefined;
-        
-        // Decode locations (from and to) for display
-        const fromDisplay = decodeURIComponent(fromParam.replace(/-/g, ' '));
-        const toDisplay = decodeURIComponent(toParam.replace(/-/g, ' '));
+        const pickupDateTime = parseDateFromUrl(date);
+        const dropoffDateTime = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
         
         const newFormData = {
-          pickup: fromDisplay,
-          dropoff: toDisplay,
-          pickupDisplay: fromDisplay,
-          dropoffDisplay: toDisplay,
+          pickup: decodedFrom,
+          dropoff: decodedTo,
+          pickupDisplay: decodedFrom,
+          dropoffDisplay: decodedTo,
           pickupDateTime: pickupDateTime,
           dropoffDateTime: dropoffDateTime,
           dateRange: isRoundTrip && pickupDateTime && dropoffDateTime
@@ -235,14 +234,14 @@ const SearchForm = () => {
         // Store original values for comparison
         originalValuesRef.current = {
           isReturn: isRoundTrip,
-          pickup: fromDisplay,
-          dropoff: toDisplay,
-          pickupDisplay: fromDisplay,
-          dropoffDisplay: toDisplay,
+          pickup: decodedFrom,
+          dropoff: decodedTo,
+          pickupDisplay: decodedFrom,
+          dropoffDisplay: decodedTo,
           pickupDateTime: pickupDateTime,
           dropoffDateTime: dropoffDateTime,
           dateRange: newFormData.dateRange,
-          passengers: Math.max(1, parseInt(passengersParam || '1', 10))
+          passengers: Math.max(1, parseInt(passengers || '1', 10))
         };
         
         initialStateLoadedRef.current = true;
@@ -905,6 +904,7 @@ const SearchForm = () => {
     console.log(`Place selected for ${field}:`, displayName);
     
     if (field === 'pickup') {
+      console.log('Setting pickup value from place selection:', displayName);
       setFormData(prev => ({
         ...prev,
         pickup: displayName,
@@ -913,9 +913,11 @@ const SearchForm = () => {
       
       // Store place_id if available
       if (placeData?.place_id) {
+        console.log('Storing pickup place_id:', placeData.place_id);
         setPickupPlaceId(placeData.place_id);
       }
     } else {
+      console.log('Setting dropoff value from place selection:', displayName);
       setFormData(prev => ({
         ...prev,
         dropoff: displayName,
@@ -924,6 +926,7 @@ const SearchForm = () => {
       
       // Store place_id if available
       if (placeData?.place_id) {
+        console.log('Storing dropoff place_id:', placeData.place_id);
         setDropoffPlaceId(placeData.place_id);
       }
     }
