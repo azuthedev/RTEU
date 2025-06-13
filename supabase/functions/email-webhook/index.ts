@@ -1,184 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2.41.0";
-import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
 // CORS headers that handle origin dynamically
 const corsHeaders = {
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
   "Access-Control-Max-Age": "86400"
 };
-
-// Configuration constants
-const RESET_TOKEN_EXPIRY_HOURS = 1;
-const RESET_RATE_LIMIT_PER_HOUR = 3;
-
-// Create a secure UUID token for password reset
-function generateResetToken(): string {
-  return uuidv4();
-}
-
-// Check if a host is a development environment
-function isDevEnvironment(host: string): boolean {
-  return host === 'localhost' || 
-         host.includes('local-credentialless') || 
-         host.includes('webcontainer') ||
-         host.endsWith('.supabase.co');
-}
-
-// Get a production domain regardless of request origin
-function getProductionDomain(req: Request): string {
-  // Always use the production domain for password reset links
-  return 'https://royaltransfereu.com';
-}
-
-// Normalize email address
-function normalizeEmail(email: string): string {
-  if (!email) return '';
-  
-  // First decode any URL encoding
-  let decoded = email;
-  try {
-    // Try to decode if it looks URL-encoded
-    if (email.includes('%')) {
-      decoded = decodeURIComponent(email);
-    }
-  } catch (e) {
-    // If decoding fails, continue with original string
-    console.warn('Failed to decode email:', e);
-  }
-  
-  // Then replace any remaining %40 with @, trim whitespace, and convert to lowercase
-  return decoded.replace(/%40/g, '@').trim().toLowerCase();
-}
-
-// Helper function to retry database operations
-const retryDatabaseOperation = async (operation, maxRetries = 2) => {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
-  }
-};
-
-// Check rate limiting for password reset requests
-async function checkRateLimits(email: string, ip: string, supabase: any): Promise<{ allowed: boolean, remaining: number, nextAllowedTime: string | null }> {
-  try {
-    // Get recent attempts for this email
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-    
-    const { count, error } = await retryDatabaseOperation(async () => {
-      return await supabase
-        .from('password_reset_attempts')
-        .select('*', { count: 'exact', head: true })
-        .eq('email', email)
-        .gt('attempted_at', oneHourAgo.toISOString());
-    });
-    
-    if (error) {
-      console.error('Error checking password reset rate limits:', error);
-      // Fail open - we don't want to block legitimate requests due to technical errors
-      return { allowed: true, remaining: RESET_RATE_LIMIT_PER_HOUR, nextAllowedTime: null };
-    }
-    
-    const attemptsUsed = count || 0;
-    const remaining = Math.max(0, RESET_RATE_LIMIT_PER_HOUR - attemptsUsed);
-    
-    // If they've hit the limit, calculate when they can try again
-    let nextAllowedTime = null;
-    if (remaining === 0) {
-      // Find the timestamp of the oldest attempt in the last hour
-      const { data: oldestAttempt, error: oldestError } = await retryDatabaseOperation(async () => {
-        return await supabase
-          .from('password_reset_attempts')
-          .select('attempted_at')
-          .eq('email', email)
-          .gt('attempted_at', oneHourAgo.toISOString())
-          .order('attempted_at', { ascending: true })
-          .limit(1)
-          .single();
-      });
-      
-      if (!oldestError && oldestAttempt) {
-        // Calculate when this attempt "expires" from the hour window
-        const oldestTimestamp = new Date(oldestAttempt.attempted_at);
-        const nextAllowed = new Date(oldestTimestamp);
-        nextAllowed.setHours(nextAllowed.getHours() + 1);
-        
-        // Format as ISO string
-        nextAllowedTime = nextAllowed.toISOString();
-      }
-    }
-    
-    return {
-      allowed: remaining > 0,
-      remaining,
-      nextAllowedTime
-    };
-  } catch (error) {
-    console.error('Error in rate limit check:', error);
-    // Fail open for technical errors
-    return { allowed: true, remaining: RESET_RATE_LIMIT_PER_HOUR, nextAllowedTime: null };
-  }
-}
-
-// Record a password reset attempt
-async function recordResetAttempt(email: string, ip: string, supabase: any, success: boolean = false, userAgent?: string, referrer?: string): Promise<void> {
-  try {
-    await retryDatabaseOperation(async () => {
-      return await supabase.from('password_reset_attempts')
-        .insert([{
-          email,
-          ip_address: ip,
-          success,
-          user_agent: userAgent || null,
-          referrer: referrer || null
-        }]);
-    });
-  } catch (error) {
-    console.error('Error recording password reset attempt:', error);
-    // Non-critical, so we just log the error and continue
-  }
-}
-
-// Create a new password reset token
-async function createPasswordResetToken(email: string, supabase: any): Promise<string | null> {
-  try {
-    // Generate token and expiry time
-    const token = generateResetToken();
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + RESET_TOKEN_EXPIRY_HOURS);
-    
-    // Store in the database
-    const { data, error } = await retryDatabaseOperation(async () => {
-      return await supabase
-        .from('password_reset_tokens')
-        .insert([
-          {
-            token,
-            user_email: email,
-            expires_at: expiresAt.toISOString(),
-            used_at: null
-          }
-        ])
-        .select();
-    });
-    
-    if (error) {
-      console.error('Error creating password reset token:', error);
-      return null;
-    }
-    
-    return token;
-  } catch (error) {
-    console.error('Error generating password reset token:', error);
-    return null;
-  }
-}
 
 Deno.serve(async (req) => {
   // Get the client's origin
@@ -189,8 +16,7 @@ Deno.serve(async (req) => {
     'https://royaltransfereu.com',
     'https://www.royaltransfereu.com', 
     'http://localhost:3000', 
-    'http://localhost:5173',
-    'https://local-credentialless.webcontainer.io'
+    'http://localhost:5173'
   ];
   
   // Set the correct CORS origin header based on the request's origin
@@ -198,7 +24,7 @@ Deno.serve(async (req) => {
     ...corsHeaders,
     "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
   };
-
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -215,41 +41,47 @@ Deno.serve(async (req) => {
       .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
     );
     
-    // Get client IP address for rate limiting
-    const clientIp = req.headers.get('x-forwarded-for') || 
-                     req.headers.get('cf-connecting-ip') || 
-                     'unknown';
+    // Verify the X-Auth header
+    const authHeader = req.headers.get('X-Auth');
+    console.log("X-Auth header present:", !!authHeader);
     
-    // Verify authorization
-    const authHeader = req.headers.get('Authorization');
-    console.log("Authorization header present:", !!authHeader);
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    console.log("WEBHOOK_SECRET env var present:", !!webhookSecret);
     
-    // Check for JWT token authentication
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      // We'll continue with JWT auth (from anon key)
-      console.log("Using JWT authentication");
-    } else {
-      // Check for webhook secret in X-Auth header as fallback
-      const xAuthHeader = req.headers.get('X-Auth');
-      const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-      
-      if (!webhookSecret || xAuthHeader !== webhookSecret) {
-        console.error("Authentication failed: Invalid or missing auth credentials");
-        
-        return new Response(
-          JSON.stringify({ 
-            error: 'Unauthorized - Invalid authentication'
-          }),
-          {
-            status: 401,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      console.log("Using X-Auth webhook secret authentication");
+    // Print first few characters of both for comparison (safely)
+    if (authHeader && webhookSecret) {
+      const authPrefix = authHeader.substring(0, 3);
+      const secretPrefix = webhookSecret.substring(0, 3);
+      console.log(`Auth header starts with: ${authPrefix}...`);
+      console.log(`Secret starts with: ${secretPrefix}...`);
+      console.log("Do they match?", authHeader === webhookSecret);
     }
-
+    
+    // Check if we're in a development environment
+    const isDev = isDevEnvironment(req);
+    
+    console.log("Is dev environment:", isDev);
+    
+    // More permissive in development, strict in production
+    if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+      console.error("Authentication failed: Header doesn't match expected secret");
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unauthorized - Invalid authentication header',
+          debug: {
+            headerPresent: !!authHeader,
+            secretPresent: !!webhookSecret,
+            match: false
+          }
+        }),
+        {
+          status: 401,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -284,11 +116,18 @@ Deno.serve(async (req) => {
         email_type, 
         booking_id, 
         pickup_location, 
-        dropoff_location, 
-        pickup_datetime, 
+        dropoff_location,
+        // Handle separate date/time fields
+        pickup_date,
+        pickup_time,
+        dropoff_date,
+        dropoff_time, 
         vehicle_type, 
         passengers, 
-        total_price 
+        total_price,
+        flight_number,
+        extra_stops,
+        luggage_count
       } = requestData;
       
       // Validate required fields
@@ -313,13 +152,11 @@ Deno.serve(async (req) => {
         console.log("Raw email from request:", email);
         
         // First, try to find the user's full name from the users table
-        const { data: userData, error: userLookupError } = await retryDatabaseOperation(async () => {
-          return await supabase
-            .from('users')
-            .select('id, name, email')
-            .ilike('email', normalizedEmail)
-            .maybeSingle();
-        });
+        const { data: userData, error: userLookupError } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .ilike('email', normalizedEmail)
+          .maybeSingle();
         
         console.log("User lookup result:", userData || "Not found");
         console.log("User lookup query parameters:", { email: normalizedEmail });
@@ -332,12 +169,6 @@ Deno.serve(async (req) => {
         if (!userData) {
           console.log(`No user found with email ${normalizedEmail} - skipping password reset`);
           console.log("Database query used: users.select('id, name, email').ilike('email', '", normalizedEmail, "')");
-          
-          // Record failed attempt
-          await recordResetAttempt(normalizedEmail, clientIp, supabase, false, 
-            req.headers.get('user-agent'),
-            req.headers.get('referer')
-          );
           
           // We don't want to reveal if a user exists or not for security reasons
           // So we return a success response even though no email will be sent
@@ -357,79 +188,15 @@ Deno.serve(async (req) => {
         const userRealName = userData.name || normalizedEmail.split('@')[0];
         console.log(`Using name "${userRealName}" for reset email`);
         
-        // Check rate limits
-        const { allowed, remaining, nextAllowedTime } = await checkRateLimits(
-          normalizedEmail, 
-          clientIp, 
-          supabase
-        );
-        
-        if (!allowed) {
-          console.log(`Rate limit exceeded for ${normalizedEmail} from ${clientIp}`);
-          
-          // Record attempt but mark as failed
-          await recordResetAttempt(normalizedEmail, clientIp, supabase, false,
-            req.headers.get('user-agent'),
-            req.headers.get('referer')
-          );
-          
-          return new Response(
-            JSON.stringify({
-              error: 'Too many password reset attempts. Please try again later.',
-              rateLimitExceeded: true,
-              nextAllowedAttempt: nextAllowedTime,
-              retryAfter: '1 hour'
-            }),
-            {
-              status: 429,
-              headers: {
-                ...headersWithOrigin,
-                'Content-Type': 'application/json',
-                'Retry-After': '3600'
-              }
-            }
-          );
-        }
-        
-        // Create a secure reset token
-        const token = await createPasswordResetToken(normalizedEmail, supabase);
-        
-        if (!token) {
-          console.error('Failed to create password reset token');
-          
-          return new Response(
-            JSON.stringify({
-              error: 'Failed to process password reset request. Please try again later.'
-            }),
-            {
-              status: 500,
-              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        
-        // Get the production domain for the reset link
-        const productionDomain = getProductionDomain(req);
-        
-        // Create the reset link with token as query parameter
-        const resetUrl = `${productionDomain}/reset-password?token=${token}`;
-        console.log('Generated secure reset link:', resetUrl);
-        
         try {
           console.log("=== PASSWORD RESET EMAIL SENDING ATTEMPT ===");
           console.log('To:', normalizedEmail);
           console.log('Using name:', userRealName);
-          console.log('Reset Link:', resetUrl);
+          console.log('Reset Link:', reset_link);
           
           // For development/testing in WebContainer, just return success
-          if (isDevEnvironment(req.headers.get('host') || '')) {
+          if (isDev) {
             console.log('DEVELOPMENT MODE: Simulating email sending success');
-            
-            // Record successful attempt
-            await recordResetAttempt(normalizedEmail, clientIp, supabase, true,
-              req.headers.get('user-agent'),
-              req.headers.get('referer')
-            );
             
             return new Response(
               JSON.stringify({ 
@@ -454,7 +221,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               name: userRealName, // Use the user's real name from the database
               email: normalizedEmail,
-              reset_link: resetUrl, // Use the FULL reset URL with token
+              reset_link: reset_link, // Use the FULL reset URL with token
               email_type: 'PWReset'
             })
           });
@@ -466,12 +233,6 @@ Deno.serve(async (req) => {
           }
           
           console.log('Password reset email sent successfully');
-          
-          // Record successful attempt
-          await recordResetAttempt(normalizedEmail, clientIp, supabase, true,
-            req.headers.get('user-agent'),
-            req.headers.get('referer')
-          );
           
           // Return success response
           return new Response(
@@ -487,12 +248,6 @@ Deno.serve(async (req) => {
         } catch (emailError) {
           console.error('Error sending password reset email:', emailError);
           
-          // Record failed attempt
-          await recordResetAttempt(normalizedEmail, clientIp, supabase, false,
-            req.headers.get('user-agent'),
-            req.headers.get('referer')
-          );
-          
           return new Response(
             JSON.stringify({ 
               success: false, 
@@ -506,8 +261,14 @@ Deno.serve(async (req) => {
         }
       } 
       else if (email_type === 'BookingReference') {
-        // Handle booking confirmation emails with flat structure
+        // Handle booking confirmation emails with separate date/time fields
         console.log("Processing booking confirmation email for reference:", booking_id);
+        console.log("Date/time components received:", {
+          pickup_date,
+          pickup_time,
+          dropoff_date,
+          dropoff_time
+        });
         
         // Validate required booking fields
         if (!booking_id || !pickup_location || !dropoff_location) {
@@ -528,13 +289,19 @@ Deno.serve(async (req) => {
           console.log('Booking ID:', booking_id);
           console.log('Pickup Location:', pickup_location);
           console.log('Dropoff Location:', dropoff_location);
-          console.log('Pickup Datetime:', pickup_datetime);
+          console.log('Pickup Date:', pickup_date);
+          console.log('Pickup Time:', pickup_time);
+          console.log('Dropoff Date:', dropoff_date);
+          console.log('Dropoff Time:', dropoff_time);
           console.log('Vehicle Type:', vehicle_type);
           console.log('Passengers:', passengers);
           console.log('Total Price:', total_price);
+          console.log('Flight Number:', flight_number);
+          console.log('Extra Stops:', extra_stops);
+          console.log('Luggage Count:', luggage_count);
           
           // For development/testing in WebContainer, just return success
-          if (isDevEnvironment(req.headers.get('host') || '')) {
+          if (isDev) {
             console.log('DEVELOPMENT MODE: Simulating email sending success');
             
             return new Response(
@@ -549,7 +316,7 @@ Deno.serve(async (req) => {
             );
           }
           
-          // Forward the request to our n8n webhook with flat structure
+          // Forward the request to our n8n webhook with separate date/time fields
           const webhookSecret = Deno.env.get('WEBHOOK_SECRET') || '';
           const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
             method: 'POST',
@@ -563,10 +330,17 @@ Deno.serve(async (req) => {
               booking_id: booking_id,
               pickup_location: pickup_location,
               dropoff_location: dropoff_location,
-              pickup_datetime: pickup_datetime,
+              // Pass separate date/time components
+              pickup_date: pickup_date,
+              pickup_time: pickup_time,
+              dropoff_date: dropoff_date || 'N/A',
+              dropoff_time: dropoff_time || 'N/A',
               vehicle_type: vehicle_type,
               passengers: passengers,
               total_price: total_price,
+              flight_number: flight_number || 'Not provided',
+              extra_stops: extra_stops || 'None',
+              luggage_count: luggage_count || '0',
               email_type: 'BookingReference'
             })
           });
@@ -643,3 +417,33 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper function to check if we're in a development environment
+function isDevEnvironment(req: Request): boolean {
+  const url = new URL(req.url);
+  const host = url.hostname;
+  return host === 'localhost' || 
+         host.includes('local-credentialless') || 
+         host.includes('webcontainer') ||
+         host.endsWith('.supabase.co');
+}
+
+// Helper function to normalize email addresses
+function normalizeEmail(email: string): string {
+  if (!email) return '';
+  
+  // First decode any URL encoding
+  let decoded = email;
+  try {
+    // Try to decode if it looks URL-encoded
+    if (email.includes('%')) {
+      decoded = decodeURIComponent(email);
+    }
+  } catch (e) {
+    // If decoding fails, continue with original string
+    console.warn('Failed to decode email:', e);
+  }
+  
+  // Then replace any remaining %40 with @, trim whitespace, and convert to lowercase
+  return decoded.replace(/%40/g, '@').trim().toLowerCase();
+}

@@ -228,21 +228,13 @@ Deno.serve(async (req: Request) => {
         // Send booking confirmation email
         if (webhookSecret && tripData) {
           try {
-            // Format datetime for email
-            const formatDate = (dateStr: string) => {
-              try {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                });
-              } catch (e) {
-                return dateStr || 'Not specified';
-              }
-            };
+            console.log('📧 Sending booking confirmation email');
+            
+            // Get pickup and return date/time from metadata
+            const pickupDate = session.metadata?.trip_pickup_date || 'Not specified';
+            const pickupTime = session.metadata?.trip_pickup_time || 'Not specified';
+            const dropoffDate = session.metadata?.trip_dropoff_date || 'N/A';
+            const dropoffTime = session.metadata?.trip_dropoff_time || 'N/A';
             
             // Format price for email
             const formatPrice = (price: number) => {
@@ -252,9 +244,7 @@ Deno.serve(async (req: Request) => {
               }).format(price);
             };
             
-            console.log('📧 Sending booking confirmation email');
-            
-            // Send booking confirmation email with flat structure
+            // Send booking confirmation email with date/time components
             const emailResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
               method: 'POST',
               headers: {
@@ -268,10 +258,18 @@ Deno.serve(async (req: Request) => {
                 email_type: "BookingReference",
                 pickup_location: tripData.pickup_address,
                 dropoff_location: tripData.dropoff_address,
-                pickup_datetime: formatDate(tripData.datetime),
+                // Use formatted date components instead of a single datetime string
+                pickup_date: pickupDate,
+                pickup_time: pickupTime,
+                dropoff_date: dropoffDate,
+                dropoff_time: dropoffTime,
                 vehicle_type: tripData.vehicle_type,
                 passengers: tripData.passengers,
-                total_price: formatPrice(tripData.estimated_price)
+                total_price: formatPrice(tripData.estimated_price),
+                // Include additional metadata that may be useful for the email
+                flight_number: session.metadata?.flight_number || 'Not provided',
+                extra_stops: session.metadata?.extra_stops || '0',
+                luggage_count: session.metadata?.luggage_count || '0'
               })
             });
             

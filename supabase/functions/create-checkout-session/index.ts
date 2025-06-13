@@ -20,6 +20,29 @@ const retryDatabaseOperation = async (operation, maxRetries = 2) => {
   }
 };
 
+// Helper function to format dates for emails
+const formatDateForEmail = (dateStr: string | null | undefined): { date: string, time: string } => {
+  if (!dateStr) return { date: 'Not specified', time: 'Not specified' };
+  
+  try {
+    const date = new Date(dateStr);
+    return {
+      date: date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+      time: date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return { date: 'Invalid date', time: 'Invalid time' };
+  }
+};
+
 Deno.serve(async (req) => {
   // Get the client's origin
   const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
@@ -100,6 +123,10 @@ Deno.serve(async (req) => {
         to: trip?.to, 
         type: trip?.type, 
         date: trip?.date,
+        pickup_date: trip?.pickup_date,
+        pickup_time: trip?.pickup_time,
+        dropoff_date: trip?.dropoff_date,
+        dropoff_time: trip?.dropoff_time,
         passengers: trip?.passengers 
       }, 
       vehicle: { 
@@ -131,6 +158,30 @@ Deno.serve(async (req) => {
 
     console.log("Creating booking with reference:", booking_reference);
 
+    // Format date components for the database
+    // Use client-provided ISO date strings directly if available
+    const pickupDate = trip.date;
+    const returnDate = trip.returnDate || null;
+    
+    // Format dates for email if not provided by the client
+    let pickupDateFormatted = trip.pickup_date;
+    let pickupTimeFormatted = trip.pickup_time;
+    let dropoffDateFormatted = trip.dropoff_date;
+    let dropoffTimeFormatted = trip.dropoff_time;
+    
+    // If date components aren't provided, format them from ISO strings
+    if (!pickupDateFormatted || !pickupTimeFormatted) {
+      const formattedPickup = formatDateForEmail(pickupDate);
+      pickupDateFormatted = formattedPickup.date;
+      pickupTimeFormatted = formattedPickup.time;
+    }
+    
+    if ((!dropoffDateFormatted || !dropoffTimeFormatted) && returnDate) {
+      const formattedDropoff = formatDateForEmail(returnDate);
+      dropoffDateFormatted = formattedDropoff.date;
+      dropoffTimeFormatted = formattedDropoff.time;
+    }
+
     // Create the trip record in the database
     const tripData = {
       user_id: customer.user_id || null,
@@ -140,7 +191,7 @@ Deno.serve(async (req) => {
       estimated_distance_km: 0, // Will be calculated by admin
       estimated_duration_min: 0, // Will be calculated by admin
       estimated_price: amount,
-      datetime: trip.date || new Date().toISOString(),
+      datetime: pickupDate,
       is_scheduled: true,
       status: 'pending', // Initially pending until assigned
       vehicle_type: vehicle.name || '',
@@ -149,7 +200,7 @@ Deno.serve(async (req) => {
       customer_email: customer.email,
       customer_phone: customer.phone || '',
       is_return: trip.type === 'round-trip',
-      return_datetime: trip.returnDate || null,
+      return_datetime: returnDate,
       extra_items: extras ? extras.join(',') : '',
       payment_method: payment_method || 'card',
       notes: '',
@@ -230,22 +281,8 @@ Deno.serve(async (req) => {
             const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
             
             if (webhookSecret) {
-              // Format datetime for email
-              const formatDate = (dateStr: string) => {
-                try {
-                  const date = new Date(dateStr);
-                  return date.toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  });
-                } catch (e) {
-                  return dateStr || 'Not specified';
-                }
-              };
-
+              console.log("Sending booking confirmation email for cash payment");
+              
               // Format price for email
               const formatPrice = (price: number) => {
                 return new Intl.NumberFormat('en-US', { 
@@ -254,9 +291,7 @@ Deno.serve(async (req) => {
                 }).format(price);
               };
 
-              console.log("Sending booking confirmation email for cash payment");
-              
-              // Send booking confirmation email with flat structure
+              // Send booking confirmation email with formatted date components
               await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
                 method: 'POST',
                 headers: {
@@ -270,7 +305,11 @@ Deno.serve(async (req) => {
                   email_type: "BookingReference",
                   pickup_location: tripData.pickup_address,
                   dropoff_location: tripData.dropoff_address,
-                  pickup_datetime: formatDate(tripData.datetime),
+                  // Use formatted date and time components for improved email display
+                  pickup_date: pickupDateFormatted,
+                  pickup_time: pickupTimeFormatted,
+                  dropoff_date: dropoffDateFormatted || 'N/A',
+                  dropoff_time: dropoffTimeFormatted || 'N/A',
                   vehicle_type: tripData.vehicle_type,
                   passengers: tripData.passengers,
                   total_price: formatPrice(tripData.estimated_price),
@@ -323,12 +362,11 @@ Deno.serve(async (req) => {
     let tripDescription = `${trip.from} to ${trip.to}`;
     let tripTypeDesc = trip.type === "round-trip" ? "Round trip" : "One way";
     
-    if (trip.type === "round-trip" && trip.returnDate) {
-      const departDate = new Date(trip.date).toLocaleDateString();
-      const returnDate = new Date(trip.returnDate).toLocaleDateString();
-      tripDescription += ` (${departDate} → ${returnDate})`;
+    // Format date components for display
+    if (trip.type === "round-trip" && returnDate) {
+      tripDescription += ` (${pickupDateFormatted} ${pickupTimeFormatted} → ${dropoffDateFormatted} ${dropoffTimeFormatted})`;
     } else {
-      tripDescription += ` (${new Date(trip.date).toLocaleDateString()})`;
+      tripDescription += ` (${pickupDateFormatted} ${pickupTimeFormatted})`;
     }
     
     // Add flight number to description if available
@@ -348,7 +386,9 @@ Deno.serve(async (req) => {
       trip_from: trip.from,
       trip_to: trip.to,
       trip_type: trip.type,
-      trip_date: new Date(trip.date).toISOString(),
+      trip_date: pickupDate,
+      trip_pickup_date: pickupDateFormatted,
+      trip_pickup_time: pickupTimeFormatted,
       vehicle_name: vehicle.name,
       customer_email: customer.email,
       flight_number: flight_number || '',
@@ -357,7 +397,11 @@ Deno.serve(async (req) => {
     };
 
     // Add optional metadata if available
-    if (trip.returnDate) metadata.trip_return_date = new Date(trip.returnDate).toISOString();
+    if (returnDate) {
+      metadata.trip_return_date = returnDate;
+      metadata.trip_dropoff_date = dropoffDateFormatted;
+      metadata.trip_dropoff_time = dropoffTimeFormatted;
+    }
     if (trip.passengers) metadata.trip_passengers = String(trip.passengers);
     if (vehicle.id) metadata.vehicle_id = vehicle.id;
     if (customer.firstName || customer.lastName) 
