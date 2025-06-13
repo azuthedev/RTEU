@@ -108,11 +108,43 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   // Get minimum booking time (4 hours from now)
   const minPickupDateTime = getMinimumBookingTime();
   
+  // Helper function to parse dates from URL strings
+  const parseUrlDate = (dateStr: string): Date | undefined => {
+    if (!dateStr || dateStr === '0') return undefined;
+    
+    try {
+      // Parse format: yymmdd (from URL)
+      const year = parseInt(`20${dateStr.slice(0, 2)}`);
+      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
+      const day = parseInt(dateStr.slice(4, 6));
+      
+      // Create date at noon by default
+      const parsedDate = new Date(year, month, day, 12, 0, 0);
+      
+      // Check if valid date
+      if (isNaN(parsedDate.getTime())) {
+        return undefined;
+      }
+      
+      // Ensure date is at least 4 hours in the future
+      const minBookingTime = getMinimumBookingTime();
+      if (parsedDate < minBookingTime) {
+        return minBookingTime;
+      }
+      
+      return parsedDate;
+    } catch (e) {
+      console.error("Error parsing URL date:", e);
+      return undefined;
+    }
+  };
+  
   // Form data state with full date objects including time
   const [formData, setFormData] = useState({
-    from: from,
-    to: to,
-    type: isOneWayFromProps ? '1' : '2',
+    pickup: '',
+    dropoff: '',
+    pickupDisplay: '', // Store the display version
+    dropoffDisplay: '', // Store the display version
     pickupDateTime: undefined as Date | undefined,
     dropoffDateTime: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined,
@@ -121,10 +153,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   
   // Store original values for comparison
   const originalValuesRef = useRef({
-    from,
-    to,
-    type,
+    from: '',
+    to: '',
     isOneWay: isOneWayFromProps,
+    pickupDisplay: '',
+    dropoffDisplay: '',
     pickupDateTime: undefined as Date | undefined,
     dropoffDateTime: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined,
@@ -151,22 +184,43 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     // Force hasChanges to false initially
     setHasChanges(false);
     
-    // Use the display names from context if available, otherwise use URL params
-    const initialPickupValue = bookingState.fromDisplay || from;
-    const initialDropoffValue = bookingState.toDisplay || to;
+    // Properly decode URL parameters for display
+    const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
+    const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
     
-    // Get dates from context if available
-    const pickupDateTime = bookingState.pickupDateTime || undefined;
-    const dropoffDateTime = bookingState.dropoffDateTime || undefined;
+    // Use the display names from context if available, otherwise use decoded URL params
+    const initialPickupValue = bookingState.fromDisplay || decodedFrom;
+    const initialDropoffValue = bookingState.toDisplay || decodedTo;
     
-    // Set initial values only once
+    // Parse dates from URL if needed
+    const parsedPickupDate = parseUrlDate(date);
+    const parsedDropoffDate = returnDate && returnDate !== '0' ? parseUrlDate(returnDate) : undefined;
+    
+    // Get dates from context if available, otherwise use parsed URL dates
+    const pickupDateTime = bookingState.pickupDateTime || parsedPickupDate;
+    const dropoffDateTime = bookingState.dropoffDateTime || parsedDropoffDate;
+    
+    // Set initial values
     setPickupValue(initialPickupValue);
     setDropoffValue(initialDropoffValue);
+    
+    // Preserve any existing coordinates from context
+    if (bookingState.fromCoords) {
+      setPickupCoords(bookingState.fromCoords);
+    }
+    
+    if (bookingState.toCoords) {
+      setDropoffCoords(bookingState.toCoords);
+    }
     
     // Set initial date values
     if (isOneWay) {
       setFormData(prev => ({
         ...prev,
+        pickup: initialPickupValue,
+        dropoff: initialDropoffValue,
+        pickupDisplay: initialPickupValue,
+        dropoffDisplay: initialDropoffValue,
         pickupDateTime: pickupDateTime,
         dropoffDateTime: undefined,
         dateRange: undefined
@@ -175,6 +229,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       if (pickupDateTime && dropoffDateTime) {
         setFormData(prev => ({
           ...prev,
+          pickup: initialPickupValue,
+          dropoff: initialDropoffValue,
+          pickupDisplay: initialPickupValue,
+          dropoffDisplay: initialDropoffValue,
           pickupDateTime: undefined,
           dropoffDateTime: undefined,
           dateRange: {
@@ -185,12 +243,13 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       }
     }
     
-    // Store original date values
+    // Store original values for comparison
     originalValuesRef.current = {
       from: initialPickupValue,
       to: initialDropoffValue,
-      type,
       isOneWay: isOneWayFromProps,
+      pickupDisplay: initialPickupValue,
+      dropoffDisplay: initialDropoffValue,
       pickupDateTime,
       dropoffDateTime,
       dateRange: pickupDateTime && dropoffDateTime 
@@ -212,7 +271,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     isInitializedRef.current = true;
   }, [from, to, type, date, returnDate, passengers, isOneWayFromProps, 
       bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.pickupDateTime, bookingState.dropoffDateTime]);
+      bookingState.pickupDateTime, bookingState.dropoffDateTime,
+      bookingState.fromCoords, bookingState.toCoords]);
 
   // Setup effect for user interaction tracking
   useEffect(() => {
@@ -263,7 +323,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : formData.dateRange?.from?.getTime() !== original.dateRange?.from?.getTime() ||
         formData.dateRange?.to?.getTime() !== original.dateRange?.to?.getTime();
     
-    const hasTypeChange = formType !== original.type;
+    const hasTypeChange = formType !== (original.isOneWay ? '1' : '2');
     const hasPassengerChange = formData.passengers !== original.passengers;
     
     // Determine if there are any changes
@@ -672,8 +732,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     originalValuesRef.current = {
       from: pickupValue,
       to: dropoffValue,
-      type: newType,
       isOneWay: isOneWay,
+      pickupDisplay: pickupValue,
+      dropoffDisplay: dropoffValue,
       pickupDateTime: isOneWay ? formData.pickupDateTime : formData.dateRange?.from,
       dropoffDateTime: !isOneWay ? formData.dateRange?.to : undefined,
       dateRange: !isOneWay && formData.dateRange?.from && formData.dateRange?.to 
