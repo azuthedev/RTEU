@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import VehicleSelection from '../components/booking/VehicleSelection';
 import PersonalDetails from '../components/booking/PersonalDetails';
@@ -7,49 +7,11 @@ import PaymentDetails from '../components/booking/PaymentDetails';
 import { useBooking } from '../contexts/BookingContext';
 import { useToast } from '../components/ui/use-toast';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { fetchWithCors, getApiUrl } from '../utils/corsHelper';
-import { requestTracker } from '../utils/requestTracker';
-import { parseDateFromUrl } from '../utils/searchFormHelpers';
 
-// Interface for API price response
-interface PricingResponse {
-  prices: Array<{
-    category: string;
-    price: number;
-    currency: string;
-  }>;
-  selected_category: string | null;
-  details: {
-    pickup_time: string;
-    pickup_location: {
-      lat: number;
-      lng: number;
-    };
-    dropoff_location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  version?: string;
-  checksum?: string;
-}
-
-// Map API category names to our vehicle IDs
-const apiCategoryMap: Record<string, string> = {
-  'standard_sedan': 'economy-sedan',
-  'premium_sedan': 'premium-sedan',
-  'vip_sedan': 'vip-sedan',
-  'standard_minivan': 'standard-minivan',
-  'xl_minivan': 'xl-minivan',
-  'vip_minivan': 'vip-minivan',
-  'sprinter_8_pax': 'sprinter-8',
-  'sprinter_16_pax': 'sprinter-16',
-  'sprinter_21_pax': 'sprinter-21',
-  'coach_51_pax': 'bus-51'
-};
-
+// Component to handle proper URL parameters and context initialization
 const BookingFlow = () => {
   const { from, to, type, date, returnDate, passengers } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { trackEvent } = useAnalytics();
@@ -58,6 +20,9 @@ const BookingFlow = () => {
   
   // Add component mount tracking to prevent updates on unmounted component
   const isMountedRef = useRef(true);
+  
+  // Flag to track initialization status
+  const isInitializedRef = useRef(false);
 
   // Clean up booking state when component unmounts
   useEffect(() => {
@@ -65,61 +30,73 @@ const BookingFlow = () => {
     return () => {
       isMountedRef.current = false;
     };
-  }, [clearBookingState]);
+  }, []);
   
-  // Initialize booking state from URL parameters
-  useEffect(() => {
-    // Skip if we don't have the required params
-    if (!from || !to || !date) return;
-
-    // Check if the url params match what's already in bookingState
-    const matchesExistingState = bookingState.from === decodeURIComponent(from).replace(/-/g, ' ') &&
-      bookingState.to === decodeURIComponent(to).replace(/-/g, ' ') &&
-      bookingState.departureDate === date &&
-      bookingState.returnDate === (returnDate === '0' ? undefined : returnDate) &&
-      bookingState.passengers === Number(passengers);
-
-    // Check if we already have valid pricing data for this route
-    const hasPricingData = !!bookingState.pricingResponse && !bookingState.pricingError;
-
-    // If we have matching state AND valid pricing data, we don't need to do anything
-    if (matchesExistingState && hasPricingData) {
-      console.log("🟢 Using existing state and pricing data - no fetch needed");
-      return;
-    }
-
-    // If state doesn't match OR we don't have valid pricing data, we need to update the state
-    // But we should be careful not to trigger multiple API calls
-    const initBooking = async () => {
-      // Check if component is still mounted before proceeding
-      if (!isMountedRef.current) {
-        console.log('Component unmounted, aborting initBooking');
-        return;
+  // Helper function to parse dates from URL strings
+  const parseUrlDate = (dateStr: string): Date | undefined => {
+    if (!dateStr || dateStr === '0') return undefined;
+    
+    try {
+      // Parse format: yymmdd (from URL)
+      const year = parseInt(`20${dateStr.slice(0, 2)}`);
+      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
+      const day = parseInt(dateStr.slice(4, 6));
+      
+      // Create date at noon by default
+      const parsedDate = new Date(year, month, day, 12, 0, 0);
+      
+      // Check if valid date
+      if (isNaN(parsedDate.getTime())) {
+        return undefined;
       }
+      
+      return parsedDate;
+    } catch (e) {
+      console.error("Error parsing URL date:", e);
+      return undefined;
+    }
+  };
+  
+  // Initialize booking state from URL parameters if needed
+  useEffect(() => {
+    // Skip if we don't have the required params or already initialized
+    if (!from || !to || !date || isInitializedRef.current) return;
 
-      console.log("🔄 Initializing booking state from URL params");
-      
-      // Decode URL parameters (from URL-friendly format to display format)
-      const fromDecoded = decodeURIComponent(from).replace(/-/g, ' ');
-      const toDecoded = decodeURIComponent(to).replace(/-/g, ' ');
-      
-      // In case of a refresh, don't overwrite existing display names
-      const fromDisplay = bookingState.fromDisplay || fromDecoded;
-      const toDisplay = bookingState.toDisplay || toDecoded;
-      
-      // Parse the date parameters
-      const pickupDateTime = parseDateFromUrl(date);
-      const dropoffDateTime = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
-      const isReturnTrip = type === '2';
-      
+    console.log("🔄 Initializing booking state from URL params");
+    
+    // Decode URL parameters (from URL-friendly format to display format)
+    const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
+    const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
+    
+    // Use or preserve display names if they exist in state
+    const fromDisplay = bookingState.fromDisplay || decodedFrom;
+    const toDisplay = bookingState.toDisplay || decodedTo;
+    
+    // Parse the date parameters
+    const pickupDateTime = bookingState.pickupDateTime || parseUrlDate(date);
+    const dropoffDateTime = bookingState.dropoffDateTime || 
+                           (returnDate && returnDate !== '0' ? parseUrlDate(returnDate) : undefined);
+    const isReturnTrip = type === '2';
+    
+    // Only update state if we have different values
+    const needsUpdate = 
+      bookingState.from !== decodedFrom ||
+      bookingState.to !== decodedTo ||
+      !bookingState.fromDisplay ||
+      !bookingState.toDisplay ||
+      !bookingState.pickupDateTime ||
+      (isReturnTrip && !bookingState.dropoffDateTime) ||
+      bookingState.isReturn !== isReturnTrip;
+    
+    if (needsUpdate) {
       // Set or update the booking state with parsed data
       setBookingState(prev => {
         // Create a copy of the current state
         const updatedState = { ...prev };
         
         // Always update these values
-        updatedState.from = fromDecoded;
-        updatedState.to = toDecoded;
+        updatedState.from = decodedFrom;
+        updatedState.to = decodedTo;
         updatedState.fromDisplay = fromDisplay;
         updatedState.toDisplay = toDisplay;
         updatedState.departureDate = date;
@@ -129,63 +106,27 @@ const BookingFlow = () => {
         updatedState.pickupDateTime = pickupDateTime;
         updatedState.dropoffDateTime = dropoffDateTime;
         
-        // Don't reset pricing data if we already have it and it's not an error
-        // This prevents unnecessary API calls
-        if (!prev.pricingResponse || prev.pricingError) {
-          updatedState.pricingError = null;
-        }
+        // Log what we're updating
+        console.log("🔄 Updating booking state with:", {
+          from: decodedFrom,
+          to: decodedTo,
+          fromDisplay,
+          toDisplay,
+          pickupDateTime,
+          dropoffDateTime,
+          isReturn: isReturnTrip
+        });
         
         return updatedState;
       });
-
-      // Only fetch prices if we don't have valid pricing data already
-      if (!hasPricingData) {
-        // Check if there's already a pricing request in progress
-        const { inCooldown, remainingTime } = requestTracker.isInCooldown('fetch-prices');
-        
-        if (inCooldown) {
-          console.log(`🔶 Price fetching in cooldown. Waiting ${remainingTime}ms`);
-          
-          // Set temporary error to prevent further attempts
-          setBookingState(prev => ({
-            ...prev,
-            pricingError: `Request cooldown period not elapsed. Please wait ${Math.ceil(remainingTime / 1000)} seconds.`
-          }));
-          
-          // Try again after cooldown
-          setTimeout(() => {
-            if (isMountedRef.current) {
-              setBookingState(prev => ({
-                ...prev,
-                pricingError: null
-              }));
-              console.log("🔄 Cooldown elapsed, price fetching can proceed");
-            }
-          }, remainingTime);
-          
-          return;
-        }
-        
-        // Check if a request is already in progress
-        if (requestTracker.isRequestInProgress('fetch-prices')) {
-          console.log("🟡 Price fetch already in progress - not starting another");
-          
-          setBookingState(prev => ({
-            ...prev,
-            pricingError: "Request already in progress"
-          }));
-          
-          return;
-        }
-        
-        console.log("🔵 Fetching initial prices - none in context");
-      }
-    };
-
-    initBooking();
-  }, [from, to, type, date, returnDate, passengers, setBookingState, toast, trackEvent, 
-      bookingState.fromDisplay, bookingState.toDisplay, bookingState.pricingResponse, 
-      bookingState.pricingError]);
+    }
+    
+    // Mark as initialized
+    isInitializedRef.current = true;
+  }, [from, to, type, date, returnDate, passengers, setBookingState, 
+      bookingState.fromDisplay, bookingState.toDisplay, 
+      bookingState.pickupDateTime, bookingState.dropoffDateTime,
+      bookingState.from, bookingState.to, bookingState.isReturn]);
 
   // Handle step navigation based on context
   const currentStep = bookingState.step;
