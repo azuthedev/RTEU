@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
-      status: 204,
+      status: 200,
       headers: headersWithOrigin,
     });
   }
@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
                   passengers: tripData.passengers,
                   total_price: formatPrice(tripData.estimated_price),
                   // Include additional metadata that may be useful for the email
-                  flight_number: tripData.flight_number || 'Not provided',
+                  flight_number: flight_number || 'Not provided',
                   extra_stops: extraStops ? extraStops.length.toString() : '0',
                   luggage_count: luggageCount || '0'
                 })
