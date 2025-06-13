@@ -277,20 +277,20 @@ Deno.serve(async (req) => {
         // Send a booking confirmation email for cash payments
         if (payment_method === 'cash') {
           try {
+            console.log("Sending booking confirmation email for cash payment");
+            
+            // Format price for email
+            const formatPrice = (price: number) => {
+              return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: 'EUR',
+              }).format(price);
+            };
+
             // Get webhook secret
             const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
             
             if (webhookSecret) {
-              console.log("Sending booking confirmation email for cash payment");
-              
-              // Format price for email
-              const formatPrice = (price: number) => {
-                return new Intl.NumberFormat('en-US', { 
-                  style: 'currency', 
-                  currency: 'EUR',
-                }).format(price);
-              };
-
               // Send booking confirmation email with formatted date components
               await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
                 method: 'POST',
@@ -313,11 +313,10 @@ Deno.serve(async (req) => {
                   vehicle_type: tripData.vehicle_type,
                   passengers: tripData.passengers,
                   total_price: formatPrice(tripData.estimated_price),
+                  // Include additional metadata that may be useful for the email
                   flight_number: tripData.flight_number || 'Not provided',
-                  extra_stops: tripData.extra_stops 
-                    ? `${JSON.parse(tripData.extra_stops).length} stop(s)` 
-                    : 'None',
-                  luggage_count: tripData.luggage_count || '0'
+                  extra_stops: extraStops ? extraStops.length.toString() : '0',
+                  luggage_count: luggageCount || '0'
                 })
               });
               

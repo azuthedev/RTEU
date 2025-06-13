@@ -520,7 +520,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         type: newIsOneWay ? '1' : '2',
         pickupDateTime: originalValuesRef.current.pickupDateTime,
         dropoffDateTime: originalValuesRef.current.dropoffDateTime,
-        dateRange: originalValuesRef.current.dateRange
+        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
+          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
+          : undefined
       }));
       return;
     }
@@ -528,24 +530,23 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     setIsOneWay(oneWay);
     
     if (oneWay) {
+      // Switching to One Way
       setFormData(prev => {
-        // When switching to One Way, use from date as pickup date if available
-        const pickupDateTime = prev.dateRange?.from || prev.pickupDateTime || minPickupDateTime;
-        
         return {
           ...prev,
           type: '1',
-          pickupDateTime: pickupDateTime,
+          pickupDateTime: prev.dateRange?.from || prev.pickupDateTime,
           dropoffDateTime: undefined,
           dateRange: undefined
         };
       });
     } else {
+      // Switching to Round Trip
       setFormData(prev => {
-        // When switching to Round Trip, use pickup date as from date and calculate a default to date
+        // Calculate a default return date (1 day after pickup)
         const pickupDate = prev.pickupDateTime || minPickupDateTime;
         const defaultDropoffDate = new Date(pickupDate);
-        defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1); // Default to next day
+        defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1);
         
         return {
           ...prev,
@@ -626,19 +627,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     const encodedFrom = encodeURIComponent(pickupValue.toLowerCase().replace(/\s+/g, '-'));
     const encodedTo = encodeURIComponent(dropoffValue.toLowerCase().replace(/\s+/g, '-'));
     
-    // Set loading state
-    setIsLoadingPrices(true);
-    setApiError(null);
-    
-    // Fetch updated prices
-    const pricingResponse = await fetchPrices();
-    
-    // If price fetching failed, stop here
-    if (!pricingResponse) {
-      setIsLoadingPrices(false);
-      return;
-    }
-    
     // Prepare URL parameters for navigation
     const newType = isOneWay ? '1' : '2';
     
@@ -668,6 +656,26 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         : undefined,
       passengers: formData.passengers
     };
+    
+    // Set loading state
+    setIsLoadingPrices(true);
+    setApiError(null);
+    
+    // Clear existing pricing data before fetching new prices
+    setBookingState(prev => ({
+      ...prev,
+      pricingResponse: null,
+      pricingError: null
+    }));
+    
+    // Fetch updated prices
+    const pricingResponse = await fetchPrices();
+    
+    // If price fetching failed, stop here
+    if (!pricingResponse) {
+      setIsLoadingPrices(false);
+      return;
+    }
     
     // Store all data in context including display values and full date objects
     setBookingState(prev => ({
@@ -761,7 +769,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           </div>
         </div>
       </div>
-      
       <div className="py-4 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Mobile View */}
@@ -862,8 +869,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 minDate={minPickupDateTime}
               />
             )}
-            
-            {/* Passengers */}
             <div className="relative">
               <Users className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg bg-white flex justify-between items-center">
@@ -893,7 +898,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 </div>
               </div>
             </div>
-            
             <motion.button
               whileTap={{ scale: hasChanges && pickupIsValid && dropoffIsValid ? 0.95 : 1 }}
               onClick={handleUpdateRoute}

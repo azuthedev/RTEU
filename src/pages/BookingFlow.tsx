@@ -52,9 +52,6 @@ const BookingFlow = () => {
   
   const { bookingState, setBookingState, clearBookingState } = useBooking();
   
-  // Track if initial fetch has been done
-  const initialFetchDone = useRef(false);
-  
   // Add component mount tracking to prevent updates on unmounted component
   const isMountedRef = useRef(true);
 
@@ -90,9 +87,15 @@ const BookingFlow = () => {
   const fetchPrices = async (): Promise<PricingResponse | null> => {
     if (!from || !to || !date) {
       if (isMountedRef.current) {
+        const errorMsg = "Required booking details are missing.";
+        setBookingState(prev => ({
+          ...prev,
+          pricingError: errorMsg
+        }));
+        
         toast({
           title: "Missing Information",
-          description: "Required booking details are missing.",
+          description: errorMsg,
           variant: "destructive"
         });
       }
@@ -361,7 +364,6 @@ const BookingFlow = () => {
       !bookingState.pricingError
     ) {
       console.log("Using existing state and prices");
-      initialFetchDone.current = true;
       return;
     }
 
@@ -402,29 +404,25 @@ const BookingFlow = () => {
         return updatedState;
       });
 
-      // Fetch prices if not already done
-      if (!initialFetchDone.current) {
-        console.log("Fetching initial prices");
-        
-        const pricingResponse = await fetchPrices();
-        
-        // Check if component is still mounted before updating state
-        if (!isMountedRef.current) {
-          console.log('Component unmounted after price fetch');
-          return;
-        }
-        
-        if (pricingResponse) {
-          // Update booking state with pricing data
-          setBookingState(prev => ({
-            ...prev,
-            pricingResponse,
-            // Clear pricing error if successful
-            pricingError: null
-          }));
-        }
-        
-        initialFetchDone.current = true;
+      // Fetch prices if they're not already in context or if they don't match current params
+      console.log("Fetching initial prices");
+      
+      const pricingResponse = await fetchPrices();
+      
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) {
+        console.log('Component unmounted after price fetch');
+        return;
+      }
+      
+      if (pricingResponse) {
+        // Update booking state with pricing data
+        setBookingState(prev => ({
+          ...prev,
+          pricingResponse,
+          // Clear pricing error if successful
+          pricingError: null
+        }));
       }
     };
 

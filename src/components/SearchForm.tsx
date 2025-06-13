@@ -64,6 +64,7 @@ const SearchForm = () => {
     dropoffDisplay: '',
     pickupDateTime: undefined as Date | undefined,
     dropoffDateTime: undefined as Date | undefined,
+    dateRange: undefined as DateRange | undefined,
     passengers: 1
   });
 
@@ -148,8 +149,8 @@ const SearchForm = () => {
         dropoff: bookingState.toDisplay || bookingState.to || '',
         pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
         dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
-        pickupDateTime: bookingState.pickupDateTime || undefined,
-        dropoffDateTime: bookingState.dropoffDateTime || undefined
+        pickupDateTime: bookingState.pickupDateTime,
+        dropoffDateTime: bookingState.dropoffDateTime
       }));
       
       if (bookingState.isReturn !== undefined) {
@@ -180,6 +181,7 @@ const SearchForm = () => {
         dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
         pickupDateTime: bookingState.pickupDateTime || undefined,
         dropoffDateTime: bookingState.dropoffDateTime || undefined,
+        dateRange: undefined, 
         passengers: bookingState.passengers || 1
       };
       
@@ -236,6 +238,7 @@ const SearchForm = () => {
           dropoffDisplay: newFormData.dropoffDisplay,
           pickupDateTime: newFormData.pickupDateTime,
           dropoffDateTime: newFormData.dropoffDateTime,
+          dateRange: newFormData.dateRange,
           passengers: Math.max(1, parseInt(passengerCount || '1', 10))
         };
         
@@ -872,6 +875,13 @@ const SearchForm = () => {
     setApiError(null);
     setGeocodingErrorField(null);
     
+    // Clear existing pricing data in the context to prevent stale data usage
+    setBookingState(prev => ({
+      ...prev,
+      pricingResponse: null,
+      pricingError: null
+    }));
+    
     // Fetch updated prices
     const pricingResponse = await fetchPrices();
     
@@ -910,7 +920,7 @@ const SearchForm = () => {
     // Track search form submission
     trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
     
-    // Update original values to match the new state
+    // Update original values to match the new route
     originalValuesRef.current = {
       isReturn,
       pickup: formData.pickup,
@@ -918,7 +928,8 @@ const SearchForm = () => {
       pickupDisplay: formData.pickupDisplay,
       dropoffDisplay: formData.dropoffDisplay,
       pickupDateTime: pickupDateObj,
-      dropoffDateTime: isReturn ? formData.dateRange?.to : undefined,
+      dropoffDateTime: isReturn && formData.dateRange?.to ? formData.dateRange.to : undefined,
+      dateRange: formData.dateRange,
       passengers
     };
     
@@ -1149,12 +1160,12 @@ const SearchForm = () => {
                 
                 if (!date) return;
                 
-                // Ensure time is at least 4 hours from now
-                const minBookingTime = getMinimumBookingTime();
+                // Ensure time is at least 4 hours in the future
+                const minDate = getMinimumBookingTime();
                 let pickupDate = date;
                 
-                if (pickupDate.getTime() < minBookingTime.getTime()) {
-                  pickupDate = minBookingTime;
+                if (pickupDate.getTime() < minDate.getTime()) {
+                  pickupDate = minDate;
                 }
                 
                 setFormData(prev => ({
