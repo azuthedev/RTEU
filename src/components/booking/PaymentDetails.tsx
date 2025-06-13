@@ -701,7 +701,7 @@ const PaymentDetails = () => {
 
           <div className="mt-6 text-sm text-gray-500">
             By clicking 'Complete Booking' you acknowledge that you have read and
-            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className=\"underline hover:text-black">Privacy Policy</a>.
+            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className="underline hover:text-black">Privacy Policy</a>.
           </div>
         </section>
       </div>
