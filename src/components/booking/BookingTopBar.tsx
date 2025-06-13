@@ -1,14 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Users, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Header from '../Header';
+import BookingTopBar from './BookingTopBar';
+import ProgressBar from './ProgressBar';
+import { useBooking } from '../../contexts/BookingContext';
+import { useAnalytics } from '../../hooks/useAnalytics';
+import Newsletter from '../Newsletter';
+import { useToast } from '../ui/use-toast';
+import { ChevronDown, CreditCard, Banknote, Tag, AlertCircle } from 'lucide-react';
+import { MapPin, Users, Plus, Minus, Loader2 } from 'lucide-react';
+import { throttle } from 'lodash-es';
 import { DatePicker } from '../ui/date-picker';
 import { DateRangePicker } from '../ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
-import { useBooking } from '../../contexts/BookingContext';
 import { initGoogleMaps } from '../../utils/optimizeThirdParty';
-import { useToast } from '../ui/use-toast';
 import { fetchWithCors, getApiUrl } from '../../utils/corsHelper';
 import { 
   formatDateForUrl, 
@@ -66,6 +74,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   
   // Flag to track component initialization
   const isInitializedRef = useRef(false);
+  
   // Flag to track user interaction
   const userInteractedRef = useRef(false);
   
@@ -275,21 +284,48 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     let dropoff = dropoffCoords;
     
     if (!pickup) {
-      pickup = await geocodeAddress(pickupValue, 'pickup', pickupPlaceId);
+      try {
+        pickup = await geocodeAddress(pickupValue, 'pickup', pickupPlaceId);
+      } catch (error) {
+        // Handle geocoding error - specific to pickup
+        setGeocodingErrorField('pickup');
+        setIsLoadingPrices(false);
+        return null;
+      }
     }
     
     if (!dropoff) {
-      dropoff = await geocodeAddress(dropoffValue, 'dropoff', dropoffPlaceId);
+      try {
+        dropoff = await geocodeAddress(dropoffValue, 'dropoff', dropoffPlaceId);
+      } catch (error) {
+        // Handle geocoding error - specific to dropoff
+        setGeocodingErrorField('dropoff');
+        setIsLoadingPrices(false);
+        return null;
+      }
     }
     
     if (!pickup || !dropoff) {
-      toast({
-        title: "Location Error",
-        description: !pickup 
-          ? "Unable to find coordinates for pickup location. Please try a more specific address." 
-          : "Unable to find coordinates for dropoff location. Please try a more specific address.",
-        variant: "destructive"
-      });
+      // Set appropriate geocoding error field if not already set
+      if (isMountedRef.current) {
+        if (!pickup && !dropoff) {
+          setGeocodingErrorField('pickup'); // Default to pickup if both failed
+        } else if (!pickup) {
+          setGeocodingErrorField('pickup');
+        } else if (!dropoff) {
+          setGeocodingErrorField('dropoff');
+        }
+        
+        toast({
+          title: "Location Error",
+          description: !pickup 
+            ? "Unable to find coordinates for pickup location. Please select a more specific address." 
+            : "Unable to find coordinates for dropoff location. Please select a more specific address.",
+          variant: "destructive"
+        });
+        
+        setIsLoadingPrices(false);
+      }
       return null;
     }
     
@@ -407,6 +443,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         
         throw new Error(`Expected JSON response but got: ${contentType}`);
       }
+      
       const data: PricingResponse = await response.json();
       console.log('Pricing data received:', data);
       
@@ -424,13 +461,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
         errorMessage += 'Please try again later.';
       }
       
-      setApiError(errorMessage);
-      
-      toast({
-        title: "Pricing Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        setApiError(errorMessage);
+        
+        toast({
+          title: "Pricing Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
       
       return null;
     } finally {
@@ -473,9 +512,19 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       if (field === 'pickup') {
         setPickupCoords(location);
         console.log('Pickup coordinates from place selection:', location);
+        
+        // Clear any existing geocoding error
+        if (geocodingErrorField === 'pickup') {
+          setGeocodingErrorField(null);
+        }
       } else {
         setDropoffCoords(location);
         console.log('Dropoff coordinates from place selection:', location);
+        
+        // Clear any existing geocoding error
+        if (geocodingErrorField === 'dropoff') {
+          setGeocodingErrorField(null);
+        }
       }
     } else if (placeData?.place_id) {
       // If we have place_id but no geometry, fetch the coordinates
@@ -484,81 +533,30 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
           if (coords) {
             if (field === 'pickup') {
               setPickupCoords(coords);
+              if (geocodingErrorField === 'pickup') {
+                setGeocodingErrorField(null);
+              }
             } else {
               setDropoffCoords(coords);
+              if (geocodingErrorField === 'dropoff') {
+                setGeocodingErrorField(null);
+              }
             }
           }
         })
         .catch(error => {
           console.error(`Error geocoding ${field} place:`, error);
-          toast({
-            title: "Geocoding Error",
-            description: `Unable to find coordinates for this ${field} location. Please try a different address.`,
-            variant: "destructive"
-          });
-        });
-    }
-  };
-
-  const handlePassengerChange = (increment: boolean) => {
-    userInteractedRef.current = true;
-    const newPassengers = increment ? formData.passengers + 1 : formData.passengers - 1;
-    if (newPassengers >= 1 && newPassengers <= 100) {
-      setFormData(prev => ({ ...prev, passengers: newPassengers }));
-      setDisplayPassengers(newPassengers);
-    }
-  };
-
-  const handleTripTypeChange = (oneWay: boolean) => {
-    userInteractedRef.current = true;
-    const newIsOneWay = oneWay;
-    // If toggling back to original state without saving, restore original values
-    if (newIsOneWay === originalValuesRef.current.isOneWay && !hasChanges) {
-      setIsOneWay(newIsOneWay);
-      setFormData(prev => ({
-        ...prev,
-        type: newIsOneWay ? '1' : '2',
-        pickupDateTime: originalValuesRef.current.pickupDateTime,
-        dropoffDateTime: originalValuesRef.current.dropoffDateTime,
-        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
-          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
-          : undefined
-      }));
-      return;
-    }
-    
-    setIsOneWay(oneWay);
-    
-    if (oneWay) {
-      // Switching to One Way
-      setFormData(prev => {
-        return {
-          ...prev,
-          type: '1',
-          pickupDateTime: prev.dateRange?.from || prev.pickupDateTime,
-          dropoffDateTime: undefined,
-          dateRange: undefined
-        };
-      });
-    } else {
-      // Switching to Round Trip
-      setFormData(prev => {
-        // Calculate a default return date (1 day after pickup)
-        const pickupDate = prev.pickupDateTime || minPickupDateTime;
-        const defaultDropoffDate = new Date(pickupDate);
-        defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1);
-        
-        return {
-          ...prev,
-          type: '2',
-          pickupDateTime: undefined,
-          dropoffDateTime: undefined,
-          dateRange: {
-            from: pickupDate,
-            to: prev.dropoffDateTime || defaultDropoffDate
+          if (isMountedRef.current) {
+            // Set geocoding error field
+            setGeocodingErrorField(field);
+            
+            toast({
+              title: "Geocoding Error",
+              description: `Unable to find coordinates for this ${field} location. Please try a different address.`,
+              variant: "destructive"
+            });
           }
-        };
-      });
+        });
     }
   };
 
@@ -702,6 +700,15 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     navigate(path);
   };
+  
+  // State for geocoding error field
+  const [geocodingErrorField, setGeocodingErrorField] = useState<'pickup' | 'dropoff' | null>(null);
+  
+  // Function to cancel geocoding
+  const handleCancelGeocoding = () => {
+    setGeocodingErrorField(null);
+    setIsLoadingPrices(false);
+  };
 
   const handlePickupValidation = (isValid: boolean) => {
     setPickupIsValid(isValid);
@@ -709,6 +716,68 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
 
   const handleDropoffValidation = (isValid: boolean) => {
     setDropoffIsValid(isValid);
+  };
+
+  const handlePassengerChange = (increment: boolean) => {
+    userInteractedRef.current = true;
+    const newPassengers = increment ? formData.passengers + 1 : formData.passengers - 1;
+    if (newPassengers >= 1 && newPassengers <= 100) {
+      setFormData(prev => ({ ...prev, passengers: newPassengers }));
+      setDisplayPassengers(newPassengers);
+    }
+  };
+
+  const handleTripTypeChange = (oneWay: boolean) => {
+    userInteractedRef.current = true;
+    const newIsOneWay = oneWay;
+    // If toggling back to original state without saving, restore original values
+    if (newIsOneWay === originalValuesRef.current.isOneWay && !hasChanges) {
+      setIsOneWay(newIsOneWay);
+      setFormData(prev => ({
+        ...prev,
+        type: newIsOneWay ? '1' : '2',
+        pickupDateTime: originalValuesRef.current.pickupDateTime,
+        dropoffDateTime: originalValuesRef.current.dropoffDateTime,
+        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
+          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
+          : undefined
+      }));
+      return;
+    }
+    
+    setIsOneWay(oneWay);
+    
+    if (oneWay) {
+      // Switching to One Way
+      setFormData(prev => {
+        return {
+          ...prev,
+          type: '1',
+          pickupDateTime: prev.dateRange?.from || prev.pickupDateTime,
+          dropoffDateTime: undefined,
+          dateRange: undefined
+        };
+      });
+    } else {
+      // Switching to Round Trip
+      setFormData(prev => {
+        // Calculate a default return date (1 day after pickup)
+        const pickupDate = prev.pickupDateTime || minPickupDateTime;
+        const defaultDropoffDate = new Date(pickupDate);
+        defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1);
+        
+        return {
+          ...prev,
+          type: '2',
+          pickupDateTime: undefined,
+          dropoffDateTime: undefined,
+          dateRange: {
+            from: pickupDate,
+            to: prev.dropoffDateTime || defaultDropoffDate
+          }
+        };
+      });
+    }
   };
 
   return (
