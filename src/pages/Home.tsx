@@ -94,18 +94,18 @@ function HomeContent() {
       <Hero />
        
       <LazyComponent height={400}>
-        <Benefits />
+        <Services />
       </LazyComponent>
-      
-      <LazyComponent height={500}>
-        <FeaturedDestinations />
+
+      <LazyComponent>
+        <BookingProcess />
+      </LazyComponent>
+
+      <LazyComponent height={400}>
+        <Benefits />
       </LazyComponent>
 
       <TrustBadges />
-      
-      <LazyComponent height={400}>
-        <Services />
-      </LazyComponent>
       
       <LazyComponent>
         <AboutPreview />
@@ -113,10 +113,6 @@ function HomeContent() {
       
       <LazyComponent>
         <FAQPreview />
-      </LazyComponent>
-      
-      <LazyComponent>
-        <BookingProcess />
       </LazyComponent>
       
       <LazyComponent>
