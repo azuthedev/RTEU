@@ -1,12 +1,11 @@
+/**
+ * Helper functions for the SearchForm component
+ */
 import { initGoogleMaps } from './optimizeThirdParty';
 import { errorTracker, ErrorContext, ErrorSeverity } from './errorTracker';
 import { sanitizeInput } from './dataValidator';
 
-/**
- * Helper functions for the SearchForm component
- */
-
-// Formatter for date URL parameters
+// Formatter for date URL parameters (strips time information - only for URL use)
 export const formatDateForUrl = (date: Date): string => {
   if (!date || isNaN(date.getTime())) {
     return '';
@@ -17,7 +16,7 @@ export const formatDateForUrl = (date: Date): string => {
   return `${year}${month}${day}`;
 };
 
-// Parse date from URL parameters
+// Parse date from URL parameters (adds noon as default time)
 export const parseDateFromUrl = (dateStr: string): Date | undefined => {
   if (!dateStr || dateStr === '0' || dateStr.length !== 6) {
     return undefined;
@@ -28,16 +27,83 @@ export const parseDateFromUrl = (dateStr: string): Date | undefined => {
     const month = parseInt(dateStr.slice(2, 4)) - 1;
     const day = parseInt(dateStr.slice(4, 6));
     
-    const date = new Date(year, month, day, 12, 0, 0, 0);
+    // Check if we're parsing today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    if (isNaN(date.getTime())) {
+    const parsedDate = new Date(year, month, day);
+    parsedDate.setHours(0, 0, 0, 0);
+    
+    // If date is invalid, return undefined
+    if (isNaN(parsedDate.getTime())) {
       return undefined;
     }
     
-    return date;
+    // Get current time plus minimum booking time
+    const now = new Date();
+    const minBookingHoursAhead = 4; // Minimum 4 hours in the future
+    const minBookingTime = new Date(now.getTime() + minBookingHoursAhead * 60 * 60 * 1000);
+    
+    // If the parsed date is today, set time to now + minimum hours
+    if (parsedDate.getTime() === today.getTime()) {
+      parsedDate.setHours(minBookingTime.getHours(), minBookingTime.getMinutes(), 0, 0);
+    } else {
+      // For future dates, use 12:00 (noon) as default time
+      parsedDate.setHours(12, 0, 0, 0);
+    }
+    
+    // Ensure we always return a date that's at least minBookingHoursAhead hours in the future
+    if (parsedDate.getTime() < minBookingTime.getTime()) {
+      return minBookingTime;
+    }
+    
+    return parsedDate;
   } catch (error) {
     console.error('Error parsing date:', error);
     return undefined;
+  }
+};
+
+// Format a date as display string for UI
+export const formatDateTimeForDisplay = (date: Date | undefined): string => {
+  if (!date) return 'Not specified';
+  
+  try {
+    return date.toLocaleString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (e) {
+    console.error('Error formatting date for display:', e);
+    return date.toString();
+  }
+};
+
+// Format date and time separately
+export const formatDateTimeComponents = (date: Date | undefined): { date: string, time: string } => {
+  if (!date) return { date: 'Not specified', time: 'Not specified' };
+  
+  try {
+    return {
+      date: date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      time: date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+  } catch (e) {
+    console.error('Error formatting date/time components:', e);
+    return {
+      date: date.toLocaleDateString() || 'Not specified',
+      time: date.toLocaleTimeString() || 'Not specified'
+    };
   }
 };
 
@@ -205,4 +271,21 @@ export const validateTransferAddress = (
     isValid: false, 
     message: 'Please enter a complete address with street name and number, or select a suggestion from the dropdown.' 
   };
+};
+
+// Gets minimum allowed booking time (4 hours from now)
+export const getMinimumBookingTime = (): Date => {
+  const now = new Date();
+  const minBookingHoursAhead = 4; // Minimum 4 hours in the future
+  const minBookingTime = new Date(now.getTime() + minBookingHoursAhead * 60 * 60 * 1000);
+  
+  return minBookingTime;
+};
+
+// Check if a date meets the minimum booking time requirement
+export const isValidBookingTime = (date: Date | undefined): boolean => {
+  if (!date) return false;
+  
+  const minBookingTime = getMinimumBookingTime();
+  return date.getTime() >= minBookingTime.getTime();
 };

@@ -37,6 +37,10 @@ export interface BookingState {
   fromDisplay?: string; // Store the display name for from location
   toDisplay?: string;   // Store the display name for to location
   isReturn?: boolean;
+  // Full date objects with time information
+  pickupDateTime?: Date;
+  dropoffDateTime?: Date;
+  // Keep these for URL compatibility
   departureDate?: string;
   returnDate?: string;
   passengers?: number;
@@ -66,6 +70,7 @@ export interface BookingState {
     discountCode?: string;
   };
   pricingResponse?: PricingResponse; // Store pricing data from API
+  pricingError?: string | null; // Added to track pricing fetch errors
   validationErrors: ValidationError[]; // Added to track validation errors
 }
 
@@ -96,6 +101,15 @@ const serializeBookingState = (state: BookingState): string => {
     };
   }
 
+  // Convert Date objects to ISO strings
+  if (stateCopy.pickupDateTime) {
+    stateCopy.pickupDateTime = stateCopy.pickupDateTime.toISOString();
+  }
+  
+  if (stateCopy.dropoffDateTime) {
+    stateCopy.dropoffDateTime = stateCopy.dropoffDateTime.toISOString();
+  }
+  
   // Remove sensitive payment information
   if (stateCopy.paymentDetails) {
     stateCopy.paymentDetails = {
@@ -120,6 +134,15 @@ const deserializeBookingState = (serialized: string | null): BookingState | null
         ...parsed.personalDetails,
         selectedExtras: new Set(parsed.personalDetails.selectedExtras)
       };
+    }
+    
+    // Convert ISO strings back to Date objects
+    if (parsed.pickupDateTime) {
+      parsed.pickupDateTime = new Date(parsed.pickupDateTime);
+    }
+    
+    if (parsed.dropoffDateTime) {
+      parsed.dropoffDateTime = new Date(parsed.dropoffDateTime);
     }
 
     // Ensure we have proper vehicle object with all methods and properties
@@ -193,6 +216,7 @@ const getDefaultBookingState = (): BookingState => ({
   paymentDetails: {
     method: 'card'
   },
+  pricingError: null, // Initialize with null
   validationErrors: []
 });
 
@@ -228,9 +252,12 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       from: bookingState.from,
       fromDisplay: bookingState.fromDisplay,
       to: bookingState.to, 
-      toDisplay: bookingState.toDisplay
+      toDisplay: bookingState.toDisplay,
+      pickupDateTime: bookingState.pickupDateTime,
+      dropoffDateTime: bookingState.dropoffDateTime
     });
-  }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay]);
+  }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
+      bookingState.pickupDateTime, bookingState.dropoffDateTime]);
 
   // Function to clear booking state
   const clearBookingState = () => {
@@ -254,14 +281,19 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
           errors.push({ field: 'route', message: 'Route information is missing' });
         }
         
-        // Check if we have date information
-        if (!bookingState.departureDate) {
-          errors.push({ field: 'date', message: 'Departure date is required' });
+        // Check if we have date information - using full date objects
+        if (!bookingState.pickupDateTime) {
+          errors.push({ field: 'pickupDateTime', message: 'Pickup date and time are required' });
         }
         
-        // Check if return date is set for round trips
-        if (bookingState.isReturn && !bookingState.returnDate) {
-          errors.push({ field: 'returnDate', message: 'Return date is required for round trips' });
+        // Check if return date is set for round trips - using full date objects
+        if (bookingState.isReturn && !bookingState.dropoffDateTime) {
+          errors.push({ field: 'dropoffDateTime', message: 'Return date and time are required for round trips' });
+        }
+        
+        // Check if pricing error exists
+        if (bookingState.pricingError) {
+          errors.push({ field: 'pricing', message: 'There was an error fetching prices. Please try again.' });
         }
         
         break;

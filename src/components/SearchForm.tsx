@@ -15,7 +15,14 @@ import { withRetry } from '../utils/retryHelper';
 import { sanitizeInput } from '../utils/dataValidator';
 import { errorTracker, ErrorContext, ErrorSeverity } from '../utils/errorTracker';
 import { requestTracker } from '../utils/requestTracker';
-import { geocodeAddress, formatDateForUrl, parseDateFromUrl, validateTransferAddress } from '../utils/searchFormHelpers';
+import { 
+  geocodeAddress, 
+  formatDateForUrl, 
+  parseDateFromUrl, 
+  validateTransferAddress,
+  getMinimumBookingTime,
+  isValidBookingTime
+} from '../utils/searchFormHelpers';
 import { useLanguage } from '../contexts/LanguageContext';
 
 // Interface for API price response
@@ -55,8 +62,8 @@ const SearchForm = () => {
     dropoff: '',
     pickupDisplay: '',
     dropoffDisplay: '',
-    departureDate: undefined as Date | undefined,
-    dateRange: undefined as DateRange | undefined,
+    pickupDateTime: undefined as Date | undefined,
+    dropoffDateTime: undefined as Date | undefined,
     passengers: 1
   });
 
@@ -68,7 +75,8 @@ const SearchForm = () => {
     dropoff: '',
     pickupDisplay: '', // Store the display version
     dropoffDisplay: '', // Store the display version
-    departureDate: undefined as Date | undefined,
+    pickupDateTime: undefined as Date | undefined,
+    dropoffDateTime: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined
   });
 
@@ -128,7 +136,10 @@ const SearchForm = () => {
         fromDisplay: bookingState.fromDisplay,
         toDisplay: bookingState.toDisplay,
         from: bookingState.from,
-        to: bookingState.to
+        to: bookingState.to,
+        pickupDateTime: bookingState.pickupDateTime,
+        dropoffDateTime: bookingState.dropoffDateTime,
+        isReturn: bookingState.isReturn
       });
       
       setFormData(prev => ({
@@ -136,7 +147,9 @@ const SearchForm = () => {
         pickup: bookingState.fromDisplay || bookingState.from || '',
         dropoff: bookingState.toDisplay || bookingState.to || '',
         pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
-        dropoffDisplay: bookingState.toDisplay || bookingState.to || ''
+        dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
+        pickupDateTime: bookingState.pickupDateTime || undefined,
+        dropoffDateTime: bookingState.dropoffDateTime || undefined
       }));
       
       if (bookingState.isReturn !== undefined) {
@@ -147,21 +160,15 @@ const SearchForm = () => {
         setPassengers(bookingState.passengers);
       }
       
-      if (bookingState.departureDate) {
-        const departureDate = parseDateFromUrl(bookingState.departureDate);
-        const returnDate = bookingState.returnDate ? parseDateFromUrl(bookingState.returnDate) : undefined;
-        
-        if (bookingState.isReturn && departureDate && returnDate) {
-          setFormData(prev => ({
-            ...prev,
-            dateRange: { from: departureDate, to: returnDate }
-          }));
-        } else if (departureDate) {
-          setFormData(prev => ({
-            ...prev,
-            departureDate
-          }));
-        }
+      // Update the date range state if we have pickup and dropoff dates
+      if (bookingState.isReturn && bookingState.pickupDateTime && bookingState.dropoffDateTime) {
+        setFormData(prev => ({
+          ...prev,
+          dateRange: { 
+            from: bookingState.pickupDateTime!, 
+            to: bookingState.dropoffDateTime! 
+          }
+        }));
       }
       
       // Store original values for comparison
@@ -171,8 +178,8 @@ const SearchForm = () => {
         dropoff: bookingState.toDisplay || bookingState.to || '',
         pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
         dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
-        departureDate: formData.departureDate,
-        dateRange: formData.dateRange,
+        pickupDateTime: bookingState.pickupDateTime || undefined,
+        dropoffDateTime: bookingState.dropoffDateTime || undefined,
         passengers: bookingState.passengers || 1
       };
       
@@ -197,8 +204,9 @@ const SearchForm = () => {
         setIsReturn(isRoundTrip);
         setPassengers(Math.max(1, parseInt(passengerCount || '1', 10)));
         
-        const departureDate = parseDateFromUrl(date);
-        const returnDateParsed = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
+        // Parse dates with times (default time set in parseDateFromUrl)
+        const pickupDateTime = parseDateFromUrl(date);
+        const dropoffDateTime = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
         
         // Decode locations (from and to) for display
         // First check if we already have display versions in the booking context
@@ -210,12 +218,10 @@ const SearchForm = () => {
           dropoff: toDisplay,
           pickupDisplay: fromDisplay,
           dropoffDisplay: toDisplay,
-          departureDate: isRoundTrip ? undefined : departureDate,
-          dateRange: isRoundTrip 
-            ? {
-                from: departureDate,
-                to: returnDateParsed
-              } as DateRange | undefined 
+          pickupDateTime: pickupDateTime,
+          dropoffDateTime: dropoffDateTime,
+          dateRange: isRoundTrip && pickupDateTime && dropoffDateTime
+            ? { from: pickupDateTime, to: dropoffDateTime } as DateRange
             : undefined
         };
 
@@ -228,15 +234,22 @@ const SearchForm = () => {
           dropoff: newFormData.dropoff,
           pickupDisplay: newFormData.pickupDisplay,
           dropoffDisplay: newFormData.dropoffDisplay,
-          departureDate: newFormData.departureDate,
-          dateRange: newFormData.dateRange,
+          pickupDateTime: newFormData.pickupDateTime,
+          dropoffDateTime: newFormData.dropoffDateTime,
           passengers: Math.max(1, parseInt(passengerCount || '1', 10))
         };
         
         initialStateLoadedRef.current = true;
       }
     } else {
-      // If not coming from URL with params, mark as initialized
+      // If not coming from URL with params, set current date + 4 hours as the default
+      const defaultPickupDateTime = getMinimumBookingTime();
+      setFormData(prev => ({
+        ...prev,
+        pickupDateTime: defaultPickupDateTime
+      }));
+      
+      // Mark as initialized
       initialStateLoadedRef.current = true;
     }
   }, [location.pathname, params, bookingState.fromDisplay, bookingState.toDisplay]);
@@ -263,8 +276,11 @@ const SearchForm = () => {
       setIsReturn(newIsReturn);
       setFormData({
         ...formData,
-        departureDate: originalValuesRef.current.departureDate,
-        dateRange: originalValuesRef.current.dateRange
+        pickupDateTime: originalValuesRef.current.pickupDateTime,
+        dropoffDateTime: originalValuesRef.current.dropoffDateTime,
+        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
+          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
+          : undefined
       });
       return;
     }
@@ -272,21 +288,30 @@ const SearchForm = () => {
     setIsReturn(newIsReturn);
     
     if (oneWay) {
+      // Switching to One Way
       setFormData(prev => {
         return {
           ...prev,
-          departureDate: prev.dateRange?.from || prev.departureDate,
+          pickupDateTime: prev.dateRange?.from || prev.pickupDateTime,
+          dropoffDateTime: undefined,
           dateRange: undefined
         };
       });
     } else {
+      // Switching to Round Trip
       setFormData(prev => {
+        // Calculate a default return date (1 day after pickup)
+        const pickupDate = prev.pickupDateTime || getMinimumBookingTime();
+        const defaultDropoffDate = new Date(pickupDate);
+        defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1);
+        
         return {
           ...prev,
-          departureDate: undefined,
+          pickupDateTime: prev.pickupDateTime || getMinimumBookingTime(),
+          dropoffDateTime: prev.dropoffDateTime || defaultDropoffDate,
           dateRange: {
-            from: prev.departureDate || prev.dateRange?.from,
-            to: prev.dateRange?.to || undefined
+            from: prev.pickupDateTime || getMinimumBookingTime(),
+            to: prev.dropoffDateTime || defaultDropoffDate
           }
         };
       });
@@ -362,11 +387,10 @@ const SearchForm = () => {
         return null;
       }
       
-      const pickupTime = isReturn 
-        ? formData.dateRange?.from 
-        : formData.departureDate;
-        
-      if (!pickupTime) {
+      // Get pickup date/time - use full Date objects with time
+      const pickupDateTime = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
+      
+      if (!pickupDateTime) {
         if (isMountedRef.current) {
           toast({
             title: "Time Error",
@@ -378,8 +402,37 @@ const SearchForm = () => {
         return null;
       }
       
-      // Format date to ISO8601
-      const pickupTimeISO = pickupTime.toISOString();
+      // Validate pickup time is at least 4 hours in the future
+      const minBookingTime = getMinimumBookingTime();
+      if (pickupDateTime.getTime() < minBookingTime.getTime()) {
+        if (isMountedRef.current) {
+          toast({
+            title: "Time Error",
+            description: "Pickup time must be at least 4 hours from now.",
+            variant: "destructive"
+          });
+          setIsLoadingPrices(false);
+        }
+        return null;
+      }
+      
+      // For return trips, validate return time is after pickup time
+      if (isReturn && formData.dateRange?.to) {
+        if (formData.dateRange.to.getTime() <= pickupDateTime.getTime()) {
+          if (isMountedRef.current) {
+            toast({
+              title: "Time Error",
+              description: "Return time must be after pickup time.",
+              variant: "destructive"
+            });
+            setIsLoadingPrices(false);
+          }
+          return null;
+        }
+      }
+      
+      // Format date to ISO8601 - preserve exact time
+      const pickupTimeISO = pickupDateTime.toISOString();
       
       // Prepare request payload with trip_type parameter
       const payload = {
@@ -708,10 +761,31 @@ const SearchForm = () => {
     const dropoff = formData.dropoff;
     
     // Check for basic form validity
-    if (!pickup || !dropoff || (!formData.departureDate && !formData.dateRange?.from)) {
+    if (!pickup || !dropoff) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for valid date/time selection
+    const pickupDateTime = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
+    if (!pickupDateTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a pickup date and time",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validate pickup time is at least 4 hours in the future
+    if (!isValidBookingTime(pickupDateTime)) {
+      toast({
+        title: "Invalid Pickup Time",
+        description: "Pickup time must be at least 4 hours from now",
         variant: "destructive"
       });
       return;
@@ -725,6 +799,18 @@ const SearchForm = () => {
         variant: "destructive"
       });
       return;
+    }
+    
+    // Validate return date is after pickup date
+    if (isReturn && formData.dateRange?.from && formData.dateRange?.to) {
+      if (formData.dateRange.to.getTime() <= formData.dateRange.from.getTime()) {
+        toast({
+          title: "Invalid Return Date",
+          description: "Return date must be after pickup date",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     // Validate addresses
@@ -810,8 +896,9 @@ const SearchForm = () => {
     // Important: Type is '1' for One Way, '2' for Round Trip 
     const type = isReturn ? '2' : '1';
     
-    const departureDate = isReturn ? formData.dateRange?.from : formData.departureDate;
-    const formattedDepartureDate = departureDate ? formatDateForUrl(departureDate) : '';
+    // Use pickupDateTime from form data
+    const pickupDateObj = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
+    const formattedDepartureDate = pickupDateObj ? formatDateForUrl(pickupDateObj) : '';
     
     // Always include returnDate parameter (use '0' for one-way trips)
     const returnDateParam = isReturn && formData.dateRange?.to
@@ -830,24 +917,29 @@ const SearchForm = () => {
       dropoff: formData.dropoff,
       pickupDisplay: formData.pickupDisplay,
       dropoffDisplay: formData.dropoffDisplay,
-      departureDate: formData.departureDate,
-      dateRange: formData.dateRange,
+      pickupDateTime: pickupDateObj,
+      dropoffDateTime: isReturn ? formData.dateRange?.to : undefined,
       passengers
     };
     
-    // Store the display names and URL-friendly names in booking context
+    // Store all information in context, including full dates with times and display names
     setBookingState(prev => ({
       ...prev,
       from: formData.pickup, 
       to: formData.dropoff,
       fromDisplay: formData.pickupDisplay,
       toDisplay: formData.dropoffDisplay,
+      pickupDateTime: pickupDateObj,
+      dropoffDateTime: isReturn && formData.dateRange?.to ? formData.dateRange.to : undefined,
       isReturn,
+      // Still keep these URL-format dates for backward compatibility
       departureDate: formattedDepartureDate,
       returnDate: returnDateParam !== '0' ? returnDateParam : undefined,
       passengers,
-      // Store pricing data in context
-      pricingResponse: pricingResponse
+      // Store the pricing data
+      pricingResponse,
+      // Clear any pricing error
+      pricingError: null
     }));
     
     // Set navigating flag before navigation to prevent error toast
@@ -1001,33 +1093,83 @@ const SearchForm = () => {
               dateRange={formData.dateRange}
               onDateRangeChange={(dateRange) => {
                 userInteractedRef.current = true;
+                
+                // Ensure both from and to dates exist
+                if (!dateRange?.from || !dateRange?.to) {
+                  return;
+                }
+                
+                // If the user selects today, ensure time is at least 4 hours from now
+                const minBookingTime = getMinimumBookingTime();
+                let pickupDate = dateRange.from;
+                
+                // Check if the selected date is today
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const selectedDate = new Date(pickupDate);
+                selectedDate.setHours(0, 0, 0, 0);
+                
+                if (selectedDate.getTime() === today.getTime() && 
+                    pickupDate.getTime() < minBookingTime.getTime()) {
+                  pickupDate = minBookingTime;
+                }
+                
+                // Make sure return date is at least 6 hours after pickup
+                let dropoffDate = dateRange.to;
+                const minReturnTime = new Date(pickupDate.getTime() + 6 * 60 * 60 * 1000);
+                
+                if (dropoffDate.getTime() < minReturnTime.getTime()) {
+                  dropoffDate = minReturnTime;
+                }
+                
+                // Update state with validated dates
                 setFormData(prev => ({
                   ...prev,
-                  dateRange,
-                  departureDate: undefined
+                  pickupDateTime: pickupDate,
+                  dropoffDateTime: dropoffDate,
+                  dateRange: {
+                    from: pickupDate,
+                    to: dropoffDate
+                  }
                 }));
-                if (dateRange?.from && dateRange?.to) {
-                  trackEvent('Search Form', 'Select Date Range', 
-                    `${dateRange.from.toISOString()} to ${dateRange.to.toISOString()}`);
-                }
+                
+                // Track selection
+                trackEvent('Search Form', 'Select Date Range', 
+                  `${pickupDate.toISOString()} to ${dropoffDate.toISOString()}`);
               }}
               placeholder={t('searchform.dates')}
+              minDate={getMinimumBookingTime()}
             />
           ) : (
             <DatePicker
-              date={formData.departureDate}
+              date={formData.pickupDateTime}
               onDateChange={(date) => {
                 userInteractedRef.current = true;
+                
+                if (!date) return;
+                
+                // Ensure time is at least 4 hours from now
+                const minBookingTime = getMinimumBookingTime();
+                let pickupDate = date;
+                
+                if (pickupDate.getTime() < minBookingTime.getTime()) {
+                  pickupDate = minBookingTime;
+                }
+                
                 setFormData(prev => ({
                   ...prev,
-                  departureDate: date,
+                  pickupDateTime: pickupDate,
+                  dropoffDateTime: undefined,
                   dateRange: undefined
                 }));
+                
                 if (date) {
                   trackEvent('Search Form', 'Select Date', date.toISOString());
                 }
               }}
               placeholder={t('searchform.date')}
+              minDate={getMinimumBookingTime()}
             />
           )}
 
@@ -1064,12 +1206,12 @@ const SearchForm = () => {
 
         <button 
           className={`w-full py-3 rounded-md flex items-center justify-center space-x-2 ${
-            pickupIsValid && dropoffIsValid && (formData.departureDate || (formData.dateRange?.from && formData.dateRange?.to))
+            pickupIsValid && dropoffIsValid && (formData.pickupDateTime || (formData.dateRange?.from && formData.dateRange?.to))
               ? 'bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`} 
           onClick={handleSubmit}
-          disabled={isLoadingPrices || !pickupIsValid || !dropoffIsValid || !(formData.departureDate || (formData.dateRange?.from && formData.dateRange?.to))}
+          disabled={isLoadingPrices || !pickupIsValid || !dropoffIsValid || !(formData.pickupDateTime || (formData.dateRange?.from && formData.dateRange?.to))}
         >
           {isLoadingPrices ? (
             <>

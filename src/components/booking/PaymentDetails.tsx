@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import { generateBookingReference } from '../../utils/bookingHelper';
 import { extras } from '../../data/extras';
 import { useToast } from '../ui/use-toast';
+import { formatDateTimeForDisplay, formatDateTimeComponents } from '../../utils/searchFormHelpers';
 
 const PaymentDetails = () => {
   const { bookingState, setBookingState, validateStep } = useBooking();
@@ -67,15 +68,25 @@ const PaymentDetails = () => {
       // Get the vehicle price from API response if available
       const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle.id) || bookingState.selectedVehicle.price;
 
+      // Format dates for display in checkout and emails
+      const pickupDateComponents = formatDateTimeComponents(bookingState.pickupDateTime);
+      const dropoffDateComponents = bookingState.isReturn ? formatDateTimeComponents(bookingState.dropoffDateTime) : undefined;
+
       // Prepare booking data for the checkout session
       const bookingData = {
         booking_reference: bookingReference,
         trip: {
-          from: bookingState.personalDetails?.pickup || bookingState.from || 'Unknown location',
-          to: bookingState.personalDetails?.dropoff || bookingState.to || 'Unknown location',
+          from: bookingState.personalDetails?.pickup || bookingState.fromDisplay || bookingState.from || 'Unknown location',
+          to: bookingState.personalDetails?.dropoff || bookingState.toDisplay || bookingState.to || 'Unknown location',
           type: bookingState.isReturn ? 'round-trip' : 'one-way',
-          date: bookingState.departureDate || new Date().toISOString(),
-          returnDate: bookingState.returnDate || null,
+          // Send complete ISO date strings with time information
+          date: bookingState.pickupDateTime?.toISOString() || new Date().toISOString(),
+          returnDate: bookingState.dropoffDateTime?.toISOString() || null,
+          // Add formatted date/time components for email
+          pickup_date: pickupDateComponents?.date || '',
+          pickup_time: pickupDateComponents?.time || '',
+          dropoff_date: dropoffDateComponents?.date || '',
+          dropoff_time: dropoffDateComponents?.time || '',
           passengers: bookingState.passengers || 1
         },
         vehicle: {
@@ -264,15 +275,25 @@ const PaymentDetails = () => {
         // Get the vehicle price from API response if available
         const vehiclePrice = getApiVehiclePrice(bookingState.selectedVehicle.id) || bookingState.selectedVehicle.price;
         
+        // Format dates for display in checkout and emails
+        const pickupDateComponents = formatDateTimeComponents(bookingState.pickupDateTime);
+        const dropoffDateComponents = bookingState.isReturn ? formatDateTimeComponents(bookingState.dropoffDateTime) : undefined;
+        
         // Prepare booking data for the cash payment
         const bookingData = {
           booking_reference: bookingReference,
           trip: {
-            from: bookingState.personalDetails?.pickup || bookingState.from || 'Unknown location',
-            to: bookingState.personalDetails?.dropoff || bookingState.to || 'Unknown location',
+            from: bookingState.personalDetails?.pickup || bookingState.fromDisplay || bookingState.from || 'Unknown location',
+            to: bookingState.personalDetails?.dropoff || bookingState.toDisplay || bookingState.to || 'Unknown location',
             type: bookingState.isReturn ? 'round-trip' : 'one-way',
-            date: bookingState.departureDate || new Date().toISOString(),
-            returnDate: bookingState.returnDate || null,
+            // Send complete ISO date strings with time information
+            date: bookingState.pickupDateTime?.toISOString() || new Date().toISOString(),
+            returnDate: bookingState.dropoffDateTime?.toISOString() || null,
+            // Add formatted date/time components for email
+            pickup_date: pickupDateComponents?.date || '',
+            pickup_time: pickupDateComponents?.time || '',
+            dropoff_date: dropoffDateComponents?.date || '',
+            dropoff_time: dropoffDateComponents?.time || '',
             passengers: bookingState.passengers || 1
           },
           vehicle: {
@@ -592,6 +613,47 @@ const PaymentDetails = () => {
           </AnimatePresence>
         </section>
 
+        {/* Show booking summary */}
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl mb-4">Booking Summary</h2>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+              <div>
+                <p className="text-sm text-gray-500">Pickup Location</p>
+                <p className="font-medium">{bookingState.fromDisplay || bookingState.from}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Dropoff Location</p>
+                <p className="font-medium">{bookingState.toDisplay || bookingState.to}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Pickup Date & Time</p>
+                <p className="font-medium">{formatDateTimeForDisplay(bookingState.pickupDateTime)}</p>
+              </div>
+              
+              {bookingState.isReturn && bookingState.dropoffDateTime && (
+                <div>
+                  <p className="text-sm text-gray-500">Return Date & Time</p>
+                  <p className="font-medium">{formatDateTimeForDisplay(bookingState.dropoffDateTime)}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm text-gray-500">Passengers</p>
+                <p className="font-medium">{bookingState.passengers} {bookingState.passengers === 1 ? 'Passenger' : 'Passengers'}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Vehicle</p>
+                <p className="font-medium">{bookingState.selectedVehicle.name}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Price Breakdown */}
         <section className="bg-white rounded-lg shadow-md p-6" id="price-details-section">
           <div className="flex items-center justify-between mb-4">
@@ -639,7 +701,7 @@ const PaymentDetails = () => {
 
           <div className="mt-6 text-sm text-gray-500">
             By clicking 'Complete Booking' you acknowledge that you have read and
-            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className="underline hover:text-black">Privacy Policy</a>.
+            agree to our <a href="/terms" className="underline hover:text-black">Terms & Conditions</a> and <a href="/privacy" className=\"underline hover:text-black">Privacy Policy</a>.
           </div>
         </section>
       </div>
