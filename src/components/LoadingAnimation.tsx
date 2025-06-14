@@ -34,13 +34,13 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
   // Translated loading messages
   const loadingMessages = [
-    t('loading.mapping_routes', 'Mapping optimal routes...'),
-    t('loading.analyzing_traffic', 'Analyzing traffic conditions...'),
-    t('loading.calculating_distance', 'Calculating distance and duration...'),
-    t('loading.sourcing_vehicles', 'Sourcing available premium vehicles...'),
-    t('loading.matching_transfer', 'Matching you with the most efficient transfer...'),
-    t('loading.securing_rate', 'Securing the best real-time rate...'),
-    t('loading.finalizing_quote', 'Finalizing your tailored quote...')
+    t('mapping_routes', 'Mapping optimal routes...'),
+    t('analyzing_traffic', 'Analyzing traffic conditions...'),
+    t('calculating_distance', 'Calculating distance and duration...'),
+    t('sourcing_vehicles', 'Sourcing available premium vehicles...'),
+    t('matching_transfer', 'Matching you with the most efficient transfer...'),
+    t('securing_rate', 'Securing the best real-time rate...'),
+    t('finalizing_quote', 'Finalizing your tailored quote...')
   ];
 
   // Refs for cleanup
@@ -213,16 +213,16 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   let statusIcon = <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-6" aria-hidden="true" />;
 
   if (error) {
-    currentMessage = `${t('loading.error', 'Error')}: ${error}`;
+    currentMessage = `${t('error', 'Error')}: ${error}`;
     statusIcon = <XCircle className="w-12 h-12 text-red-600 mb-6" aria-hidden="true" />;
   } else if (geocodingErrorField) {
     // Show geocoding-specific error message
     currentMessage = geocodingErrorField === 'pickup'
-      ? t('loading.geocoding_error_pickup', "Could not locate your pickup address. Please try a different address.")
-      : t('loading.geocoding_error_dropoff', "Could not locate your dropoff address. Please try a different address.");
+      ? t('geocoding_error_pickup', "Could not locate your pickup address. Please try a different address.")
+      : t('geocoding_error_dropoff', "Could not locate your dropoff address. Please try a different address.");
     statusIcon = <MapPinOff className="w-12 h-12 text-amber-600 mb-6" aria-hidden="true" />;
   } else if (loadingComplete) {
-    currentMessage = t('loading.complete', "All set! Redirecting...");
+    currentMessage = t('complete', "All set! Redirecting...");
     statusIcon = <CheckCircle className="w-12 h-12 text-green-600 mb-6" aria-hidden="true" />;
   } else {
     currentMessage = loadingMessages[messageIndex];
@@ -256,9 +256,9 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             >
               <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
               <span>
-                {t('loading.elapsed', '{{time}}s elapsed', { time: elapsedTime })}
+                {t('elapsed', '{{time}}s elapsed', { time: elapsedTime })}
                 {estimatedTimeRemaining !== null && estimatedTimeRemaining > 0 && (
-                  <span> • {t('loading.remaining', '~{{time}}s remaining', { time: estimatedTimeRemaining })}</span>
+                  <span> • {t('remaining', '~{{time}}s remaining', { time: estimatedTimeRemaining })}</span>
                 )}
               </span>
             </div>
@@ -268,7 +268,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
           {isSlowConnection && !loadingComplete && !error && (
             <div className="flex items-center text-xs text-amber-700 mt-2">
               <AlertTriangle className="w-3 h-3 mr-1" aria-hidden="true" />
-              <span>{t('loading.slow_connection', 'Slow connection detected')}</span>
+              <span>{t('slow_connection', 'Slow connection detected')}</span>
             </div>
           )}
           
@@ -277,7 +277,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             <div className={`flex items-center text-xs mt-1 ${
               networkQuality === 'poor' ? 'text-red-600' : 'text-amber-600'
             }`}>
-              <span>{t('loading.network_quality', 'Network quality: {{quality}}', { quality: t(`loading.${networkQuality}`, networkQuality) })}</span>
+              <span>{t('network_quality', 'Network quality: {{quality}}', { quality: t(networkQuality, networkQuality) })}</span>
             </div>
           )}
         </div>
@@ -313,10 +313,10 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
                   ref={tryDifferentRouteButtonRef}
                   onClick={onTryDifferentRoute}
                   className="px-4 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors flex items-center justify-center mx-auto"
-                  aria-label={t('loading.try_different_address', 'Enter a different address')}
+                  aria-label={t('try_different_address', 'Enter a different address')}
                 >
                   <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
-                  {t('loading.try_different_address_button', 'Try Different Address')}
+                  {t('try_different_address_button', 'Try Different Address')}
                 </button>
               </motion.div>
             )}
@@ -332,10 +332,10 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
                   ref={cancelButtonRef}
                   onClick={onCancel}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center justify-center mx-auto"
-                  aria-label={t('loading.cancel_loading', 'Cancel loading process')}
+                  aria-label={t('cancel_loading', 'Cancel loading process')}
                 >
                   <XSquare className="w-4 h-4 mr-1" aria-hidden="true" />
-                  {error || geocodingErrorField ? t('loading.go_back', 'Go Back') : t('common.cancel', 'Cancel')}
+                  {error || geocodingErrorField ? t('go_back', 'Go Back') : t('common.cancel', 'Cancel')}
                 </button>
               </motion.div>
             )}

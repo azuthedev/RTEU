@@ -46,6 +46,8 @@
   "searchform.passenger": "Passagerare",
   "searchform.passengers": "Passagerare",
   "searchform.cta": "Se priser",
+  "searchform.updating": "Uppdaterar...",
+  "searchform.update_route": "Uppdatera rutt",
   
   "testimonials.quote1": "Utmärkt service, artiga förare och perfekt timing! Våra transferresor var smidiga och stressfria. Rekommenderar starkt Royal Transfer!",
   "testimonials.author1": "Sarah P.",
@@ -57,5 +59,28 @@
   "testimonials.author3": "John D.",
   "testimonials.location3": "USA",
   
-  "footer.copyright": "© 2025 Royal Transfer EU. Alla rättigheter förbehållna."
+  "footer.copyright": "© 2025 Royal Transfer EU. Alla rättigheter förbehållna.",
+  
+  "mapping_routes": "Kartlägger optimala rutter...",
+  "analyzing_traffic": "Analyserar trafikförhållanden...",
+  "calculating_distance": "Beräknar avstånd och varaktighet...",
+  "sourcing_vehicles": "Söker tillgängliga premiumfordon...",
+  "matching_transfer": "Matchar dig med den mest effektiva transporten...",
+  "securing_rate": "Säkrar bästa pris i realtid...",
+  "finalizing_quote": "Slutför din skräddarsydda offert...",
+  "complete": "Allt klart! Omdirigerar...",
+  "error": "Fel",
+  "go_back": "Gå tillbaka",
+  "geocoding_error_pickup": "Kunde inte hitta din upphämtningsadress. Vänligen försök med en annan adress.",
+  "geocoding_error_dropoff": "Kunde inte hitta din avlämningsadress. Vänligen försök med en annan adress.",
+  "try_different_address": "Ange en annan adress",
+  "try_different_address_button": "Prova en annan adress",
+  "elapsed": "{{time}}s förflutit",
+  "remaining": "~{{time}}s återstår",
+  "slow_connection": "Långsam anslutning upptäckt",
+  "network_quality": "Nätverkskvalitet: {{quality}}",
+  "good": "bra",
+  "fair": "medel",
+  "poor": "dålig",
+  "cancel_loading": "Avbryt laddningsprocessen"
 }

@@ -46,6 +46,8 @@
   "searchform.passenger": "Пассажир",
   "searchform.passengers": "Пассажиры",
   "searchform.cta": "Показать цены",
+  "searchform.updating": "Обновление...",
+  "searchform.update_route": "Обновить маршрут",
   
   "testimonials.quote1": "Превосходный сервис, вежливые водители и идеальное расписание! Наши трансферы были комфортными и без стресса. Очень рекомендую Royal Transfer!",
   "testimonials.author1": "Сара П.",
@@ -57,5 +59,28 @@
   "testimonials.author3": "Джон Д.",
   "testimonials.location3": "США",
   
-  "footer.copyright": "© 2025 Royal Transfer EU. Все права защищены."
+  "footer.copyright": "© 2025 Royal Transfer EU. Все права защищены.",
+  
+  "mapping_routes": "Построение оптимальных маршрутов...",
+  "analyzing_traffic": "Анализ дорожной обстановки...",
+  "calculating_distance": "Расчет расстояния и времени в пути...",
+  "sourcing_vehicles": "Поиск доступных премиум автомобилей...",
+  "matching_transfer": "Подбор наиболее эффективного трансфера для вас...",
+  "securing_rate": "Обеспечение лучшего тарифа в реальном времени...",
+  "finalizing_quote": "Завершение вашего индивидуального предложения...",
+  "complete": "Всё готово! Перенаправление...",
+  "error": "Ошибка",
+  "go_back": "Назад",
+  "geocoding_error_pickup": "Не удалось определить ваш адрес посадки. Пожалуйста, попробуйте другой адрес.",
+  "geocoding_error_dropoff": "Не удалось определить ваш адрес высадки. Пожалуйста, попробуйте другой адрес.",
+  "try_different_address": "Введите другой адрес",
+  "try_different_address_button": "Попробовать другой адрес",
+  "elapsed": "{{time}}с прошло",
+  "remaining": "~{{time}}с осталось",
+  "slow_connection": "Обнаружено медленное соединение",
+  "network_quality": "Качество сети: {{quality}}",
+  "good": "хорошее",
+  "fair": "среднее",
+  "poor": "плохое",
+  "cancel_loading": "Отменить процесс загрузки"
 }

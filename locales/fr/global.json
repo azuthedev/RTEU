@@ -46,6 +46,8 @@
   "searchform.passenger": "Passager",
   "searchform.passengers": "Passagers",
   "searchform.cta": "Voir les Prix",
+  "searchform.updating": "Mise à jour...",
+  "searchform.update_route": "Mettre à jour l'itinéraire",
   
   "testimonials.quote1": "Service exceptionnel, chauffeurs polis et timing parfait! Nos transferts étaient fluides et sans stress. Je recommande vivement Royal Transfer!",
   "testimonials.author1": "Sarah P.",
@@ -57,5 +59,28 @@
   "testimonials.author3": "John D.",
   "testimonials.location3": "États-Unis",
   
-  "footer.copyright": "© 2025 Royal Transfer EU. Tous droits réservés."
+  "footer.copyright": "© 2025 Royal Transfer EU. Tous droits réservés.",
+  
+  "mapping_routes": "Cartographie des routes optimales...",
+  "analyzing_traffic": "Analyse des conditions de circulation...",
+  "calculating_distance": "Calcul de la distance et de la durée...",
+  "sourcing_vehicles": "Recherche de véhicules premium disponibles...",
+  "matching_transfer": "Vous associer au transfert le plus efficace...",
+  "securing_rate": "Sécurisation du meilleur tarif en temps réel...",
+  "finalizing_quote": "Finalisation de votre devis personnalisé...",
+  "complete": "Tout est prêt! Redirection...",
+  "error": "Erreur",
+  "go_back": "Retour",
+  "geocoding_error_pickup": "Impossible de localiser votre adresse de prise en charge. Veuillez essayer une adresse différente.",
+  "geocoding_error_dropoff": "Impossible de localiser votre adresse de destination. Veuillez essayer une adresse différente.",
+  "try_different_address": "Entrer une adresse différente",
+  "try_different_address_button": "Essayer une adresse différente",
+  "elapsed": "{{time}}s écoulées",
+  "remaining": "~{{time}}s restantes",
+  "slow_connection": "Connexion lente détectée",
+  "network_quality": "Qualité du réseau: {{quality}}",
+  "good": "bonne",
+  "fair": "moyenne",
+  "poor": "faible",
+  "cancel_loading": "Annuler le processus de chargement"
 }
