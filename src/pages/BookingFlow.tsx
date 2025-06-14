@@ -7,6 +7,7 @@ import PaymentDetails from '../components/booking/PaymentDetails';
 import { useBooking } from '../contexts/BookingContext';
 import { useToast } from '../components/ui/use-toast';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { parseDateFromUrl } from '../utils/searchFormHelpers';
 
 // Component to handle proper URL parameters and context initialization
 const BookingFlow = () => {
@@ -33,37 +34,14 @@ const BookingFlow = () => {
     };
   }, []);
   
-  // Helper function to parse dates from URL strings
-  const parseUrlDate = (dateStr: string): Date | undefined => {
-    if (!dateStr || dateStr === '0') return undefined;
-    
-    try {
-      // Parse format: yymmdd (from URL)
-      const year = parseInt(`20${dateStr.slice(0, 2)}`);
-      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
-      const day = parseInt(dateStr.slice(4, 6));
-      
-      // Create date at noon by default
-      const parsedDate = new Date(year, month, day, 12, 0, 0);
-      
-      // Check if valid date
-      if (isNaN(parsedDate.getTime())) {
-        return undefined;
-      }
-      
-      return parsedDate;
-    } catch (e) {
-      console.error("Error parsing URL date:", e);
-      return undefined;
-    }
-  };
-  
   // Initialize booking state from URL parameters if needed
   useEffect(() => {
     // Skip if we don't have the required params or already initialized
     if (!from || !to || !date || isInitializedRef.current) return;
 
-    console.log("🔄 Initializing booking state from URL params");
+    console.log("🔄 Initializing booking state from URL params", {
+      from, to, type, date, returnDate, passengers
+    });
     
     // Decode URL parameters (from URL-friendly format to display format)
     const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
@@ -89,6 +67,10 @@ const BookingFlow = () => {
       updatedState.fromCoords = prev.fromCoords;
       updatedState.toCoords = prev.toCoords;
       
+      // CRITICAL: Preserve validation states
+      updatedState.fromValid = prev.fromValid !== undefined ? prev.fromValid : !!prev.fromDisplay;
+      updatedState.toValid = prev.toValid !== undefined ? prev.toValid : !!prev.toDisplay;
+      
       // Trip type - preserve context data
       updatedState.isReturn = prev.isReturn !== undefined 
         ? prev.isReturn 
@@ -103,13 +85,40 @@ const BookingFlow = () => {
       updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
       
       // Date objects with time information
-      // Parse dates from URL only if we don't have them in context
-      if (!prev.pickupDateTime) {
-        updatedState.pickupDateTime = parseUrlDate(date);
+      // Parse dates from URL, but keep time from context if available
+      const pickupDateParsed = parseDateFromUrl(date);
+      if (!prev.pickupDateTime && pickupDateParsed) {
+        // If no pickup date in context, use parsed date
+        updatedState.pickupDateTime = pickupDateParsed;
+      } else if (prev.pickupDateTime && pickupDateParsed) {
+        // If we have both, update the date part but preserve time
+        const contextDate = prev.pickupDateTime;
+        pickupDateParsed.setHours(
+          contextDate.getHours(),
+          contextDate.getMinutes(),
+          contextDate.getSeconds(),
+          contextDate.getMilliseconds()
+        );
+        updatedState.pickupDateTime = pickupDateParsed;
       }
       
-      if (updatedState.isReturn && !prev.dropoffDateTime && returnDate !== '0') {
-        updatedState.dropoffDateTime = parseUrlDate(returnDate);
+      // Same logic for return date
+      if (updatedState.isReturn && returnDate !== '0') {
+        const dropoffDateParsed = parseDateFromUrl(returnDate);
+        if (!prev.dropoffDateTime && dropoffDateParsed) {
+          // If no dropoff date in context, use parsed date
+          updatedState.dropoffDateTime = dropoffDateParsed;
+        } else if (prev.dropoffDateTime && dropoffDateParsed) {
+          // If we have both, update the date part but preserve time
+          const contextDate = prev.dropoffDateTime;
+          dropoffDateParsed.setHours(
+            contextDate.getHours(),
+            contextDate.getMinutes(),
+            contextDate.getSeconds(),
+            contextDate.getMilliseconds()
+          );
+          updatedState.dropoffDateTime = dropoffDateParsed;
+        }
       }
       
       // Log what we're updating
@@ -118,6 +127,8 @@ const BookingFlow = () => {
         toContext: !!prev.to,
         fromCoordsContext: !!prev.fromCoords,
         toCoordsContext: !!prev.toCoords,
+        fromValidContext: prev.fromValid,
+        toValidContext: prev.toValid,
         isReturnContext: prev.isReturn,
         pickupDateTimeContext: !!prev.pickupDateTime,
         dropoffDateTimeContext: !!prev.dropoffDateTime,
@@ -126,6 +137,8 @@ const BookingFlow = () => {
         toFinal: updatedState.to,
         fromCoordsFinal: !!updatedState.fromCoords,
         toCoordsFinal: !!updatedState.toCoords,
+        fromValidFinal: updatedState.fromValid,
+        toValidFinal: updatedState.toValid,
         isReturnFinal: updatedState.isReturn,
         pickupDateTimeFinal: updatedState.pickupDateTime,
         dropoffDateTimeFinal: updatedState.dropoffDateTime
@@ -182,7 +195,7 @@ const BookingFlow = () => {
         hasPricingError: !!bookingState.pricingError
       });
     }
-  }, [bookingState, fetchPricingData, isInitializedRef.current]);
+  }, [bookingState, fetchPricingData]);
 
   // Handle step navigation based on context
   const currentStep = bookingState.step;
