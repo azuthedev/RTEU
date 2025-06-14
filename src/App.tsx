@@ -65,6 +65,33 @@ const PageLoader = () => (
 const RouteObserver = () => {
   const location = useLocation();
   const { trackEvent } = useAuth();
+  const prevPathRef = useRef(location.pathname);
+  // Track if we're scrolling due to a navigation action
+  const scrollInProgressRef = useRef(false);
+  // Store a flag for forced scroll (like clicking Home on home page)
+  const forceScrollRef = useRef(false);
+
+  // Set up listener for custom scroll events
+  useEffect(() => {
+    const handleForceScroll = () => {
+      forceScrollRef.current = true;
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+      // Reset the force scroll flag after animation completes
+      setTimeout(() => {
+        forceScrollRef.current = false;
+      }, 1000);
+    };
+
+    window.addEventListener('forceScrollToTop', handleForceScroll);
+    
+    return () => {
+      window.removeEventListener('forceScrollToTop', handleForceScroll);
+    };
+  }, []);
 
   useEffect(() => {
     // Update page-specific classes
@@ -76,6 +103,26 @@ const RouteObserver = () => {
     
     // Preload images for the current route
     preloadImagesForRoute(location.pathname);
+
+    // Always scroll to top on navigation or forced scroll
+    // Either when path changes OR when forceScrollRef is true
+    if (prevPathRef.current !== location.pathname || forceScrollRef.current) {
+      if (!scrollInProgressRef.current) {
+        scrollInProgressRef.current = true;
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        });
+        
+        // Reset the scroll flag after animation completes
+        setTimeout(() => {
+          scrollInProgressRef.current = false;
+        }, 1000);
+      }
+      
+      prevPathRef.current = location.pathname;
+    }
 
     return () => {
       document.documentElement.classList.remove('booking-page');
