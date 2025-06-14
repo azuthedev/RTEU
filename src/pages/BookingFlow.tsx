@@ -8,6 +8,7 @@ import { useBooking } from '../contexts/BookingContext';
 import { useToast } from '../components/ui/use-toast';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { parseDateFromUrl } from '../utils/searchFormHelpers';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 // Component to handle proper URL parameters and context initialization
 const BookingFlow = () => {
@@ -25,6 +26,9 @@ const BookingFlow = () => {
   // Flag to track initialization status
   const isInitializedRef = useRef(false);
   const pricingRequestedRef = useRef(false);
+
+  // State to control full-screen loading until we have all data
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
 
   // Clean up booking state when component unmounts
   useEffect(() => {
@@ -169,6 +173,7 @@ const BookingFlow = () => {
     
     if (needsPricing) {
       console.log("🔵 Need to fetch initial prices - none in context");
+      setIsLoadingInitialData(true);
       pricingRequestedRef.current = true;
       
       // Fetch prices using the context function
@@ -185,6 +190,9 @@ const BookingFlow = () => {
           toDisplay: bookingState.toDisplay,
           passengers: bookingState.passengers || 1
         });
+
+        // Set loading to false after pricing data is fetched
+        setIsLoadingInitialData(false);
       };
       
       fetchPrices();
@@ -194,12 +202,24 @@ const BookingFlow = () => {
         hasPricingResponse: !!bookingState.pricingResponse,
         hasPricingError: !!bookingState.pricingError
       });
+      setIsLoadingInitialData(false);
     }
   }, [bookingState, fetchPricingData]);
 
   // Handle step navigation based on context
   const currentStep = bookingState.step;
   
+  // If still loading initial data, show loading screen
+  if (isLoadingInitialData || bookingState.isPricingLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-auto">
+          <LoadingAnimation />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen pt-20">
       {/* Main content area with step transitions */}
