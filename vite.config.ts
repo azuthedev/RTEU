@@ -164,7 +164,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     preview: {
-      port: 4000,
+      port: 5173, // Changed from 4000 to 5173
       open: true,
     },
     define: {
