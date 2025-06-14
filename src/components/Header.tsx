@@ -122,6 +122,28 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
     handlePortalClick('partner', e);
   };
 
+  // Function to handle home link click - always scroll to top even on homepage
+  const handleHomeClick = (e: React.MouseEvent) => {
+    if (location.pathname === '/') {
+      e.preventDefault(); // Prevent default navigation
+      // Dispatch a custom event to trigger the scroll
+      const forceScrollEvent = new Event('forceScrollToTop');
+      window.dispatchEvent(forceScrollEvent);
+      
+      // Also manually scroll to top with smooth behavior
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+      
+      trackEvent('Navigation', 'Menu Click', 'Home (Scroll to Top)');
+    } else {
+      // Normal navigation if not on homepage
+      trackEvent('Navigation', 'Menu Click', 'Home');
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -146,6 +168,9 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             onClick={() => {
               trackEvent('Navigation', 'Logo Click', 'Header');
               navigate('/');
+              // Also dispatch force scroll event
+              const forceScrollEvent = new Event('forceScrollToTop');
+              window.dispatchEvent(forceScrollEvent);
             }}
             className="flex items-center focus:outline-none h-16 py-2"
             aria-label="Royal Transfer EU Homepage"
@@ -166,7 +191,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
             <a 
               href="/" 
               className="relative py-2 text-gray-700 group font-sans text-[15px]"
-              onClick={() => trackEvent('Navigation', 'Menu Click', 'Home')}
+              onClick={handleHomeClick}
             >
               {t('nav.home')}
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
@@ -385,7 +410,7 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                 <nav className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col space-y-4">
                     {[
-                      { href: '/', label: t('nav.home') },
+                      { href: '/', label: t('nav.home'), onClick: handleHomeClick },
                       { href: '/about', label: t('nav.about') },
                       { href: '/services', label: t('nav.services') },
                       { href: '/blogs/destinations', label: t('nav.destinations') },
@@ -397,9 +422,13 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                         <a
                           href={link.href}
                           className="relative py-2 text-gray-700 group font-sans"
-                          onClick={() => {
+                          onClick={(e) => {
+                            if (link.onClick) {
+                              link.onClick(e);
+                            } else {
+                              trackEvent('Navigation', 'Mobile Menu Click', link.label);
+                            }
                             setIsMenuOpen(false);
-                            trackEvent('Navigation', 'Mobile Menu Click', link.label);
                           }}
                         >
                           <span>{link.label}</span>
