@@ -63,7 +63,6 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
   const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
   
-  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
   // Initialize validation state based on whether we have addresses in bookingState
@@ -92,6 +91,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   
   // State for controlling the loading modal visibility
   const [showLoadingModal, setShowLoadingModal] = useState(false);
+
+  // Update showLoadingModal based on bookingState.isPricingLoading
+  useEffect(() => {
+    setShowLoadingModal(bookingState.isPricingLoading);
+  }, [bookingState.isPricingLoading]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -361,13 +365,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       }
     }
     
-    // Set loading state
-    setIsLoadingPrices(true);
+    // Set API error to null
     setApiError(null);
     setGeocodingErrorField(null);
-    
-    // Show loading modal
-    setShowLoadingModal(true);
     
     // Use the context's fetchPricingData function
     const dropoffDateTime = !isOneWay && formData.dateRange?.to ? formData.dateRange.to : undefined;
@@ -385,12 +385,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       passengers: formData.passengers
     });
     
-    // Hide loading modal
-    setShowLoadingModal(false);
-    setIsLoadingPrices(false);
-    
     // If price fetching failed, stop here
-    if (!pricingResponse) {
+    if (!pricingResponse || bookingState.pricingError) {
       return;
     }
     
@@ -502,16 +498,12 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       activeRequestRef.current = null;
     }
     
-    setIsLoadingPrices(false);
     setGeocodingErrorField(null);
-    setShowLoadingModal(false);
   };
   
   // Function to try a different route (for geocoding errors)
   const handleTryDifferentRoute = () => {
     setGeocodingErrorField(null);
-    setIsLoadingPrices(false);
-    setShowLoadingModal(false);
     
     // Focus the appropriate field
     setTimeout(() => {
@@ -786,9 +778,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges || isLoadingPrices || !pickupIsValid || !dropoffIsValid}
+              disabled={!hasChanges || bookingState.isPricingLoading || !pickupIsValid || !dropoffIsValid}
             >
-              {isLoadingPrices ? (
+              {bookingState.isPricingLoading ? (
                 <div className="flex items-center justify-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {t('searchform.updating', 'Updating...')}
@@ -943,9 +935,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!hasChanges || isLoadingPrices || !pickupIsValid || !dropoffIsValid}
+              disabled={!hasChanges || bookingState.isPricingLoading || !pickupIsValid || !dropoffIsValid}
             >
-              {isLoadingPrices ? (
+              {bookingState.isPricingLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {t('searchform.updating', 'Updating')}
