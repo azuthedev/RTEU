@@ -781,7 +781,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                   {t('searchform.updating', 'Updating...')}
                 </div>
               ) : (
-              {t('searchform.update_route', 'Update Route')}
+              t('searchform.update_route', 'Update Route')
               )}
             </motion.button>
           </div>
