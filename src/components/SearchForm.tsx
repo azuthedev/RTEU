@@ -25,7 +25,7 @@ const SearchForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
-  const { bookingState, setBookingState, fetchPricingData } = useBooking();
+  const { bookingState, setBookingState, fetchPricingData, clearBookingState } = useBooking();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -385,22 +385,23 @@ const SearchForm = () => {
       }
       
       // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
-      const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
-      const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
+      const encodedFrom = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
+      const encodedTo = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
       
-      // Important: Type is '1' for One Way, '2' for Round Trip 
-      const type = isReturn ? '2' : '1';
+      // Prepare URL parameters for navigation
+      const newType = isReturn ? '2' : '1';
       
-      // Use pickupDateTime from form data
-      const pickupDateObj = isReturn ? formData.dateRange?.from : formData.pickupDateTime;
-      const formattedDepartureDate = pickupDateObj ? formatDateForUrl(pickupDateObj) : '';
+      let formattedDepartureDate = '';
+      let formattedReturnDate = '0';
       
-      // Always include returnDate parameter (use '0' for one-way trips)
-      const returnDateParam = isReturn && formData.dateRange?.to
-        ? formatDateForUrl(formData.dateRange.to)
-        : '0';
+      if (isReturn && formData.dateRange?.from && formData.dateRange?.to) {
+        formattedDepartureDate = formatDateForUrl(formData.dateRange.from);
+        formattedReturnDate = formatDateForUrl(formData.dateRange.to);
+      } else if (formData.pickupDateTime) {
+        formattedDepartureDate = formatDateForUrl(formData.pickupDateTime);
+      }
       
-      const path = `/transfer/${encodedPickup}/${encodedDropoff}/${type}/${formattedDepartureDate}/${returnDateParam}/${passengers}/form`;
+      const path = `/transfer/${encodedFrom}/${encodedTo}/${newType}/${formattedDepartureDate}/${formattedReturnDate}/${passengers}/form`;
       
       // Track search form submission
       trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
@@ -621,6 +622,7 @@ const SearchForm = () => {
             className="w-full"
             required={true}
             onValidation={handlePickupValidation}
+            initialIsValid={pickupIsValid}
           />
 
           {/* Dropoff Location */}
@@ -644,6 +646,7 @@ const SearchForm = () => {
             className="w-full"
             required={true}
             onValidation={handleDropoffValidation}
+            initialIsValid={dropoffIsValid}
           />
 
           {/* Date Selection */}
@@ -672,8 +675,8 @@ const SearchForm = () => {
                   
                   setFormData(prev => ({
                     ...prev,
-                    pickupDateTime: pickupDate,
-                    dropoffDateTime: returnDate,
+                    pickupDateTime: undefined,
+                    dropoffDateTime: undefined,
                     dateRange: {
                       from: pickupDate,
                       to: returnDate
@@ -686,6 +689,7 @@ const SearchForm = () => {
                 }
               }}
               placeholder={t('searchform.dates')}
+              className="w-full"
               minDate={getMinimumBookingTime()}
             />
           ) : (
@@ -694,25 +698,21 @@ const SearchForm = () => {
               onDateChange={(date) => {
                 userInteractedRef.current = true;
                 
-                if (!date) return;
-                
-                // Ensure time is at least 4 hours in the future
-                const minDate = getMinimumBookingTime();
-                let pickupDate = date;
-                
-                if (pickupDate.getTime() < minDate.getTime()) {
-                  pickupDate = minDate;
-                }
-                
-                setFormData(prev => ({
-                  ...prev,
-                  pickupDateTime: pickupDate,
-                  dropoffDateTime: undefined,
-                  dateRange: undefined
-                }));
-                
+                // Ensure date is valid and at least 4 hours in the future
                 if (date) {
-                  trackEvent('Search Form', 'Select Date', date.toISOString());
+                  const minDate = getMinimumBookingTime();
+                  const finalDate = date.getTime() < minDate.getTime() ? minDate : date;
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    pickupDateTime: finalDate,
+                    dropoffDateTime: undefined,
+                    dateRange: undefined
+                  }));
+                  
+                  if (date) {
+                    trackEvent('Search Form', 'Select Date', date.toISOString());
+                  }
                 }
               }}
               placeholder={t('searchform.date')}

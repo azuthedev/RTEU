@@ -13,6 +13,7 @@ interface GooglePlacesAutocompleteProps {
   onValidation?: (isValid: boolean, message?: string) => void;
   required?: boolean;
   id?: string;
+  initialIsValid?: boolean; // Added to support initializing with validation state
 }
 
 export function GooglePlacesAutocomplete({
@@ -24,13 +25,14 @@ export function GooglePlacesAutocomplete({
   disabled = false,
   onValidation,
   required = false,
-  id
+  id,
+  initialIsValid = false // Default to false unless explicitly provided
 }: GooglePlacesAutocompleteProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [apiLoaded, setApiLoaded] = useState(isGoogleMapsLoaded());
-  const [isValidAddress, setIsValidAddress] = useState<boolean | null>(null);
+  const [isValidAddress, setIsValidAddress] = useState<boolean | null>(initialIsValid);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [isGeocoded, setIsGeocoded] = useState(false);
@@ -88,6 +90,17 @@ export function GooglePlacesAutocomplete({
       pendingInitRef.current = false;
     };
   }, []);
+
+  // When initialIsValid changes, update the validation state
+  useEffect(() => {
+    setIsValidAddress(initialIsValid);
+    
+    // If we're setting to valid, also clear any error messages
+    if (initialIsValid) {
+      setValidationMessage(null);
+      setGeocodingError(null);
+    }
+  }, [initialIsValid]);
 
   // Apply custom styles and position the dropdown
   useEffect(() => {
