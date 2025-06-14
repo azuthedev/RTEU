@@ -179,15 +179,15 @@ export function DateRangePicker({
   // Generate minute options (every 15 minutes)
   const minuteOptions = [0, 15, 30, 45];
   
-  // Format the display text for the date range with time
+  // Format the display text for the date range with time - using compact format
   const getFormattedDateRange = () => {
     if (dateRange?.from) {
-      const fromText = format(dateRange.from, "PPP") + 
-                      ` at ${dateRange.from.getHours().toString().padStart(2, '0')}:${dateRange.from.getMinutes().toString().padStart(2, '0')}`;
+      const fromText = format(dateRange.from, "dd/MM/yyyy") + 
+                      ` ${dateRange.from.getHours().toString().padStart(2, '0')}:${dateRange.from.getMinutes().toString().padStart(2, '0')}`;
       
       if (dateRange.to) {
-        const toText = format(dateRange.to, "PPP") +
-                      ` at ${dateRange.to.getHours().toString().padStart(2, '0')}:${dateRange.to.getMinutes().toString().padStart(2, '0')}`;
+        const toText = format(dateRange.to, "dd/MM/yyyy") +
+                      ` ${dateRange.to.getHours().toString().padStart(2, '0')}:${dateRange.to.getMinutes().toString().padStart(2, '0')}`;
         return `${fromText} - ${toText}`;
       }
       return fromText;
@@ -238,10 +238,10 @@ export function DateRangePicker({
             className
           )}
         >
-          <span className="truncate">
+          <span className="truncate text-left overflow-hidden text-ellipsis whitespace-nowrap">
             {getFormattedDateRange()}
           </span>
-          <CalendarIcon className="h-5 w-5 text-gray-400" />
+          <CalendarIcon className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
         </Button>
       </PopoverTrigger>
       <PopoverContent 
@@ -312,9 +312,9 @@ export function DateRangePicker({
                 </div>
 
                 <div className="flex flex-col space-y-4">
-                  {/* Selected date display */}
+                  {/* Selected date display with compact format */}
                   <div className="text-sm font-medium text-center pb-2 border-b">
-                    {selectedRange.from && format(selectedRange.from, "PPP")}
+                    {selectedRange.from && format(selectedRange.from, "dd/MM/yyyy")}
                   </div>
                   
                   <div className="flex space-x-2">
@@ -466,14 +466,14 @@ export function DateRangePicker({
                 </div>
 
                 <div className="flex flex-col space-y-4">
-                  {/* Display both dates */}
+                  {/* Display both dates with compact format */}
                   <div className="text-sm text-center pb-2 border-b">
                     <div className="font-medium">
-                      {selectedRange.to && format(selectedRange.to, "PPP")}
+                      {selectedRange.to && format(selectedRange.to, "dd/MM/yyyy")}
                     </div>
                     {selectedRange.from && (
                       <div className="text-xs text-gray-500 mt-1">
-                        Departure: {format(selectedRange.from, "PPP")}
+                        Departure: {format(selectedRange.from, "dd/MM/yyyy")}
                       </div>
                     )}
                   </div>

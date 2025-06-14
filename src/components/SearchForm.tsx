@@ -148,6 +148,10 @@ const SearchForm = () => {
           : undefined
       });
       
+      // Initialize validation state based on context data
+      setPickupIsValid(!!bookingState.fromValid || !!bookingState.fromCoords);
+      setDropoffIsValid(!!bookingState.toValid || !!bookingState.toCoords);
+      
       // Store original values for comparison
       originalValuesRef.current = {
         isReturn: !!bookingState.isReturn,
@@ -166,76 +170,6 @@ const SearchForm = () => {
       initialStateLoadedRef.current = true;
     }
   }, [bookingState]);
-
-  // Check if we're on the pre-filled home route
-  useEffect(() => {
-    // Skip if we've already loaded the initial state
-    if (initialStateLoadedRef.current) {
-      return;
-    }
-    
-    if (location.pathname.startsWith('/home/transfer/')) {
-      // Parse URL parameters
-      const urlPattern = /\/home\/transfer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/form/;
-      const match = location.pathname.match(urlPattern);
-      
-      if (match) {
-        const [, from, to, type, date, returnDate, passengers] = match;
-        
-        // Properly decode URL parameters
-        const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
-        const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
-        
-        // Convert type to boolean flag - '1' means One Way (isReturn = false)
-        const isRoundTrip = type === '2';
-        setIsReturn(isRoundTrip);
-        setPassengers(Math.max(1, parseInt(passengers || '1', 10)));
-        
-        // Parse dates with times (default time set in parseDateFromUrl)
-        const pickupDateTime = parseDateFromUrl(date);
-        const dropoffDateTime = returnDate && returnDate !== '0' ? parseDateFromUrl(returnDate) : undefined;
-        
-        const newFormData = {
-          pickup: decodedFrom,
-          dropoff: decodedTo,
-          pickupDisplay: decodedFrom,
-          dropoffDisplay: decodedTo,
-          pickupDateTime: pickupDateTime,
-          dropoffDateTime: dropoffDateTime,
-          dateRange: isRoundTrip && pickupDateTime && dropoffDateTime
-            ? { from: pickupDateTime, to: dropoffDateTime } as DateRange
-            : undefined
-        };
-
-        setFormData(newFormData);
-
-        // Store original values for comparison
-        originalValuesRef.current = {
-          isReturn: isRoundTrip,
-          pickup: decodedFrom,
-          dropoff: decodedTo,
-          pickupDisplay: decodedFrom,
-          dropoffDisplay: decodedTo,
-          pickupDateTime: pickupDateTime,
-          dropoffDateTime: dropoffDateTime,
-          dateRange: newFormData.dateRange,
-          passengers: Math.max(1, parseInt(passengers || '1', 10))
-        };
-        
-        initialStateLoadedRef.current = true;
-      }
-    } else {
-      // If not coming from URL with params, set current date + 4 hours as the default
-      const defaultPickupDateTime = getMinimumBookingTime();
-      setFormData(prev => ({
-        ...prev,
-        pickupDateTime: defaultPickupDateTime
-      }));
-      
-      // Mark as initialized
-      initialStateLoadedRef.current = true;
-    }
-  }, [location.pathname, location.search]);
 
   const handlePassengerChange = (increment: boolean) => {
     userInteractedRef.current = true;
@@ -470,6 +404,13 @@ const SearchForm = () => {
       
       // Track search form submission
       trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
+      
+      // Save address validation state to booking context
+      setBookingState(prev => ({
+        ...prev,
+        fromValid: pickupIsValid,
+        toValid: dropoffIsValid
+      }));
       
       // Set navigating flag before navigation to prevent error toast
       navigatingIntentionallyRef.current = true;
@@ -722,26 +663,26 @@ const SearchForm = () => {
                   }
                   
                   // Ensure return date is after pickup date
-                  let dropoffDate = dateRange.to;
+                  let returnDate = dateRange.to;
                   const minReturnTime = new Date(pickupDate.getTime() + 6 * 60 * 60 * 1000);
                   
-                  if (dropoffDate.getTime() < minReturnTime.getTime()) {
-                    dropoffDate = minReturnTime;
+                  if (returnDate.getTime() < minReturnTime.getTime()) {
+                    returnDate = minReturnTime;
                   }
                   
                   setFormData(prev => ({
                     ...prev,
                     pickupDateTime: pickupDate,
-                    dropoffDateTime: dropoffDate,
+                    dropoffDateTime: returnDate,
                     dateRange: {
                       from: pickupDate,
-                      to: dropoffDate
+                      to: returnDate
                     }
                   }));
                   
                   // Track selection
                   trackEvent('Search Form', 'Select Date Range', 
-                    `${pickupDate.toISOString()} to ${dropoffDate.toISOString()}`);
+                    `${pickupDate.toISOString()} to ${returnDate.toISOString()}`);
                 }
               }}
               placeholder={t('searchform.dates')}

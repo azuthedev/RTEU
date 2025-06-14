@@ -116,9 +116,9 @@ export function DatePicker({ date, onDateChange, className, placeholder, minDate
   // Generate minute options (every 15 minutes)
   const minuteOptions = [0, 15, 30, 45];
   
-  // Format the display date with time
+  // Format the display date with time - using compact format
   const formattedDate = date 
-    ? `${format(date, "PPP")} at ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    ? `${format(date, "dd/MM/yyyy")} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
     : placeholder || t('searchform.date');
 
   // Handle popover opening
@@ -148,7 +148,7 @@ export function DatePicker({ date, onDateChange, className, placeholder, minDate
             className
           )}
         >
-          {formattedDate}
+          <span className="truncate">{formattedDate}</span>
           <CalendarIcon className="h-5 w-5 text-gray-400" />
         </Button>
       </PopoverTrigger>
@@ -221,9 +221,9 @@ export function DatePicker({ date, onDateChange, className, placeholder, minDate
                 </div>
                 
                 <div className="flex flex-col space-y-4">
-                  {/* Selected date display */}
+                  {/* Selected date display with compact format */}
                   <div className="text-sm font-medium text-center pb-2 border-b">
-                    {selectedDate && format(selectedDate, "PPP")}
+                    {selectedDate && format(selectedDate, "dd/MM/yyyy")}
                   </div>
                   
                   <div className="flex space-x-2">

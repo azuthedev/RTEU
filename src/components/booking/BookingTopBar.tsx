@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { MapPin, Users, Plus, Minus, Loader2, AlertCircle } from 'lucide-react';
+import { MapPin, Users, Plus, Minus, Loader2, AlertCircle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DatePicker } from '../ui/date-picker';
 import { DateRangePicker } from '../ui/date-range-picker';
@@ -17,7 +17,7 @@ import {
 } from '../../utils/searchFormHelpers';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const BookingTopBar: React.FC<{
+interface BookingTopBarProps {
   from: string;
   to: string;
   type: string;
@@ -25,7 +25,9 @@ const BookingTopBar: React.FC<{
   returnDate?: string;
   passengers: string;
   currentStep?: number;
-}> = ({ 
+}
+
+const BookingTopBar: React.FC<BookingTopBarProps> = ({ 
   from, 
   to, 
   type, 
@@ -46,73 +48,142 @@ const BookingTopBar: React.FC<{
   // Flag to track user interaction
   const userInteractedRef = useRef(false);
   
-  // Determine if it's a one-way trip based on both type and returnDate
-  const isOneWayFromProps = type === '1' || !returnDate || returnDate === '0';
-  const [isOneWay, setIsOneWay] = useState(isOneWayFromProps);
-  const [displayPassengers, setDisplayPassengers] = useState(parseInt(passengers, 10));
+  // Determine if it's a one-way trip based on bookingState first, then URL params as fallback
+  const [isOneWay, setIsOneWay] = useState(!bookingState.isReturn);
+  const [displayPassengers, setDisplayPassengers] = useState(bookingState.passengers || parseInt(passengers, 10) || 1);
   const [hasChanges, setHasChanges] = useState(false);
   
-  // Input field states
+  // Input field states - initialize with bookingState (which was populated in BookingFlow)
   const [pickupValue, setPickupValue] = useState('');
   const [dropoffValue, setDropoffValue] = useState('');
   
-  // State for geocoded coordinates and place IDs
-  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(null);
+  // State for geocoded coordinates and place IDs - initialize from bookingState
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(bookingState.fromCoords || null);
+  const [dropoffCoords, setDropoffCoords] = useState<{lat: number, lng: number} | null>(bookingState.toCoords || null);
   const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
   const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
   
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
-  // Track validation state for addresses
-  const [pickupIsValid, setPickupIsValid] = useState(true); // Default to true for initial values
-  const [dropoffIsValid, setDropoffIsValid] = useState(true); // Default to true for initial values
+  // Initialize validation state based on whether we have addresses in bookingState
+  // If addresses exist in bookingState, they were already validated in SearchForm
+  const [pickupIsValid, setPickupIsValid] = useState(!!bookingState.fromDisplay);
+  const [dropoffIsValid, setDropoffIsValid] = useState(!!bookingState.toDisplay);
+
+  // Track active request ID
+  const activeRequestRef = useRef<string | null>(null);
   
-  // Add component mount tracking
+  // Flag for intentional navigation after successful API response
+  const navigatingIntentionallyRef = useRef(false);
+  
+  // Flag to track component mount status
   const isMountedRef = useRef(true);
   
+  // Time tracking for request throttling
+  const lastClickTimeRef = useRef<number>(0);
+  const isClickThrottledRef = useRef<boolean>(false);
+  
+  // Add a flag to track if a search was successful but component unmounted during transition
+  const successfulSearchRef = useRef<boolean>(false);
+  
+  // Track geocoding error fields
+  const [geocodingErrorField, setGeocodingErrorField] = useState<'pickup' | 'dropoff' | null>(null);
+  
+  // State for controlling the loading modal visibility
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+
+  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      // Clean up any active request when component unmounts
+      if (activeRequestRef.current) {
+        // Code to abort the active request would go here
+      }
     };
   }, []);
-  
+
   // Get minimum booking time (4 hours from now)
-  const minPickupDateTime = getMinimumBookingTime();
-  
-  // Helper function to parse dates from URL strings
-  const parseUrlDate = (dateStr: string): Date | undefined => {
-    if (!dateStr || dateStr === '0') return undefined;
-    
-    try {
-      // Parse format: yymmdd (from URL)
-      const year = parseInt(`20${dateStr.slice(0, 2)}`);
-      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
-      const day = parseInt(dateStr.slice(4, 6));
-      
-      // Create date at noon by default
-      const parsedDate = new Date(year, month, day, 12, 0, 0);
-      
-      // Check if valid date
-      if (isNaN(parsedDate.getTime())) {
-        return undefined;
-      }
-      
-      // Ensure date is at least 4 hours in the future
-      const minBookingTime = getMinimumBookingTime();
-      if (parsedDate < minBookingTime) {
-        return minBookingTime;
-      }
-      
-      return parsedDate;
-    } catch (e) {
-      console.error("Error parsing URL date:", e);
-      return undefined;
+  const minimumDate = getMinimumBookingTime();
+
+  // Initialize form with existing data from context
+  useEffect(() => {
+    // Only run this effect once during initialization
+    if (isInitializedRef.current) {
+      return;
     }
-  };
-  
+
+    console.log("🔄 BookingTopBar - Initializing from context");
+    
+    // CRITICAL CHANGE: Always use bookingContext as the primary source of truth
+    // URL parameters should only be used as fallbacks
+    
+    // Set initial values directly from bookingState
+    setPickupValue(bookingState.fromDisplay || bookingState.from || '');
+    setDropoffValue(bookingState.toDisplay || bookingState.to || '');
+    
+    // Use isReturn from bookingState (default to URL param type if not set)
+    setIsOneWay(!bookingState.isReturn);
+    
+    // Use passengers from bookingState (default to URL param if not set)
+    setDisplayPassengers(bookingState.passengers || parseInt(passengers, 10) || 1);
+    
+    // Use coordinates from bookingState if available
+    if (bookingState.fromCoords) {
+      setPickupCoords(bookingState.fromCoords);
+    }
+    
+    if (bookingState.toCoords) {
+      setDropoffCoords(bookingState.toCoords);
+    }
+    
+    // Set form data with actual date objects from bookingState
+    setFormData({
+      pickup: bookingState.fromDisplay || bookingState.from || '',
+      dropoff: bookingState.toDisplay || bookingState.to || '',
+      pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
+      dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
+      pickupDateTime: bookingState.isReturn ? undefined : bookingState.pickupDateTime,
+      dropoffDateTime: bookingState.isReturn ? undefined : bookingState.dropoffDateTime,
+      dateRange: bookingState.isReturn && bookingState.pickupDateTime && bookingState.dropoffDateTime
+        ? { from: bookingState.pickupDateTime, to: bookingState.dropoffDateTime }
+        : undefined,
+      passengers: bookingState.passengers || parseInt(passengers, 10) || 1
+    });
+    
+    // Store original values for comparison
+    originalValuesRef.current = {
+      isReturn: !!bookingState.isReturn,
+      pickup: bookingState.fromDisplay || bookingState.from || '',
+      dropoff: bookingState.toDisplay || bookingState.to || '',
+      pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
+      dropoffDisplay: bookingState.toDisplay || bookingState.to || '',
+      pickupDateTime: bookingState.pickupDateTime,
+      dropoffDateTime: bookingState.dropoffDateTime,
+      dateRange: bookingState.isReturn && bookingState.pickupDateTime && bookingState.dropoffDateTime
+        ? { from: bookingState.pickupDateTime, to: bookingState.dropoffDateTime }
+        : undefined,
+      passengers: bookingState.passengers || parseInt(passengers, 10) || 1
+    };
+    
+    console.log("BookingTopBar initialized with context data:", {
+      pickupValue: bookingState.fromDisplay || bookingState.from,
+      dropoffValue: bookingState.toDisplay || bookingState.to,
+      isOneWay: !bookingState.isReturn,
+      pickupDateTime: bookingState.pickupDateTime,
+      dropoffDateTime: bookingState.dropoffDateTime,
+      fromCoords: bookingState.fromCoords ? 'Present' : 'None',
+      toCoords: bookingState.toCoords ? 'Present' : 'None',
+      initialPickupValid: !!bookingState.fromDisplay,
+      initialDropoffValid: !!bookingState.toDisplay
+    });
+    
+    // Mark as initialized
+    isInitializedRef.current = true;
+  }, [bookingState, from, to, type, date, returnDate, passengers]);
+
   // Form data state with full date objects including time
   const [formData, setFormData] = useState({
     pickup: '',
@@ -122,20 +193,20 @@ const BookingTopBar: React.FC<{
     pickupDateTime: undefined as Date | undefined,
     dropoffDateTime: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined,
-    passengers: parseInt(passengers, 10)
+    passengers: displayPassengers
   });
   
   // Store original values for comparison
   const originalValuesRef = useRef({
     from: '',
     to: '',
-    isOneWay: isOneWayFromProps,
+    isOneWay: true,
     pickupDisplay: '',
     dropoffDisplay: '',
     pickupDateTime: undefined as Date | undefined,
     dropoffDateTime: undefined as Date | undefined,
     dateRange: undefined as DateRange | undefined,
-    passengers: parseInt(passengers, 10),
+    passengers: 1,
   });
 
   // Ensure Google Maps is loaded
@@ -147,106 +218,6 @@ const BookingTopBar: React.FC<{
         });
     }
   }, []);
-
-  // Initialize component once with values from props and context
-  useEffect(() => {
-    // Only run this effect once during initialization
-    if (isInitializedRef.current) {
-      return;
-    }
-    
-    // Force hasChanges to false initially
-    setHasChanges(false);
-    
-    // Properly decode URL parameters for display
-    const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
-    const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
-    
-    // Use the display names from context if available, otherwise use decoded URL params
-    const initialPickupValue = bookingState.fromDisplay || decodedFrom;
-    const initialDropoffValue = bookingState.toDisplay || decodedTo;
-    
-    // Parse dates from URL if needed
-    const parsedPickupDate = parseUrlDate(date);
-    const parsedDropoffDate = returnDate && returnDate !== '0' ? parseUrlDate(returnDate) : undefined;
-    
-    // Get dates from context if available, otherwise use parsed URL dates
-    const pickupDateTime = bookingState.pickupDateTime || parsedPickupDate;
-    const dropoffDateTime = bookingState.dropoffDateTime || parsedDropoffDate;
-    
-    // Set initial values
-    setPickupValue(initialPickupValue);
-    setDropoffValue(initialDropoffValue);
-    
-    // Preserve any existing coordinates from context
-    if (bookingState.fromCoords) {
-      setPickupCoords(bookingState.fromCoords);
-    }
-    
-    if (bookingState.toCoords) {
-      setDropoffCoords(bookingState.toCoords);
-    }
-    
-    // Set initial date values
-    if (isOneWay) {
-      setFormData(prev => ({
-        ...prev,
-        pickup: initialPickupValue,
-        dropoff: initialDropoffValue,
-        pickupDisplay: initialPickupValue,
-        dropoffDisplay: initialDropoffValue,
-        pickupDateTime: pickupDateTime,
-        dropoffDateTime: undefined,
-        dateRange: undefined
-      }));
-    } else {
-      if (pickupDateTime && dropoffDateTime) {
-        setFormData(prev => ({
-          ...prev,
-          pickup: initialPickupValue,
-          dropoff: initialDropoffValue,
-          pickupDisplay: initialPickupValue,
-          dropoffDisplay: initialDropoffValue,
-          pickupDateTime: undefined,
-          dropoffDateTime: undefined,
-          dateRange: {
-            from: pickupDateTime,
-            to: dropoffDateTime
-          }
-        }));
-      }
-    }
-    
-    // Store original values for comparison
-    originalValuesRef.current = {
-      from: initialPickupValue,
-      to: initialDropoffValue,
-      isOneWay: isOneWayFromProps,
-      pickupDisplay: initialPickupValue,
-      dropoffDisplay: initialDropoffValue,
-      pickupDateTime,
-      dropoffDateTime,
-      dateRange: pickupDateTime && dropoffDateTime && !isOneWayFromProps
-        ? { from: pickupDateTime, to: dropoffDateTime }
-        : undefined,
-      passengers: parseInt(passengers, 10)
-    };
-    
-    console.log("BookingTopBar initialized with:", {
-      type,
-      isOneWay: isOneWayFromProps,
-      from: initialPickupValue,
-      to: initialDropoffValue,
-      pickupDateTime,
-      dropoffDateTime
-    });
-    
-    // Mark as initialized to prevent this effect from running again
-    isInitializedRef.current = true;
-  }, [from, to, type, date, returnDate, passengers, isOneWayFromProps, 
-      bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.pickupDateTime, bookingState.dropoffDateTime,
-      bookingState.fromCoords, bookingState.toCoords]);
 
   // Setup effect for user interaction tracking
   useEffect(() => {
@@ -289,8 +260,8 @@ const BookingTopBar: React.FC<{
     
     // Compare current form data with original values
     const hasAddressChanges = 
-      pickupValue !== original.from ||
-      dropoffValue !== original.to;
+      pickupValue !== original.pickupDisplay ||
+      dropoffValue !== original.dropoffDisplay;
     
     const hasDateChanges = isOneWay
       ? formData.pickupDateTime?.getTime() !== original.pickupDateTime?.getTime()
@@ -344,9 +315,10 @@ const BookingTopBar: React.FC<{
       return;
     }
     
+    // Check if return date is set for round trips - using full date objects
     if (!isOneWay && (!formData.dateRange?.from || !formData.dateRange?.to)) {
       toast({
-        title: "Missing Date Information",
+        title: "Missing Return Date",
         description: "Please select both pickup and return dates",
         variant: "destructive"
       });
@@ -354,8 +326,8 @@ const BookingTopBar: React.FC<{
     }
     
     // Ensure pickup time is at least 4 hours in the future
-    const pickupDateTime = isOneWay ? formData.pickupDateTime : formData.dateRange?.from;
-    if (pickupDateTime && !isValidBookingTime(pickupDateTime)) {
+    const pickupDateObj = isOneWay ? formData.pickupDateTime : formData.dateRange!.from;
+    if (pickupDateObj && !isValidBookingTime(pickupDateObj)) {
       toast({
         title: "Invalid Pickup Time",
         description: "Pickup time must be at least 4 hours from now",
@@ -368,7 +340,7 @@ const BookingTopBar: React.FC<{
     if (!isOneWay && formData.dateRange?.from && formData.dateRange?.to) {
       if (formData.dateRange.to.getTime() <= formData.dateRange.from.getTime()) {
         toast({
-          title: "Invalid Return Time",
+          title: "Invalid Return Date",
           description: "Return time must be after pickup time",
           variant: "destructive"
         });
@@ -376,31 +348,66 @@ const BookingTopBar: React.FC<{
       }
     }
     
-    // Get values from current state - use actual display values for the URL
-    const encodedFrom = encodeURIComponent(pickupValue.toLowerCase().replace(/\s+/g, '-'));
-    const encodedTo = encodeURIComponent(dropoffValue.toLowerCase().replace(/\s+/g, '-'));
+    // Set loading state
+    setIsLoadingPrices(true);
+    setApiError(null);
+    setGeocodingErrorField(null);
     
-    // Prepare URL parameters for navigation
-    const newType = isOneWay ? '1' : '2';
+    // Show loading modal
+    setShowLoadingModal(true);
     
-    let formattedDepartureDate = '';
-    let formattedReturnDate = '0';
+    // Use the context's fetchPricingData function
+    const dropoffDateTime = !isOneWay && formData.dateRange?.to ? formData.dateRange.to : undefined;
     
-    if (isOneWay && formData.pickupDateTime) {
-      formattedDepartureDate = formatDateForUrl(formData.pickupDateTime);
-    } else if (!isOneWay && formData.dateRange?.from && formData.dateRange?.to) {
-      formattedDepartureDate = formatDateForUrl(formData.dateRange.from);
-      formattedReturnDate = formatDateForUrl(formData.dateRange.to);
-    }
-    
-    const baseRoute = location.pathname.startsWith('/home') ? '/home/transfer' : '/transfer';
-    const path = `${baseRoute}/${encodedFrom}/${encodedTo}/${newType}/${formattedDepartureDate}/${formattedReturnDate}/${formData.passengers}/form`;
-    
-    // Update original values to match the new route
-    originalValuesRef.current = {
+    const pricingResponse = await fetchPricingData({
       from: pickupValue,
       to: dropoffValue,
+      fromCoords: pickupCoords,
+      toCoords: dropoffCoords,
+      pickupDateTime: pickupDateObj!,
+      dropoffDateTime: dropoffDateTime,
+      isReturn: !isOneWay,
+      fromDisplay: pickupValue,
+      toDisplay: dropoffValue,
+      passengers: formData.passengers
+    });
+    
+    // Hide loading modal
+    setShowLoadingModal(false);
+    setIsLoadingPrices(false);
+    
+    // If price fetching failed, stop here
+    if (!pricingResponse) {
+      return;
+    }
+    
+    // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
+    const encodedPickup = encodeURIComponent(pickupValue.toLowerCase().replace(/\s+/g, '-'));
+    const encodedDropoff = encodeURIComponent(dropoffValue.toLowerCase().replace(/\s+/g, '-'));
+    
+    // Important: Type is '1' for One Way, '2' for Round Trip 
+    const urlType = isOneWay ? '1' : '2';
+    
+    // Format dates for URL
+    const formattedDepartureDate = pickupDateObj ? formatDateForUrl(pickupDateObj) : '';
+    
+    // Always include returnDate parameter (use '0' for one-way trips)
+    const returnDateParam = !isOneWay && formData.dateRange?.to
+      ? formatDateForUrl(formData.dateRange.to)
+      : '0';
+    
+    // Build the URL path
+    const path = `/transfer/${encodedPickup}/${encodedDropoff}/${urlType}/${formattedDepartureDate}/${returnDateParam}/${formData.passengers}/form`;
+    
+    // Reset change detection before navigation
+    setHasChanges(false);
+    userInteractedRef.current = false;
+    
+    // Reset original values to match the new state
+    originalValuesRef.current = {
       isOneWay: isOneWay,
+      from: pickupValue,
+      to: dropoffValue,
       pickupDisplay: pickupValue,
       dropoffDisplay: dropoffValue,
       pickupDateTime: isOneWay ? formData.pickupDateTime : formData.dateRange?.from,
@@ -410,38 +417,6 @@ const BookingTopBar: React.FC<{
         : undefined,
       passengers: formData.passengers
     };
-    
-    // Set loading state
-    setIsLoadingPrices(true);
-    setApiError(null);
-    
-    // Use the context's fetchPricingData function
-    const dropoffDateTime = !isOneWay && formData.dateRange?.to ? formData.dateRange.to : undefined;
-    const pickupDateObj = isOneWay ? formData.pickupDateTime! : formData.dateRange!.from;
-    
-    const pricingResponse = await fetchPricingData({
-      from: pickupValue,
-      to: dropoffValue,
-      fromCoords: pickupCoords,
-      toCoords: dropoffCoords,
-      pickupDateTime: pickupDateObj,
-      dropoffDateTime: dropoffDateTime,
-      isReturn: !isOneWay,
-      fromDisplay: pickupValue,
-      toDisplay: dropoffValue,
-      passengers: formData.passengers
-    });
-    
-    // If price fetching failed, stop here
-    if (!pricingResponse) {
-      setIsLoadingPrices(false);
-      return;
-    }
-    
-    // Reset change detection before navigation
-    setHasChanges(false);
-    userInteractedRef.current = false;
-    setIsLoadingPrices(false);
     
     navigate(path);
   };
@@ -497,21 +472,45 @@ const BookingTopBar: React.FC<{
     }
   };
   
-  // State for geocoding error field
-  const [geocodingErrorField, setGeocodingErrorField] = useState<'pickup' | 'dropoff' | null>(null);
-  
-  // Function to cancel geocoding
-  const handleCancelGeocoding = () => {
-    setGeocodingErrorField(null);
-    setIsLoadingPrices(false);
-  };
-
+  // Function to handle pickup validation
   const handlePickupValidation = (isValid: boolean) => {
     setPickupIsValid(isValid);
   };
 
+  // Function to handle dropoff validation
   const handleDropoffValidation = (isValid: boolean) => {
     setDropoffIsValid(isValid);
+  };
+  
+  // Function to cancel loading
+  const handleCancelLoading = () => {
+    if (activeRequestRef.current) {
+      // Code to abort the active request would go here
+      activeRequestRef.current = null;
+    }
+    
+    setIsLoadingPrices(false);
+    setGeocodingErrorField(null);
+    setShowLoadingModal(false);
+  };
+  
+  // Function to try a different route (for geocoding errors)
+  const handleTryDifferentRoute = () => {
+    setGeocodingErrorField(null);
+    setIsLoadingPrices(false);
+    setShowLoadingModal(false);
+    
+    // Focus the appropriate field
+    setTimeout(() => {
+      const pickupInput = document.getElementById('pickup-field');
+      const dropoffInput = document.getElementById('dropoff-field');
+      
+      if (geocodingErrorField === 'pickup' && pickupInput) {
+        (pickupInput as HTMLInputElement).focus();
+      } else if (geocodingErrorField === 'dropoff' && dropoffInput) {
+        (dropoffInput as HTMLInputElement).focus();
+      }
+    }, 100);
   };
 
   const handlePassengerChange = (increment: boolean) => {
@@ -556,7 +555,7 @@ const BookingTopBar: React.FC<{
       // Switching to Round Trip
       setFormData(prev => {
         // Calculate a default return date (1 day after pickup)
-        const pickupDate = prev.pickupDateTime || minPickupDateTime;
+        const pickupDate = prev.pickupDateTime || minimumDate;
         const defaultDropoffDate = new Date(pickupDate);
         defaultDropoffDate.setDate(defaultDropoffDate.getDate() + 1);
         
@@ -576,12 +575,12 @@ const BookingTopBar: React.FC<{
   return (
     <div className="relative">
       {/* Loading overlay */}
-      {isLoadingPrices && (
+      {showLoadingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-6">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <LoadingAnimation 
-              onCancel={handleCancelGeocoding}
-              onTryDifferentRoute={() => setGeocodingErrorField(null)}
+              onCancel={handleCancelLoading}
+              onTryDifferentRoute={handleTryDifferentRoute}
               geocodingErrorField={geocodingErrorField}
               isSlowConnection={false}
             />
@@ -698,7 +697,7 @@ const BookingTopBar: React.FC<{
                   }
                 }}
                 placeholder={t('searchform.date', 'Select departure date')}
-                minDate={minPickupDateTime}
+                minDate={minimumDate}
               />
             ) : (
               <DateRangePicker
@@ -734,12 +733,12 @@ const BookingTopBar: React.FC<{
                 }}
                 placeholder={t('searchform.dates', 'Select departure & return dates')}
                 className="w-full"
-                minDate={minPickupDateTime}
+                minDate={minimumDate}
               />
             )}
             <div className="relative">
               <Users className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg bg-white flex justify-between items-center">
+              <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-md bg-white flex justify-between items-center">
                 <span className="text-gray-700 text-[12px]">
                   {displayPassengers} {' '}
                   {displayPassengers !== 1 ? t('searchform.passengers', 'Passengers') : t('searchform.passenger', 'Passenger')}
@@ -782,7 +781,7 @@ const BookingTopBar: React.FC<{
                   {t('searchform.updating', 'Updating...')}
                 </div>
               ) : (
-                t('searchform.update_route', 'Update Route')
+              {t('searchform.update_route', 'Update Route')}
               )}
             </motion.button>
           </div>
@@ -849,7 +848,7 @@ const BookingTopBar: React.FC<{
                     }
                   }}
                   placeholder={t('searchform.date', 'Select departure date')}
-                  minDate={minPickupDateTime}
+                  minDate={minimumDate}
                 />
               ) : (
                 <DateRangePicker
@@ -885,14 +884,14 @@ const BookingTopBar: React.FC<{
                   }}
                   placeholder={t('searchform.dates', 'Select departure & return dates')}
                   className="col-span-1"
-                  minDate={minPickupDateTime}
+                  minDate={minimumDate}
                 />
               )}
               
               {/* Passengers */}
               <div className="relative">
                 <Users className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg bg-white flex justify-between items-center">
+                <div className="w-full h-[42px] pl-10 pr-4 border border-gray-200 rounded-md bg-white flex justify-between items-center">
                   <span className="text-gray-700 text-[12px]">
                     {displayPassengers} {' '}
                     {displayPassengers !== 1 ? t('searchform.passengers', 'Passengers') : t('searchform.passenger', 'Passenger')}

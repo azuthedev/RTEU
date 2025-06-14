@@ -1,9 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, XCircle, AlertTriangle, XSquare, Clock, MapPin, MapPinOff, RefreshCcw } from 'lucide-react';
+import { Loader2, XCircle, AlertTriangle, XSquare, Clock, MapPin, MapPinOff, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const LoadingAnimation = ({
+interface LoadingAnimationProps {
+  className?: string;
+  loadingComplete?: boolean;
+  onCancel?: () => void;
+  onTryDifferentRoute?: () => void;
+  error?: string | null;
+  startTime?: number;
+  isSlowConnection?: boolean;
+  geocodingErrorField?: 'pickup' | 'dropoff' | null;
+}
+
+const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   className = '',
   loadingComplete = false,
   onCancel,
@@ -17,7 +28,7 @@ const LoadingAnimation = ({
   const [messageIndex, setMessageIndex] = useState(0);
   const [showCancelButton, setShowCancelButton] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(null);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
   const [networkQuality, setNetworkQuality] = useState('good');
   const { t } = useLanguage();
 
@@ -33,17 +44,17 @@ const LoadingAnimation = ({
   ];
 
   // Refs for cleanup
-  const progressIntervalRef = useRef(null);
-  const messageIntervalRef = useRef(null);
-  const timerIntervalRef = useRef(null);
-  const cancelTimeoutRef = useRef(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cancelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use a ref to track if component is mounted
   const isMountedRef = useRef(true);
 
   // Ref for focus management
-  const cancelButtonRef = useRef(null);
-  const tryDifferentRouteButtonRef = useRef(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const tryDifferentRouteButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Clean up all intervals and timeouts when unmounting
   useEffect(() => {
@@ -97,7 +108,7 @@ const LoadingAnimation = ({
       clearInterval(progressIntervalRef.current);
     }
 
-    if (loadingComplete || error) {
+    if (loadingComplete || error || geocodingErrorField) {
       // If loading is complete or error occurred, immediately set progress to 100%
       setProgress(100);
       return;
@@ -132,7 +143,7 @@ const LoadingAnimation = ({
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [loadingComplete, error, isSlowConnection]);
+  }, [loadingComplete, error, isSlowConnection, geocodingErrorField]);
 
   // Handle message cycling
   useEffect(() => {
@@ -141,7 +152,7 @@ const LoadingAnimation = ({
       clearInterval(messageIntervalRef.current);
     }
 
-    if (loadingComplete || error) {
+    if (loadingComplete || error || geocodingErrorField) {
       // Set to the "complete" message
       setMessageIndex(loadingMessages.length);
       return;
@@ -158,11 +169,11 @@ const LoadingAnimation = ({
         clearInterval(messageIntervalRef.current);
       }
     };
-  }, [loadingComplete, error, loadingMessages.length]);
+  }, [loadingComplete, error, loadingMessages.length, geocodingErrorField]);
 
   // Show cancel button after 10 seconds
   useEffect(() => {
-    if (loadingComplete || error) return;
+    if (loadingComplete || error || geocodingErrorField) return;
     
     cancelTimeoutRef.current = setTimeout(() => {
       if (!isMountedRef.current) return;
@@ -179,7 +190,7 @@ const LoadingAnimation = ({
     return () => {
       if (cancelTimeoutRef.current) clearTimeout(cancelTimeoutRef.current);
     };
-  }, [loadingComplete, error]);
+  }, [loadingComplete, error, geocodingErrorField]);
 
   // Keyboard trap for accessibility - keep focus inside modal
   useEffect(() => {
@@ -203,15 +214,16 @@ const LoadingAnimation = ({
 
   if (error) {
     currentMessage = `${t('loading.error', 'Error')}: ${error}`;
-    statusIcon = <XCircle className="w-12 h-12 text-red-600 mb-6\" aria-hidden="true" />;
+    statusIcon = <XCircle className="w-12 h-12 text-red-600 mb-6" aria-hidden="true" />;
   } else if (geocodingErrorField) {
     // Show geocoding-specific error message
     currentMessage = geocodingErrorField === 'pickup'
       ? t('loading.geocoding_error_pickup', "Could not locate your pickup address. Please try a different address.")
       : t('loading.geocoding_error_dropoff', "Could not locate your dropoff address. Please try a different address.");
-    statusIcon = <MapPinOff className="w-12 h-12 text-amber-600 mb-6\" aria-hidden="true" />;
+    statusIcon = <MapPinOff className="w-12 h-12 text-amber-600 mb-6" aria-hidden="true" />;
   } else if (loadingComplete) {
     currentMessage = t('loading.complete', "All set! Redirecting...");
+    statusIcon = <CheckCircle className="w-12 h-12 text-green-600 mb-6" aria-hidden="true" />;
   } else {
     currentMessage = loadingMessages[messageIndex];
   }
@@ -300,10 +312,10 @@ const LoadingAnimation = ({
                 <button
                   ref={tryDifferentRouteButtonRef}
                   onClick={onTryDifferentRoute}
-                  className="px-4 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors flex items-center mx-auto"
+                  className="px-4 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors flex items-center justify-center mx-auto"
                   aria-label={t('loading.try_different_address', 'Enter a different address')}
                 >
-                  <RefreshCcw className="w-4 h-4 mr-2" aria-hidden="true" />
+                  <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
                   {t('loading.try_different_address_button', 'Try Different Address')}
                 </button>
               </motion.div>
@@ -319,7 +331,7 @@ const LoadingAnimation = ({
                 <button
                   ref={cancelButtonRef}
                   onClick={onCancel}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center mx-auto"
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center justify-center mx-auto"
                   aria-label={t('loading.cancel_loading', 'Cancel loading process')}
                 >
                   <XSquare className="w-4 h-4 mr-1" aria-hidden="true" />

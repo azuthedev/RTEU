@@ -69,13 +69,8 @@ export const formatDateTimeForDisplay = (date: Date | undefined): string => {
   if (!date) return 'Not specified';
   
   try {
-    return date.toLocaleString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    // Use more compact format dd/MM/yyyy HH:mm
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   } catch (e) {
     console.error('Error formatting date for display:', e);
     return date.toString();
@@ -88,15 +83,8 @@ export const formatDateTimeComponents = (date: Date | undefined): { date: string
   
   try {
     return {
-      date: date.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }),
-      time: date.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      date: `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`,
+      time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
     };
   } catch (e) {
     console.error('Error formatting date/time components:', e);

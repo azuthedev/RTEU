@@ -29,6 +29,7 @@ const PersonalDetails = () => {
   
   const [formTouched, setFormTouched] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [luggageExceedsCapacity, setLuggageExceedsCapacity] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   
   // Determine if pickup or dropoff is an airport
@@ -51,6 +52,11 @@ const PersonalDetails = () => {
           ? bookingState.personalDetails.luggageCount 
           : 2 // Default to 2 luggage items
       });
+      
+      // Check if the current luggage count exceeds the vehicle capacity
+      if (bookingState.personalDetails.luggageCount !== undefined) {
+        setLuggageExceedsCapacity(bookingState.personalDetails.luggageCount > maxLuggage);
+      }
     }
     
     // Check if pickup or dropoff is an airport
@@ -90,7 +96,7 @@ const PersonalDetails = () => {
         }, 100);
       }
     }
-  }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError, bookingState.fromDisplay, bookingState.from, bookingState.toDisplay, bookingState.to]);
+  }, [bookingState.personalDetails, bookingState.validationErrors, scrollToError, bookingState.fromDisplay, bookingState.from, bookingState.toDisplay, bookingState.to, maxLuggage]);
 
   // Handle adding an extra stop
   const handleAddExtraStop = () => {
@@ -233,16 +239,22 @@ const PersonalDetails = () => {
   // Function to handle luggage count changes
   const handleLuggageCountChange = (increment: boolean) => {
     let newCount = formData.luggageCount;
-    if (increment && newCount < maxLuggage) {
+    
+    if (increment) {
+      // Allow going beyond max but set the flag
       newCount++;
     } else if (!increment && newCount > 0) {
       newCount--;
     }
     
+    // Update the luggage count
     setFormData({
       ...formData,
       luggageCount: newCount
     });
+    
+    // Set the exceeded capacity flag
+    setLuggageExceedsCapacity(newCount > maxLuggage);
     
     setFormTouched({ ...formTouched, luggageCount: true });
   };
@@ -364,6 +376,16 @@ const PersonalDetails = () => {
   };
 
   const handleNext = () => {
+    // Check if luggage count exceeds vehicle capacity
+    if (luggageExceedsCapacity) {
+      toast({
+        title: "Luggage Capacity Exceeded",
+        description: `Your luggage count (${formData.luggageCount}) exceeds the vehicle capacity (${maxLuggage}). Please reduce your luggage or select a larger vehicle.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Validate the form
     if (!validateForm()) {
       // Find the first error field and scroll to it
@@ -479,12 +501,7 @@ const PersonalDetails = () => {
                 <button 
                   type="button"
                   onClick={() => handleLuggageCountChange(true)}
-                  className={`w-8 h-8 flex items-center justify-center border rounded-full ${
-                    formData.luggageCount < maxLuggage 
-                      ? 'border-gray-300 hover:bg-gray-100' 
-                      : 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  }`}
-                  disabled={formData.luggageCount >= maxLuggage}
+                  className="w-8 h-8 flex items-center justify-center border rounded-full border-gray-300 hover:bg-gray-100"
                   aria-label="Increase luggage count"
                   id="luggage-increase"
                 >
@@ -492,9 +509,27 @@ const PersonalDetails = () => {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Maximum {maxLuggage} luggage items for {bookingState.selectedVehicle?.name}
-            </p>
+            <div className="mt-2">
+              <p className="text-xs text-gray-500">
+                Maximum {maxLuggage} luggage items for {bookingState.selectedVehicle?.name}
+              </p>
+              
+              {/* Show warning when luggage exceeds capacity */}
+              {luggageExceedsCapacity && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start">
+                  <AlertCircle className="w-5 h-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-amber-800 font-medium">
+                      Luggage capacity exceeded
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Your current vehicle ({bookingState.selectedVehicle?.name}) can only fit {maxLuggage} luggage items.
+                      Please reduce your luggage count or go back to select a larger vehicle.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Regular extras */}

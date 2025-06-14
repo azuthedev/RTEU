@@ -105,15 +105,36 @@ const getCategoryDisplayName = (category: string): string => {
 const VehicleSelection = () => {
   const { bookingState, setBookingState, validateStep } = useBooking();
   const { toast } = useToast();
-  const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]);
+  
+  // Initialize with previously selected vehicle if available, otherwise use default
+  const [selectedVehicle, setSelectedVehicle] = useState(() => 
+    bookingState.selectedVehicle || vehicles[0]
+  );
+  
   const [modalVehicle, setModalVehicle] = useState<typeof vehicles[0] | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('sedan');
+  
+  // Set initial category based on selected vehicle if exists
+  const getInitialCategory = (): string => {
+    if (!bookingState.selectedVehicle) return 'sedan';
+    
+    // Find which category the selected vehicle belongs to
+    for (const category of Object.keys(categorizeVehicles())) {
+      const vehiclesInCategory = categorizeVehicles()[category];
+      if (vehiclesInCategory.some(v => v.id === bookingState.selectedVehicle?.id)) {
+        return category;
+      }
+    }
+    return 'sedan'; // Default fallback
+  };
+  
+  const [activeCategory, setActiveCategory] = useState(getInitialCategory());
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
   
   const carouselRef = useRef<HTMLDivElement>(null);
+  const categoryTabsRef = useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
   const itemsPerView = isMobile ? 1 : 3;
   const initializeAttemptRef = useRef(false);
@@ -150,7 +171,7 @@ const VehicleSelection = () => {
     const vehiclesByCategory = categorizeVehicles();
     setCategorizedVehicles(vehiclesByCategory);
     
-    // Initialize with first vehicle as default
+    // Initialize with first vehicle as default if no selection in state
     if (!selectedVehicle && vehiclesByCategory.sedan && vehiclesByCategory.sedan.length > 0) {
       setSelectedVehicle(vehiclesByCategory.sedan[0]);
     }
@@ -170,6 +191,17 @@ const VehicleSelection = () => {
     
     console.log("🔄 Initial categorization complete");
   }, [bookingState.selectedVehicle, selectedVehicle]);
+
+  // Ensure category tabs are scrolled to show active category
+  useEffect(() => {
+    // Wait for the DOM to be fully rendered
+    setTimeout(() => {
+      if (categoryTabsRef.current) {
+        // Reset scroll position to 0 (left edge) when component mounts
+        categoryTabsRef.current.scrollLeft = 0;
+      }
+    }, 100);
+  }, []);
 
   // Apply API prices to vehicles when we have pricing data
   useEffect(() => {
@@ -582,7 +614,11 @@ const VehicleSelection = () => {
           <>
             {/* Category Tabs */}
             <div className="mb-8 sticky top-0 z-10 bg-white py-4 -mt-4 shadow-sm">
-              <div className="flex justify-center md:justify-start gap-2 overflow-x-auto py-2 px-1">
+              <div 
+                ref={categoryTabsRef}
+                className="flex justify-start gap-2 overflow-x-auto py-2 px-1 pl-1 scrollbar-hide"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
                 {vehicleCategories.map((category) => {
                   // Count available vehicles in this category
                   const vehiclesInCategory = categorizedVehicles[category.id] || [];
@@ -600,7 +636,7 @@ const VehicleSelection = () => {
                     <button
                       key={category.id}
                       onClick={() => handleCategoryChange(category.id)}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
+                      className={`px-3 py-1 text-sm md:text-base md:px-4 md:py-2 rounded-lg transition-colors ${
                         activeCategory === category.id 
                           ? `bg-blue-600 text-white shadow-sm`
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

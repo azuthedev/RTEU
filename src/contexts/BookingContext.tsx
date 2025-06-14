@@ -47,6 +47,8 @@ export interface BookingState {
   // Store coordinates to prevent repeated geocoding
   fromCoords?: {lat: number, lng: number} | null;
   toCoords?: {lat: number, lng: number} | null;
+  fromValid?: boolean;  // Track if pickup location is valid
+  toValid?: boolean;    // Track if dropoff location is valid
   isReturn?: boolean;
   // Full date objects with time information
   pickupDateTime?: Date;
@@ -298,6 +300,8 @@ const getDefaultBookingState = (pathname?: string): BookingState => {
     },
     fromCoords: null,
     toCoords: null,
+    fromValid: false,  // Initialize validation state as false
+    toValid: false,    // Initialize validation state as false
     pricingError: null, // Initialize with null
     validationErrors: [],
     isPricingLoading: false // Initialize loading state as false
@@ -323,22 +327,13 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     // Return in priority order: saved state, URL state, or default state
     if (savedState) {
-      // If saved state exists, enhance it with any URL parameters
+      // If saved state exists, only update the URL parameters
       if (urlState) {
-        // Prioritize display names from saved state but allow URL to update coordinates
         return {
           ...savedState,
-          // Only update these if they're undefined in saved state
-          from: savedState.from || urlState.from,
-          to: savedState.to || urlState.to,
-          // Preserve display names from saved state if they exist
-          fromDisplay: savedState.fromDisplay || urlState.fromDisplay,
-          toDisplay: savedState.toDisplay || urlState.toDisplay,
-          isReturn: savedState.isReturn !== undefined ? savedState.isReturn : urlState.isReturn,
-          passengers: savedState.passengers || urlState.passengers,
-          // Only update dates if they're not already set
-          pickupDateTime: savedState.pickupDateTime || urlState.pickupDateTime,
-          dropoffDateTime: savedState.dropoffDateTime || urlState.dropoffDateTime,
+          // Only update URL-specific fields if they don't exist in savedState
+          departureDate: urlState.departureDate,
+          returnDate: urlState.returnDate
         };
       }
       return savedState;
@@ -376,13 +371,16 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       toDisplay: bookingState.toDisplay,
       pickupDateTime: bookingState.pickupDateTime,
       dropoffDateTime: bookingState.dropoffDateTime,
+      fromValid: bookingState.fromValid,
+      toValid: bookingState.toValid,
       pricingData: bookingState.pricingResponse ? 'Available' : 'None',
       pricingError: bookingState.pricingError,
       isPricingLoading: bookingState.isPricingLoading
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.pickupDateTime, bookingState.dropoffDateTime, 
-      bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading]);
+      bookingState.pickupDateTime, bookingState.dropoffDateTime, bookingState.fromValid, 
+      bookingState.toValid, bookingState.pricingResponse, bookingState.pricingError, 
+      bookingState.isPricingLoading]);
 
   // Function to clear booking state
   const clearBookingState = () => {
@@ -595,6 +593,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isReturn: isReturn,
         fromCoords: pickup,
         toCoords: dropoff,
+        fromValid: true,  // Mark address as valid since we have coordinates
+        toValid: true,    // Mark address as valid since we have coordinates
         pickupDateTime: pickupDateTime,
         dropoffDateTime: isReturn ? dropoffDateTime : undefined,
         passengers: passengers,
@@ -641,6 +641,15 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Check if we have the required route information
         if (!bookingState.from || !bookingState.to) {
           errors.push({ field: 'route', message: 'Route information is missing' });
+        }
+        
+        // Check if addresses are validated
+        if (bookingState.fromValid === false) {
+          errors.push({ field: 'from', message: 'Pickup address is invalid or incomplete' });
+        }
+        
+        if (bookingState.toValid === false) {
+          errors.push({ field: 'to', message: 'Dropoff address is invalid or incomplete' });
         }
         
         // Check if we have date information - using full date objects
@@ -701,6 +710,14 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
               errors.push({ field: `extraStop${index}`, message: `Address for stop ${index + 1} is required` });
             }
           });
+        }
+        
+        // Check if luggage count is valid
+        if (bookingState.personalDetails.luggageCount !== undefined) {
+          if (bookingState.personalDetails.luggageCount > bookingState.selectedVehicle.suitcases) {
+            // This is now just a warning, not a validation error
+            console.warn(`Luggage count (${bookingState.personalDetails.luggageCount}) exceeds vehicle capacity (${bookingState.selectedVehicle.suitcases})`);
+          }
         }
         
         break;
