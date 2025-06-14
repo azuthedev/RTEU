@@ -16,10 +16,11 @@ import { updateMetaTags, addStructuredData } from '../utils/seo';
 import LazyComponent from '../components/LazyComponent';
 import DeferredComponent from '../components/DeferredComponent';
 import { initGoogleMaps } from '../utils/optimizeThirdParty'; 
-import { BookingProvider } from '../contexts/BookingContext';
+import { BookingProvider, useBooking } from '../contexts/BookingContext';
 
 function HomeContent() {
   const location = useLocation();
+  const { clearBookingState } = useBooking();
   
   // Update SEO metadata when component mounts
   useEffect(() => {
@@ -57,6 +58,10 @@ function HomeContent() {
   
   // Initialize Google Maps early for search form
   useEffect(() => {
+    // Clear booking state when Home component mounts
+    // This ensures fresh booking state for new searches
+    clearBookingState();
+    
     // Pre-load Google Maps API as it's critical for the search functionality
     if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
       initGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ['places'])
@@ -64,7 +69,7 @@ function HomeContent() {
           console.log('Home: Google Maps API initialization:', success ? 'successful' : 'failed');
         });
     }
-  }, []);
+  }, [clearBookingState]);
   
   return (
     <>
