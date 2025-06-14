@@ -69,65 +69,74 @@ const BookingFlow = () => {
     const decodedFrom = decodeURIComponent(from.replace(/-/g, ' '));
     const decodedTo = decodeURIComponent(to.replace(/-/g, ' '));
     
-    // Use or preserve display names if they exist in state
-    const fromDisplay = bookingState.fromDisplay || decodedFrom;
-    const toDisplay = bookingState.toDisplay || decodedTo;
-    
-    // Parse the date parameters
-    const pickupDateTime = bookingState.pickupDateTime || parseUrlDate(date);
-    const dropoffDateTime = bookingState.dropoffDateTime || 
-                           (returnDate && returnDate !== '0' ? parseUrlDate(returnDate) : undefined);
-    const isReturnTrip = type === '2';
-    
-    // Only update state if we have different values
-    const needsUpdate = 
-      bookingState.from !== decodedFrom ||
-      bookingState.to !== decodedTo ||
-      !bookingState.fromDisplay ||
-      !bookingState.toDisplay ||
-      !bookingState.pickupDateTime ||
-      (isReturnTrip && !bookingState.dropoffDateTime) ||
-      bookingState.isReturn !== isReturnTrip;
-    
-    if (needsUpdate) {
-      // Set or update the booking state with parsed data
-      setBookingState(prev => {
-        // Create a copy of the current state
-        const updatedState = { ...prev };
+    // Use the context value as the primary source of truth
+    // Only update fields that are empty in the current context
+    setBookingState(prev => {
+      // Create a new state object based on current state
+      const updatedState = { ...prev };
+      
+      // CRITICAL CHANGE: Only update state fields if they don't exist in context
+      // This prioritizes existing context data over URL parameters
+      
+      // Location information - preserve context data when available
+      updatedState.from = prev.from || decodedFrom;
+      updatedState.to = prev.to || decodedTo;
+      updatedState.fromDisplay = prev.fromDisplay || decodedFrom;
+      updatedState.toDisplay = prev.toDisplay || decodedTo;
+      
+      // CRITICAL: Preserve coordinate data which is obtained via geocoding
+      // These are expensive to calculate and should never be lost
+      updatedState.fromCoords = prev.fromCoords;
+      updatedState.toCoords = prev.toCoords;
+      
+      // Trip type - preserve context data
+      updatedState.isReturn = prev.isReturn !== undefined 
+        ? prev.isReturn 
+        : type === '2';
+      
+      // Passenger count - preserve context data
+      updatedState.passengers = prev.passengers || 
+                               (passengers ? parseInt(passengers, 10) : 1);
+      
+      // URL date parameters for bookmarking/sharing - always update these
+      updatedState.departureDate = date;
+      updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
+      
+      // Date objects with time information
+      // Parse dates from URL only if we don't have them in context
+      if (!prev.pickupDateTime) {
+        updatedState.pickupDateTime = parseUrlDate(date);
+      }
+      
+      if (updatedState.isReturn && !prev.dropoffDateTime && returnDate !== '0') {
+        updatedState.dropoffDateTime = parseUrlDate(returnDate);
+      }
+      
+      // Log what we're updating
+      console.log("🔄 Booking state updated from URL parameters", {
+        fromContext: !!prev.from,
+        toContext: !!prev.to,
+        fromCoordsContext: !!prev.fromCoords,
+        toCoordsContext: !!prev.toCoords,
+        isReturnContext: prev.isReturn,
+        pickupDateTimeContext: !!prev.pickupDateTime,
+        dropoffDateTimeContext: !!prev.dropoffDateTime,
         
-        // Always update these values
-        updatedState.from = decodedFrom;
-        updatedState.to = decodedTo;
-        updatedState.fromDisplay = fromDisplay;
-        updatedState.toDisplay = toDisplay;
-        updatedState.departureDate = date;
-        updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
-        updatedState.passengers = passengers ? parseInt(passengers, 10) : 1;
-        updatedState.isReturn = isReturnTrip;
-        updatedState.pickupDateTime = pickupDateTime;
-        updatedState.dropoffDateTime = dropoffDateTime;
-        
-        // Log what we're updating
-        console.log("🔄 Updating booking state with:", {
-          from: decodedFrom,
-          to: decodedTo,
-          fromDisplay,
-          toDisplay,
-          pickupDateTime,
-          dropoffDateTime,
-          isReturn: isReturnTrip
-        });
-        
-        return updatedState;
+        fromFinal: updatedState.from,
+        toFinal: updatedState.to,
+        fromCoordsFinal: !!updatedState.fromCoords,
+        toCoordsFinal: !!updatedState.toCoords,
+        isReturnFinal: updatedState.isReturn,
+        pickupDateTimeFinal: updatedState.pickupDateTime,
+        dropoffDateTimeFinal: updatedState.dropoffDateTime
       });
-    }
+      
+      return updatedState;
+    });
     
     // Mark as initialized
     isInitializedRef.current = true;
-  }, [from, to, type, date, returnDate, passengers, setBookingState, 
-      bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.pickupDateTime, bookingState.dropoffDateTime,
-      bookingState.from, bookingState.to, bookingState.isReturn]);
+  }, [from, to, type, date, returnDate, passengers, setBookingState]);
   
   // Fetch pricing if needed
   useEffect(() => {
