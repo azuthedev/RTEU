@@ -31,7 +31,7 @@
   "services.minivan.sub": "Minivan confortevoli per gruppi, viaggi di famiglia o esigenze di lavoro.",
   
   "about.head": "Il tuo viaggio, ridefinito.",
-  "about.sub": "Per oltre 15 anni, Royal Transfer EU ha fornito trasferimenti aeroportuali e servizi taxi sicuri, puntuali e confortevoli in tutta Italia. Grazie a anni di esperienza e dedizione, siamo il partner di viaggio preferito per migliaia di persone in tutto il mondo.",
+  "about.sub": "Per oltre 15 anni, Royal Transfer EU ha fornito trasferimenti aeroportuali sicuri, puntuali e confortevoli in tutta Italia. Grazie a anni di esperienza e dedizione, siamo il partner di viaggio preferito per migliaia di persone in tutto il mondo.",
   "about.cta": "Leggi di Più",
   
   "faq.head": "Domande Frequenti",
@@ -40,8 +40,8 @@
   "faq.how.sub": "Prenota online, via telefono o tramite la nostra app—conferma istantanea garantita.",
   "faq.delay.head": "Cosa succede se il mio volo è in ritardo?",
   "faq.delay.sub": "Nessun problema! Monitoriamo i voli e adattiamo gli orari di prelievo senza costi aggiuntivi.",
-  "faq.prices.head": "I vostri prezzi sono fissi o a tassametro?",
-  "faq.prices.sub": "Scegli tra tariffe fisse per trasparenza o corse a tassametro per flessibilità.",
+  "faq.prices.head": "I vostri prezzi sono fissi o variabili?",
+  "faq.prices.sub": "Scegli tra tariffe fisse per trasparenza o prezzi flessibili basati sulla distanza.",
   "faq.where.head": "Dove mi incontrerà il mio autista all'aeroporto?",
   "faq.where.sub": "Il tuo autista sarà nell'area arrivi con un cartello che mostra il tuo nome.",
   "faq.group.head": "Offrite veicoli per gruppi o famiglie?",
@@ -77,5 +77,9 @@
   "sitemap.gethelp.privacy": "Informativa sulla Privacy",
   "sitemap.gethelp.cookies": "Impostazioni Cookie",
   
-  "sitemap.contact.head": "Informazioni di Contatto"
+  "sitemap.contact.head": "Informazioni di Contatto",
+  
+  "hero.headline": "La strada è una parte",
+  "hero.headline1": "dell'avventura",
+  "hero.subhead": "Goditi il viaggio – noi ci occupiamo del resto"
 }

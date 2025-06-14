@@ -31,7 +31,7 @@
   "services.minivan.sub": "Bekväma minibussar för grupper, familjeresor eller affärsbehov.",
   
   "about.head": "Din resa, omdefinierad.",
-  "about.sub": "I över 15 år har Royal Transfer EU tillhandahållit säkra, punktliga och bekväma flygplatstransfers och taxitjänster i hela Italien. Tack vare år av erfarenhet och engagemang är vi den föredragna resepartnern för tusentals över hela världen.",
+  "about.sub": "I över 15 år har Royal Transfer EU tillhandahållit säkra, punktliga och bekväma flygplatstransfers i hela Italien. Tack vare år av erfarenhet och engagemang är vi den föredragna resepartnern för tusentals över hela världen.",
   "about.cta": "Läs mer",
   
   "faq.head": "Vanliga frågor",
@@ -40,8 +40,8 @@
   "faq.how.sub": "Boka online, via telefon eller via vår app—omedelbar bekräftelse garanterad.",
   "faq.delay.head": "Vad händer om mitt flyg är försenat?",
   "faq.delay.sub": "Inga problem! Vi spårar flyg och justerar upphämtningstider utan extra kostnad.",
-  "faq.prices.head": "Är era priser fasta eller per taxameter?",
-  "faq.prices.sub": "Välj mellan fasta priser för transparens eller taxameterresor för flexibilitet.",
+  "faq.prices.head": "Är era priser fasta eller variabla?",
+  "faq.prices.sub": "Välj mellan fasta priser för transparens eller flexibla priser baserade på avstånd.",
   "faq.where.head": "Var kommer min förare att möta mig på flygplatsen?",
   "faq.where.sub": "Din förare kommer att vara i ankomsthallen med en skylt som visar ditt namn.",
   "faq.group.head": "Erbjuder ni fordon för grupper eller familjer?",
