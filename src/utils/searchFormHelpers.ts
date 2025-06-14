@@ -16,7 +16,7 @@ export const formatDateForUrl = (date: Date): string => {
   return `${year}${month}${day}`;
 };
 
-// Parse date from URL parameters (adds noon as default time)
+// Parse date from URL parameters (preserves time from context when available)
 export const parseDateFromUrl = (dateStr: string): Date | undefined => {
   if (!dateStr || dateStr === '0' || dateStr.length !== 6) {
     return undefined;
@@ -27,34 +27,36 @@ export const parseDateFromUrl = (dateStr: string): Date | undefined => {
     const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
     const day = parseInt(dateStr.slice(4, 6));
     
-    // Check if we're parsing today's date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const parsedDate = new Date(year, month, day);
-    parsedDate.setHours(0, 0, 0, 0);
+    // Create date with midnight time to avoid overwriting time information
+    const parsedDate = new Date(year, month, day, 0, 0, 0);
     
     // If date is invalid, return undefined
     if (isNaN(parsedDate.getTime())) {
       return undefined;
     }
     
+    // We set the time to midnight (00:00) here - this is important!
+    // This ensures we don't overwrite any time information that might be set later
+    // or already exist in the context
+    
     // Get current time plus minimum booking time
     const now = new Date();
     const minBookingHoursAhead = 4; // Minimum 4 hours in the future
     const minBookingTime = new Date(now.getTime() + minBookingHoursAhead * 60 * 60 * 1000);
     
-    // If the parsed date is today, set time to now + minimum hours
+    // If the parsed date is today and time is midnight, set time to at least minimum booking time
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     if (parsedDate.getTime() === today.getTime()) {
+      // For today, ensure time is at least min booking hours ahead
       parsedDate.setHours(minBookingTime.getHours(), minBookingTime.getMinutes(), 0, 0);
     } else {
-      // For future dates, use 12:00 (noon) as default time
-      parsedDate.setHours(12, 0, 0, 0);
-    }
-    
-    // Ensure we always return a date that's at least minBookingHoursAhead hours in the future
-    if (parsedDate.getTime() < minBookingTime.getTime()) {
-      return minBookingTime;
+      // For future dates, keep midnight time - the caller will set the time component
+      // Only if date is already past, set to minimumBookingTime
+      if (parsedDate.getTime() < minBookingTime.getTime()) {
+        return minBookingTime;
+      }
     }
     
     return parsedDate;

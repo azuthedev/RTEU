@@ -68,8 +68,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   
   // Initialize validation state based on whether we have addresses in bookingState
   // If addresses exist in bookingState, they were already validated in SearchForm
-  const [pickupIsValid, setPickupIsValid] = useState(!!bookingState.fromDisplay);
-  const [dropoffIsValid, setDropoffIsValid] = useState(!!bookingState.toDisplay);
+  const [pickupIsValid, setPickupIsValid] = useState(!!bookingState.fromValid);
+  const [dropoffIsValid, setDropoffIsValid] = useState(!!bookingState.toValid);
 
   // Track active request ID
   const activeRequestRef = useRef<string | null>(null);
@@ -115,7 +115,16 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       return;
     }
 
-    console.log("🔄 BookingTopBar - Initializing from context");
+    console.log("🔄 BookingTopBar - Initializing from context", {
+      fromDisplay: bookingState.fromDisplay,
+      toDisplay: bookingState.toDisplay,
+      pickupDateTime: bookingState.pickupDateTime,
+      dropoffDateTime: bookingState.dropoffDateTime,
+      fromValid: bookingState.fromValid,
+      toValid: bookingState.toValid,
+      fromCoords: bookingState.fromCoords,
+      toCoords: bookingState.toCoords
+    });
     
     // CRITICAL CHANGE: Always use bookingContext as the primary source of truth
     // URL parameters should only be used as fallbacks
@@ -138,6 +147,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     if (bookingState.toCoords) {
       setDropoffCoords(bookingState.toCoords);
     }
+    
+    // Set validation status from bookingState
+    setPickupIsValid(!!bookingState.fromValid);
+    setDropoffIsValid(!!bookingState.toValid);
     
     // Set form data with actual date objects from bookingState
     setFormData({
@@ -176,8 +189,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       dropoffDateTime: bookingState.dropoffDateTime,
       fromCoords: bookingState.fromCoords ? 'Present' : 'None',
       toCoords: bookingState.toCoords ? 'Present' : 'None',
-      initialPickupValid: !!bookingState.fromDisplay,
-      initialDropoffValid: !!bookingState.toDisplay
+      initialPickupValid: !!bookingState.fromValid,
+      initialDropoffValid: !!bookingState.toValid
     });
     
     // Mark as initialized
@@ -196,11 +209,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     passengers: displayPassengers
   });
   
-  // Store original values for comparison
+  // Store original values for comparison and restoration
   const originalValuesRef = useRef({
-    from: '',
-    to: '',
-    isOneWay: true,
+    isReturn: false,
+    pickup: '',
+    dropoff: '',
     pickupDisplay: '',
     dropoffDisplay: '',
     pickupDateTime: undefined as Date | undefined,
@@ -268,7 +281,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : formData.dateRange?.from?.getTime() !== original.dateRange?.from?.getTime() ||
         formData.dateRange?.to?.getTime() !== original.dateRange?.to?.getTime();
     
-    const hasTypeChange = formType !== (original.isOneWay ? '1' : '2');
+    const hasTypeChange = formType !== (original.isReturn ? '2' : '1');
     const hasPassengerChange = formData.passengers !== original.passengers;
     
     // Determine if there are any changes
@@ -405,9 +418,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // Reset original values to match the new state
     originalValuesRef.current = {
-      isOneWay: isOneWay,
-      from: pickupValue,
-      to: dropoffValue,
+      isReturn: !isOneWay,
+      pickup: pickupValue,
+      dropoff: dropoffValue,
       pickupDisplay: pickupValue,
       dropoffDisplay: dropoffValue,
       pickupDateTime: isOneWay ? formData.pickupDateTime : formData.dateRange?.from,
@@ -526,15 +539,13 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     userInteractedRef.current = true;
     const newIsOneWay = oneWay;
     // If toggling back to original state without saving, restore original values
-    if (newIsOneWay === originalValuesRef.current.isOneWay && !hasChanges) {
+    if (newIsOneWay === originalValuesRef.current.isReturn && !hasChanges) {
       setIsOneWay(newIsOneWay);
       setFormData(prev => ({
         ...prev,
         pickupDateTime: originalValuesRef.current.pickupDateTime,
         dropoffDateTime: originalValuesRef.current.dropoffDateTime,
-        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
-          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
-          : undefined
+        dateRange: originalValuesRef.current.dateRange
       }));
       return;
     }
@@ -655,6 +666,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               required={true}
               onValidation={handlePickupValidation}
               id="pickup-field-mobile"
+              initialIsValid={pickupIsValid}
             />
             
             {/* Mobile Dropoff Location */}
@@ -674,6 +686,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
               required={true}
               onValidation={handleDropoffValidation}
               id="dropoff-field-mobile"
+              initialIsValid={dropoffIsValid}
             />
             
             {/* Date Selection */}
@@ -806,6 +819,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 required={true}
                 onValidation={handlePickupValidation}
                 id="pickup-field-desktop"
+                initialIsValid={pickupIsValid}
               />
               
               {/* Desktop Dropoff Location */}
@@ -825,6 +839,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
                 required={true}
                 onValidation={handleDropoffValidation}
                 id="dropoff-field-desktop"
+                initialIsValid={dropoffIsValid}
               />
               
               {/* Date Selection */}

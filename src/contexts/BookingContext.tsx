@@ -186,6 +186,15 @@ const deserializeBookingState = (serialized: string | null): BookingState | null
     if (!parsed.validationErrors) {
       parsed.validationErrors = [];
     }
+    
+    // CRITICAL FIX: Ensure fromValid and toValid are properly deserialized
+    if (parsed.fromValid === undefined && parsed.fromDisplay) {
+      parsed.fromValid = true; // If we have a display name, it was validated
+    }
+    
+    if (parsed.toValid === undefined && parsed.toDisplay) {
+      parsed.toValid = true; // If we have a display name, it was validated
+    }
 
     return parsed;
   } catch (e) {
@@ -332,8 +341,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return {
           ...savedState,
           // Only update URL-specific fields if they don't exist in savedState
-          departureDate: urlState.departureDate,
-          returnDate: urlState.returnDate
+          departureDate: savedState.departureDate || urlState.departureDate,
+          returnDate: savedState.returnDate || urlState.returnDate
         };
       }
       return savedState;
@@ -373,13 +382,16 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dropoffDateTime: bookingState.dropoffDateTime,
       fromValid: bookingState.fromValid,
       toValid: bookingState.toValid,
+      fromCoords: bookingState.fromCoords ? 'Present' : 'None',
+      toCoords: bookingState.toCoords ? 'Present' : 'None',
       pricingData: bookingState.pricingResponse ? 'Available' : 'None',
       pricingError: bookingState.pricingError,
       isPricingLoading: bookingState.isPricingLoading
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
       bookingState.pickupDateTime, bookingState.dropoffDateTime, bookingState.fromValid, 
-      bookingState.toValid, bookingState.pricingResponse, bookingState.pricingError, 
+      bookingState.toValid, bookingState.fromCoords, bookingState.toCoords,
+      bookingState.pricingResponse, bookingState.pricingError, 
       bookingState.isPricingLoading]);
 
   // Function to clear booking state
