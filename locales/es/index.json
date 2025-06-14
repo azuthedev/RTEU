@@ -31,7 +31,7 @@
   "services.minivan.sub": "Minivans cómodas para grupos, viajes familiares o necesidades de negocios.",
   
   "about.head": "Tu viaje, redefinido.",
-  "about.sub": "Durante más de 15 años, Royal Transfer EU ha proporcionado traslados de aeropuerto y servicios de taxi seguros, puntuales y cómodos en toda Italia. Aprovechando años de experiencia y dedicación, somos el socio de viaje preferido para miles de personas en todo el mundo.",
+  "about.sub": "Durante más de 15 años, Royal Transfer EU ha proporcionado traslados de aeropuerto seguros, puntuales y cómodos en toda Italia. Aprovechando años de experiencia y dedicación, somos el socio de viaje preferido para miles de personas en todo el mundo.",
   "about.cta": "Leer Más",
   
   "faq.head": "Preguntas Frecuentes",
@@ -40,8 +40,8 @@
   "faq.how.sub": "Reserve en línea, por teléfono o a través de nuestra aplicación—confirmación instantánea garantizada.",
   "faq.delay.head": "¿Qué pasa si mi vuelo se retrasa?",
   "faq.delay.sub": "¡No se preocupe! Seguimos los vuelos y ajustamos los horarios de recogida sin costo adicional.",
-  "faq.prices.head": "¿Sus precios son fijos o con taxímetro?",
-  "faq.prices.sub": "Elija entre tarifas fijas para transparencia o viajes con taxímetro para flexibilidad.",
+  "faq.prices.head": "¿Sus precios son fijos o variables?",
+  "faq.prices.sub": "Elija entre tarifas fijas para transparencia o precios flexibles basados en la distancia.",
   "faq.where.head": "¿Dónde me encontrará mi conductor en el aeropuerto?",
   "faq.where.sub": "Su conductor estará en el área de llegadas con un cartel que muestra su nombre.",
   "faq.group.head": "¿Ofrecen vehículos para grupos o familias?",
