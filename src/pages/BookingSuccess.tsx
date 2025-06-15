@@ -5,22 +5,12 @@ import { CheckCircle, ArrowRight, Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
-import { supabase, createServiceRoleClient } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import SignUpModal from '../components/SignUpModal';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '../components/ui/use-toast';
-
-// Create a service role client for admin-level access
-const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-let supabaseServiceRole;
-if (!serviceRoleKey) {
-  console.error('Missing VITE_SUPABASE_SERVICE_ROLE_KEY - using regular client');
-  supabaseServiceRole = supabase; // Fallback to regular client
-} else {
-  supabaseServiceRole = createServiceRoleClient();
-}
+import { supabase } from '../lib/supabase';
 
 // Helper function to retry database operations
 const retryDatabaseOperation = async (operation, maxRetries = 2) => {
@@ -83,7 +73,7 @@ const BookingSuccess = () => {
       // Clear navigation state to prevent issues on page refresh
       window.history.replaceState({}, document.title);
     } else if (bookingRef) {
-      // Fetch data from database if no cached state
+      // Fetch data from edge function if no cached state
       fetchBookingDetails(bookingRef);
     } else {
       setLoading(false);
@@ -99,21 +89,26 @@ const BookingSuccess = () => {
     try {
       console.log('Fetching booking details for reference:', reference);
       
-      // Retry database operation with backoff
-      const data = await retryDatabaseOperation(async () => {
-        // Use service role client to bypass RLS policies
-        const { data, error } = await supabaseServiceRole
-          .from('trips')
-          .select('*')
-          .eq('booking_reference', reference)
-          .single();
-        
-        if (error) {
-          throw error;
+      // Use the secure Edge Function instead of direct database access
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-booking-details`, 
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ booking_reference: reference })
         }
-        
-        return data;
-      });
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from edge function:', errorText);
+        throw new Error('Could not retrieve booking details');
+      }
+      
+      const data = await response.json();
       
       if (data) {
         console.log('Booking data retrieved successfully:', data);
@@ -124,45 +119,14 @@ const BookingSuccess = () => {
         return;
       }
       
-      // If we get here without data, try fallback
-      console.log('No data found with exact match, trying fallback query');
+      // If we reach here, something went wrong
+      throw new Error('No booking data found');
       
-      // Try a more permissive query as fallback
-      try {
-        const fallbackData = await retryDatabaseOperation(async () => {
-          const { data, error } = await supabaseServiceRole
-            .from('trips')
-            .select('*')
-            .ilike('booking_reference', `%${reference}%`)
-            .limit(1);
-          
-          if (error) throw error;
-          if (!data || data.length === 0) {
-            throw new Error('No matching booking found with reference: ' + reference);
-          }
-          
-          return data[0];
-        });
-        
-        setBookingDetails(fallbackData);
-        console.log('Booking data found with fallback query:', fallbackData);
-        
-        // Check user status
-        checkUserStatus(fallbackData);
-      } catch (fallbackError) {
-        console.error('Fallback query error:', fallbackError);
-        toast({
-          title: "Error",
-          description: "Could not find your booking. Please contact support.",
-          variant: "destructive"
-        });
-        setError('Could not find your booking');
-      }
     } catch (error) {
       console.error('Error fetching booking details:', error);
       toast({
         title: "Error",
-        description: "There was an issue retrieving your booking details.",
+        description: "Could not find your booking. Please contact support.",
         variant: "destructive"
       });
       setError('Could not load booking details');
@@ -178,9 +142,9 @@ const BookingSuccess = () => {
       if (!user && bookingData?.customer_email) {
         console.log('Checking if user exists for email:', bookingData.customer_email);
         
-        // Use service role client to bypass RLS
+        // Use regular Supabase client with anonymous permissions
         const userData = await retryDatabaseOperation(async () => {
-          const { data, error } = await supabaseServiceRole
+          const { data, error } = await supabase
             .from('users')
             .select('id')
             .eq('email', bookingData.customer_email)
@@ -212,6 +176,92 @@ const BookingSuccess = () => {
     } finally {
       setIsCheckingUser(false);
     }
+  };
+
+  // Link an unlinked booking to the current user
+  const linkBookingToUser = async (reference: string, userId: string, retries = 2) => {
+    if (!reference || !userId) return;
+    
+    try {
+      console.log(`Linking booking ${reference} to user ${userId}`);
+      
+      const { error } = await supabase
+        .from('trips')
+        .update({ user_id: userId })
+        .eq('booking_reference', reference);
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Booking linked successfully');
+      trackEvent('Booking', 'Booking Linked On Signup', reference);
+      
+      toast({
+        title: "Booking Linked",
+        description: "Your booking has been linked to your account.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error('Error linking booking to user:', error);
+      
+      if (retries > 0) {
+        console.log(`Retrying booking link... (${retries} attempts left)`);
+        // Wait for a short delay before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return linkBookingToUser(reference, userId, retries - 1);
+      }
+      
+      // Show user-friendly error but don't fail the flow
+      toast({
+        title: "Booking Link Failed",
+        description: "You can link this manually in your bookings page.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Format date for display
+  const formatDateTime = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-UK', {
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
+  // Navigate to login with prefilled email
+  const handleLoginClick = () => {
+    if (!bookingDetails?.customer_email) return;
+    
+    trackEvent('Navigation', 'Login From Booking Success', bookingReference || '');
+    navigate('/login', { 
+      state: { 
+        prefillEmail: bookingDetails.customer_email,
+        bookingReference: bookingReference
+      }
+    });
+  };
+
+  // Navigate to signup with prefilled details
+  const handleSignupClick = () => {
+    if (!bookingDetails) return;
+    
+    trackEvent('Navigation', 'Signup From Booking Success', bookingReference || '');
+    navigate('/customer-signup', { 
+      state: { 
+        prefillEmail: bookingDetails.customer_email,
+        prefillName: bookingDetails.customer_name,
+        prefillPhone: bookingDetails.customer_phone,
+        bookingReference: bookingReference
+      }
+    });
   };
 
   // Create confetti effect
@@ -286,49 +336,6 @@ const BookingSuccess = () => {
       }
     };
   }, []);
-
-  // Format date for display
-  const formatDateTime = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-UK', {
-        day: '2-digit', 
-        month: 'long', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (e) {
-      return 'Invalid date';
-    }
-  };
-
-  // Navigate to login with prefilled email
-  const handleLoginClick = () => {
-    if (!bookingDetails?.customer_email) return;
-    
-    trackEvent('Navigation', 'Login From Booking Success', bookingReference || '');
-    navigate('/login', { 
-      state: { 
-        prefillEmail: bookingDetails.customer_email,
-        bookingReference: bookingReference
-      }
-    });
-  };
-
-  // Navigate to signup with prefilled details
-  const handleSignupClick = () => {
-    if (!bookingDetails) return;
-    
-    trackEvent('Navigation', 'Signup From Booking Success', bookingReference || '');
-    navigate('/customer-signup', { 
-      state: { 
-        prefillEmail: bookingDetails.customer_email,
-        prefillName: bookingDetails.customer_name,
-        prefillPhone: bookingDetails.customer_phone,
-        bookingReference: bookingReference
-      }
-    });
-  };
 
   // Loading state
   if (loading) {
