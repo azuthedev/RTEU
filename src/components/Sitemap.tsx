@@ -381,25 +381,6 @@ const Sitemap = () => {
                 {t('nav.bookNow', 'Book Now')}
               </button>
               
-              <div className="mt-6">
-                <h4 className="text-sm uppercase tracking-wider mb-3">We Accept</h4>
-                <div className="flex flex-wrap gap-2">
-                  <div className="bg-white p-1 rounded h-8">
-                    <img 
-                      src="https://files.royaltransfereu.com/assets/Visa.png" 
-                      alt="Visa" 
-                      className="h-full object-contain"
-                    />
-                  </div>
-                  <div className="bg-white p-1 rounded h-8">
-                    <img 
-                      src="https://files.royaltransfereu.com/assets/Mastercard-logo.svg" 
-                      alt="Mastercard" 
-                      className="h-full object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           
