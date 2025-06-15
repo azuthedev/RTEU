@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, ChevronDown, ChevronRight, Instagram, Github, Linkedin } from 'lucide-react';
+import { Phone, Mail, MapPin, ChevronDown, ChevronRight, Instagram, MessageSquareMore, BotMessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -63,29 +63,65 @@ const Sitemap = () => {
         behavior: 'smooth'
       });
       
-      trackEvent('Navigation', 'Footer Click', 'Home (Scroll to Top)');
+      trackEvent('Navigation', 'Menu Click', 'Home (Scroll to Top)');
     } else {
       // Normal navigation if not on homepage
-      trackEvent('Navigation', 'Footer Click', 'Home');
+      trackEvent('Navigation', 'Menu Click', 'Home');
     }
   };
-  
-  // Define essential quick links for mobile
+
+  // Define essential quick links for mobile accordion
   const essentialQuickLinks = [
-    { path: '/', label: t('sitemap.quicklinks.home', 'Home'), onClick: handleHomeClick },
-    { path: '/about', label: t('sitemap.quicklinks.about', 'About Us') },
-    { path: '/services', label: t('sitemap.quicklinks.services', 'Services') },
-    { path: '/blogs/destinations', label: t('sitemap.quicklinks.destinations', 'Destinations') },
-    { path: '/contact', label: t('sitemap.quicklinks.contact', 'Contact') },
+    {
+      path: '/',
+      label: t('sitemap.quicklinks.home', 'Home'),
+      onClick: handleHomeClick
+    },
+    {
+      path: '/faq',
+      label: t('sitemap.quicklinks.faqs', 'FAQs'),
+      onClick: () => {}
+    },
+    {
+      path: '/about',
+      label: t('sitemap.quicklinks.about', 'About Us'),
+      onClick: () => {}
+    },
+    {
+      path: '/contact',
+      label: t('sitemap.quicklinks.contact', 'Contact'),
+      onClick: () => {}
+    }
   ];
-  
-  // Define help links
+
+  // Define help links for mobile accordion
   const helpLinks = [
-    { path: '/booking-support', label: t('sitemap.gethelp.bookingsupport', 'Booking Support') },
-    { path: '/payment-info', label: t('sitemap.gethelp.payment', 'Payment Information') },
-    { path: '/terms', label: t('sitemap.gethelp.terms', 'Terms & Conditions') },
-    { path: '/privacy', label: t('sitemap.gethelp.privacy', 'Privacy Policy') },
+    {
+      path: '/booking-support',
+      label: t('sitemap.gethelp.bookingsupport', 'Booking Support')
+    },
+    {
+      path: '/payment-info',
+      label: t('sitemap.gethelp.payment', 'Payment Information')
+    },
+    {
+      path: '/terms',
+      label: t('sitemap.gethelp.terms', 'Terms & Conditions')
+    },
+    {
+      path: '/privacy',
+      label: t('sitemap.gethelp.privacy', 'Privacy Policy')
+    }
   ];
+
+  // Function to open Voiceflow chat widget
+  const openVoiceflowChat = () => {
+    // @ts-ignore - voiceflow is added via script
+    if (window.voiceflow && window.voiceflow.chat) {
+      // @ts-ignore
+      window.voiceflow.chat.open();
+    }
+  };
 
   // Handle Book Now click - similar to the header implementation
   const handleCTAClick = () => {
@@ -222,30 +258,32 @@ const Sitemap = () => {
               >
                 <Instagram className="w-8 h-8" />
               </a>
-              <a 
-                href="https://linkedin.com" 
-                target="_blank"
-                rel="noopener noreferrer"
+              
+              <button 
+                onClick={openVoiceflowChat}
                 className="p-3 hover:text-blue-400 transition-colors" 
-                aria-label="LinkedIn"
+                aria-label="Chat with us"
               >
-                <Linkedin className="w-8 h-8" />
-              </a>
-              <a 
-                href="https://github.com" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 hover:text-blue-400 transition-colors" 
-                aria-label="GitHub"
-              >
-                <Github className="w-8 h-8" />
-              </a>
+                <MessageSquareMore className="w-8 h-8" />
+              </button>
+              
+              <div className="relative">
+                {/* Position 24/7 as an absolute element so it doesn't affect layout */}
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-xs font-bold text-blue-400">24/7</div>
+                <button 
+                  onClick={openVoiceflowChat}
+                  className="p-3 hover:text-blue-400 transition-colors" 
+                  aria-label="AI Assistant"
+                >
+                  <BotMessageSquare className="w-8 h-8" />
+                </button>
+              </div>
             </div>
           </div>
           
           {/* Copyright - minimal */}
           <div className="pt-6 text-center text-gray-400 text-sm">
-            <p>{t('footer.copyright', '© 2025 Royal Transfer EU. All rights reserved.')}</p>
+            <p>{t('footer.copyright', `© ${currentYear} Royal Transfer EU. All rights reserved.`)}</p>
           </div>
         </div>
         
@@ -335,8 +373,8 @@ const Sitemap = () => {
               
               {/* Social Icons */}
               <div className="mt-6">
-                <h4 className="text-sm uppercase tracking-wider mb-3">Follow Us</h4>
-                <div className="flex space-x-4">
+                <h4 className="text-sm uppercase tracking-wider mb-3">FOLLOW US</h4>
+                <div className="flex items-center space-x-4 relative">
                   <a 
                     href="https://instagram.com/royaltransfer1991" 
                     target="_blank" 
@@ -346,24 +384,30 @@ const Sitemap = () => {
                   >
                     <Instagram className="h-5 w-5" />
                   </a>
-                  <a 
-                    href="https://linkedin.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    aria-label="LinkedIn"
+                  
+                  <button 
+                    onClick={openVoiceflowChat}
+                    aria-label="Chat with us"
                     className="text-gray-400 hover:text-white"
                   >
-                    <Linkedin className="h-5 w-5" />
-                  </a>
-                  <a 
-                    href="https://github.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    aria-label="GitHub"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <Github className="h-5 w-5" />
-                  </a>
+                    <MessageSquareMore className="h-5 w-5" />
+                  </button>
+                  
+                  <div className="relative">
+                    <button 
+                      onClick={openVoiceflowChat}
+                      aria-label="AI Assistant"
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <BotMessageSquare className="h-5 w-5" />
+                    </button>
+                    
+                    {/* Position 24/7 text to the right of the bot icon */}
+                    <div className="absolute top-0 -right-12 text-xs text-blue-400 flex items-center">
+                      <ArrowLeft className="h-3 w-3 ml-1" />
+                      <span>24/7</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -373,21 +417,18 @@ const Sitemap = () => {
               <h3 className="text-lg font-semibold mb-4">Stay Connected</h3>
               <p className="text-gray-300 mb-4">Get exclusive offers, news, and updates about our services.</p>
               
-              {/* Updated to use handleCTAClick */}
               <button
                 onClick={handleCTAClick}
                 className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md font-bold hover:bg-blue-700 transition-colors mb-6"
               >
                 {t('nav.bookNow', 'Book Now')}
               </button>
-              
-
             </div>
           </div>
           
           {/* Copyright - Desktop */}
           <div className="mt-12 pt-8 border-t border-gray-800 text-gray-400 text-sm flex justify-between items-center">
-            <p>{t('footer.copyright', '© 2025 Royal Transfer EU. All rights reserved.')}</p>
+            <p>{t('footer.copyright', `© ${currentYear} Royal Transfer EU. All rights reserved.`)}</p>
             <div className="flex space-x-6">
               <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
