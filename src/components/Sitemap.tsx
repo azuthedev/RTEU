@@ -381,6 +381,7 @@ const Sitemap = () => {
                 {t('nav.bookNow', 'Book Now')}
               </button>
               
+
             </div>
           </div>
           

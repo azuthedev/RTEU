@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Provider } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 import { sendOtpEmail, checkEmailVerification as checkEmailVerificationUtil } from '../utils/emailValidator';
 import { normalizeEmail } from '../utils/emailNormalizer';
@@ -18,6 +18,7 @@ interface AuthContextType {
   setUserId: (id: string) => void;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: Error | null, data?: { user: User | null } }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null, session: Session | null }>;
+  signInWithGoogle: (options?: { redirectTo?: string }) => Promise<{ error: Error | null, data?: any }>;
   signOut: () => Promise<void>;
   updateUserData: (updates: Partial<Omit<UserData, 'id' | 'email' | 'created_at'>>) => 
     Promise<{ error: Error | null, data: UserData | null }>;
@@ -107,20 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   // Function to fetch user data
   const fetchUserData = async (userId: string) => {
     try {
-      // Explicitly specify the columns to fetch to avoid any schema issues
       const { data, error } = await supabase
         .from('users')
-        .select(`
-          id,
-          name,
-          email,
-          phone, 
-          user_role,
-          created_at,
-          is_suspended,
-          updated_at,
-          email_verified
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
@@ -477,6 +467,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     }
   };
 
+  // Sign in with Google
+  const signInWithGoogle = async (options?: { redirectTo?: string }) => {
+    try {
+      setLoading(true);
+      
+      // Track sign in attempt
+      trackEvent('Authentication', 'Google Sign In Attempt');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: options?.redirectTo || `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      
+      if (error) {
+        trackEvent('Authentication', 'Google Sign In Error', error.message);
+        throw error;
+      }
+
+      // Track successful sign in initiation
+      trackEvent('Authentication', 'Google Sign In Redirect');
+      
+      return { error: null, data };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { error: error as Error, data: null };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
@@ -803,8 +829,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         email: data.email,
         error: data.error
       };
-    } catch (error: any) {
-      console.error('Error verifying password reset token:', error);
+    } catch (err: any) {
+      console.error('Error verifying password reset token:', err);
       
       // For development, provide a fallback
       if (isDevEnvironment.current) {
@@ -821,7 +847,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       return { 
         valid: false, 
-        error: error.message || 'Failed to verify token'
+        error: err.message || 'Failed to verify token'
       };
     }
   };
@@ -918,6 +944,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     setUserId,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     updateUserData,
     sendVerificationEmail,

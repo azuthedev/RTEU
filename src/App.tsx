@@ -43,7 +43,6 @@ const Bookings = lazy(() => import('./pages/Bookings'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
-const Terms = lazy(() => import('./pages/Terms'));
 const CookieBanner = lazy(() => import('./components/ui/CookieBanner'));
 const Sitemap = lazy(() => import('./components/Sitemap'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
@@ -51,6 +50,8 @@ const VerificationSuccess = lazy(() => import('./pages/VerificationSuccess'));
 const VerificationFailed = lazy(() => import('./pages/VerificationFailed'));
 const UnverifiedUserPrompt = lazy(() => import('./components/UnverifiedUserPrompt'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Terms = lazy(() => import('./pages/Terms'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 
 // Optimized loading fallback component
 const PageLoader = () => (
@@ -213,6 +214,7 @@ function AppRoutes() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route 
             path="/profile" 
             element={
