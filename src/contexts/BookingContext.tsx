@@ -438,6 +438,9 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       console.log("📡 Fetching prices for route:", { from, to, isReturn });
       const { requestId, signal } = requestTracker.startRequest('fetch-prices');
+      
+      // Store the active request ID for potential cancellation
+      activeRequestRef.current = requestId;
 
       requestTracker.updateStage(requestId, 'geocoding');
       
@@ -592,6 +595,9 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Pricing data received:', data);
       
       requestTracker.updateStage(requestId, 'complete');
+      
+      // Clear the active request ID since it completed successfully
+      activeRequestRef.current = null;
       
       // Update state with all necessary data, using display names from params or URL-decoded versions
       setBookingState(prev => ({
@@ -809,6 +815,9 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }, 500);
     }
   };
+
+  // Track active request ID for cancellation
+  const activeRequestRef = useRef<string | null>(null);
 
   return (
     <BookingContext.Provider value={{ 

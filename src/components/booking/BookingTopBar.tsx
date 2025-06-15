@@ -507,8 +507,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // Focus the appropriate field
     setTimeout(() => {
-      const pickupInput = document.getElementById('pickup-field');
-      const dropoffInput = document.getElementById('dropoff-field');
+      const pickupInput = document.getElementById('pickup-field-mobile');
+      const dropoffInput = document.getElementById('dropoff-field-mobile');
       
       if (geocodingErrorField === 'pickup' && pickupInput) {
         (pickupInput as HTMLInputElement).focus();

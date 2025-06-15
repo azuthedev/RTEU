@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2, AlertCircle, X, Check } from 'lucide-react';
 import { throttle } from 'lodash-es';
 import { initGoogleMaps, isGoogleMapsLoaded } from '../../utils/optimizeThirdParty';
+import { isAirport, extractAirportName } from '../../utils/airportDetection';
 
 interface GooglePlacesAutocompleteProps {
   value: string;
@@ -363,7 +364,7 @@ export function GooglePlacesAutocomplete({
   // Function to determine the best display name for a place
   const getDisplayName = (place: google.maps.places.PlaceResult): string => {
     // Check if it's an airport or transport hub
-    const isAirport = place.types?.includes('airport') || 
+    const isAirportLocation = place.types?.includes('airport') || 
                      place.name?.toLowerCase().includes('airport') ||
                      place.name?.toLowerCase().includes('aeroporto') ||
                      place.name?.toLowerCase().includes('terminal') ||
@@ -380,7 +381,7 @@ export function GooglePlacesAutocomplete({
                    place.name?.toLowerCase().includes('cruise');
     
     // For airports, stations, and ports, prioritize the name
-    if (isAirport || isStation || isPort) {
+    if (isAirportLocation || isStation || isPort) {
       return place.name || place.formatted_address || '';
     }
     
@@ -412,6 +413,16 @@ export function GooglePlacesAutocomplete({
 
   // Validate that the address is complete enough
   const validateAddressCompleteness = (place: google.maps.places.PlaceResult): { isValid: boolean, message: string | null } => {
+    // Check if this is an airport using the imported utility function
+    if (place.name && isAirport(place.name)) {
+      return { isValid: true, message: null };
+    }
+    
+    // Check if formatted_address appears to be an airport
+    if (place.formatted_address && isAirport(place.formatted_address)) {
+      return { isValid: true, message: null };
+    }
+    
     // Always valid for airports, stations, and specific place types
     if (
       place.types?.includes('airport') ||
@@ -489,7 +500,12 @@ export function GooglePlacesAutocomplete({
 
   // Validate free text input
   const validateFreeTextInput = (text: string): boolean => {
-    // Special case for transportation hubs
+    // First check if it's an airport using the imported function
+    if (isAirport(text)) {
+      return true;
+    }
+    
+    // Special case for transportation hubs (redundant with isAirport but keeping for backup)
     const transportationHubRegex = /\b(airport|aeroporto|terminal|station|stazione|MXP|LIN|FCO|CIA|NAP|arrivals|arrivi)\b/i;
     if (transportationHubRegex.test(text)) {
       return true;

@@ -61,6 +61,7 @@ const SearchForm = () => {
   const [pickupPlaceId, setPickupPlaceId] = useState<string | null>(null);
   const [dropoffPlaceId, setDropoffPlaceId] = useState<string | null>(null);
   
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
   // Flag to track if initial state loading is complete
@@ -92,7 +93,7 @@ const SearchForm = () => {
   // Track geocoding error fields
   const [geocodingErrorField, setGeocodingErrorField] = useState<'pickup' | 'dropoff' | null>(null);
   
-  // State for controlling the loading modal visibility - now depends on bookingState.isPricingLoading
+  // State for controlling the loading modal visibility
   const [showLoadingModal, setShowLoadingModal] = useState(false);
 
   // Cleanup on unmount
@@ -106,11 +107,6 @@ const SearchForm = () => {
       }
     };
   }, []);
-
-  // Update showLoadingModal based on bookingState.isPricingLoading
-  useEffect(() => {
-    setShowLoadingModal(bookingState.isPricingLoading);
-  }, [bookingState.isPricingLoading]);
 
   // Initialize form with existing data from context if available
   useEffect(() => {
@@ -199,7 +195,9 @@ const SearchForm = () => {
         ...prev,
         pickupDateTime: originalValuesRef.current.pickupDateTime,
         dropoffDateTime: originalValuesRef.current.dropoffDateTime,
-        dateRange: originalValuesRef.current.dateRange
+        dateRange: originalValuesRef.current.pickupDateTime && originalValuesRef.current.dropoffDateTime
+          ? { from: originalValuesRef.current.pickupDateTime, to: originalValuesRef.current.dropoffDateTime }
+          : undefined
       }));
       return;
     }
@@ -346,21 +344,25 @@ const SearchForm = () => {
     // Reset all state for the new search
     successfulSearchRef.current = false;
     navigatingIntentionallyRef.current = false;
+    
+    // IMPORTANT: Set loading state and show modal BEFORE making the API call
+    setIsLoadingPrices(true);
     setApiError(null);
     setGeocodingErrorField(null);
+    setShowLoadingModal(true);
     
     // Prepare the dropoff date/time for round trips
     const dropoffDateTime = isReturn ? formData.dateRange?.to : undefined;
     
     try {
-      // Fetch prices using the fetchPricingData function from context
+      // Use the context's fetchPricingData function and AWAIT the result
       const pricingResponse = await fetchPricingData({
         from: formData.pickup,
         to: formData.dropoff,
         fromCoords: pickupCoords,
         toCoords: dropoffCoords,
-        pickupDateTime: isReturn ? formData.dateRange!.from : formData.pickupDateTime!,
-        dropoffDateTime,
+        pickupDateTime: pickupDateTime,
+        dropoffDateTime: dropoffDateTime,
         isReturn,
         fromDisplay: formData.pickupDisplay,
         toDisplay: formData.dropoffDisplay,
@@ -373,54 +375,73 @@ const SearchForm = () => {
         return;
       }
       
-      // If price fetching failed, stop here - the loading modal will be hidden by the effect
-      if (!pricingResponse || bookingState.pricingError) {
+      // Hide loading modal AFTER data is fetched
+      setShowLoadingModal(false);
+      setIsLoadingPrices(false);
+      
+      // If price fetching failed, stop here
+      if (!pricingResponse) {
         return;
       }
       
-      // Only proceed with navigation if we have a successful pricing response
-      if (bookingState.pricingResponse) {
-        // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
-        const encodedFrom = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
-        const encodedTo = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
-        
-        // Prepare URL parameters for navigation
-        const newType = isReturn ? '2' : '1';
-        
-        let formattedDepartureDate = '';
-        let formattedReturnDate = '0';
-        
-        if (isReturn && formData.dateRange?.from && formData.dateRange?.to) {
-          formattedDepartureDate = formatDateForUrl(formData.dateRange.from);
-          formattedReturnDate = formatDateForUrl(formData.dateRange.to);
-        } else if (formData.pickupDateTime) {
-          formattedDepartureDate = formatDateForUrl(formData.pickupDateTime);
-        }
-        
-        const path = `/transfer/${encodedFrom}/${encodedTo}/${newType}/${formattedDepartureDate}/${formattedReturnDate}/${passengers}/form`;
-        
-        // Track search form submission
-        trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
-        
-        // Save address validation state to booking context
-        setBookingState(prev => ({
-          ...prev,
-          fromValid: pickupIsValid,
-          toValid: dropoffIsValid
-        }));
-        
-        // Set navigating flag before navigation to prevent error toast
-        navigatingIntentionallyRef.current = true;
-        successfulSearchRef.current = true;
-        
-        // Navigate to booking flow
-        navigate(path);
-        
-        // Scroll to top after navigation
-        window.scrollTo(0, 0);
-      }
+      // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
+      const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
+      const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
+      
+      // Important: Type is '1' for One Way, '2' for Round Trip 
+      const urlType = isReturn ? '2' : '1';
+      
+      // Format dates for URL
+      const formattedDepartureDate = pickupDateTime ? formatDateForUrl(pickupDateTime) : '';
+      
+      // Always include returnDate parameter (use '0' for one-way trips)
+      const returnDateParam = isReturn && formData.dateRange?.to
+        ? formatDateForUrl(formData.dateRange.to)
+        : '0';
+      
+      // Build the URL path
+      const path = `/transfer/${encodedPickup}/${encodedDropoff}/${urlType}/${formattedDepartureDate}/${returnDateParam}/${passengers}/form`;
+      
+      // Reset change detection before navigation
+      successfulSearchRef.current = true;
+      
+      // Reset original values to match the new state
+      originalValuesRef.current = {
+        isReturn,
+        pickup: formData.pickup,
+        dropoff: formData.dropoff,
+        pickupDisplay: formData.pickupDisplay,
+        dropoffDisplay: formData.dropoffDisplay,
+        pickupDateTime: isReturn ? formData.dateRange?.from : formData.pickupDateTime,
+        dropoffDateTime: isReturn ? formData.dateRange?.to : undefined,
+        dateRange: isReturn && formData.dateRange?.from && formData.dateRange?.to 
+          ? { from: formData.dateRange.from, to: formData.dateRange.to }
+          : undefined,
+        passengers
+      };
+      
+      // Track search form submission
+      trackEvent('Search Form', 'Form Submit', `${formData.pickup} to ${formData.dropoff}`, passengers);
+      
+      // Save address validation state to booking context
+      setBookingState(prev => ({
+        ...prev,
+        fromValid: pickupIsValid,
+        toValid: dropoffIsValid
+      }));
+      
+      // Set navigating flag before navigation to prevent error toast
+      navigatingIntentionallyRef.current = true;
+      
+      // Navigate to booking flow
+      navigate(path);
+      
+      // Scroll to top after navigation
+      window.scrollTo(0, 0);
     } catch (error) {
       console.error("Error during search submission:", error);
+      setShowLoadingModal(false);
+      setIsLoadingPrices(false);
       
       // Display error to user
       toast({
@@ -519,10 +540,9 @@ const SearchForm = () => {
       activeRequestRef.current = null;
     }
     
+    setIsLoadingPrices(false);
     setGeocodingErrorField(null);
-    
-    // The loading state is now controlled by the context
-    // and will be updated automatically via the effect hook
+    setShowLoadingModal(false);
   };
   
   // Function to try a different route (for geocoding errors)
@@ -752,9 +772,9 @@ const SearchForm = () => {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`} 
           onClick={handleSubmit}
-          disabled={bookingState.isPricingLoading || !pickupIsValid || !dropoffIsValid || !(formData.pickupDateTime || (formData.dateRange?.from && formData.dateRange?.to))}
+          disabled={isLoadingPrices || !pickupIsValid || !dropoffIsValid || !(formData.pickupDateTime || (formData.dateRange?.from && formData.dateRange?.to))}
         >
-          {bookingState.isPricingLoading ? (
+          {isLoadingPrices ? (
             <>
               <Loader2 className="h-5 w-5 mr-2 animate-spin" />
               <span>{t('common.loading')}</span>
