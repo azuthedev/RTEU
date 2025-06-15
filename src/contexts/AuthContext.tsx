@@ -107,9 +107,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   // Function to fetch user data
   const fetchUserData = async (userId: string) => {
     try {
+      // Explicitly specify the columns to fetch to avoid any schema issues
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          name,
+          email,
+          phone, 
+          user_role,
+          created_at,
+          is_suspended,
+          updated_at,
+          email_verified
+        `)
         .eq('id', userId)
         .single();
 
@@ -792,8 +803,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         email: data.email,
         error: data.error
       };
-    } catch (err: any) {
-      console.error('Error verifying password reset token:', err);
+    } catch (error: any) {
+      console.error('Error verifying password reset token:', error);
       
       // For development, provide a fallback
       if (isDevEnvironment.current) {
@@ -810,7 +821,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       return { 
         valid: false, 
-        error: err.message || 'Failed to verify token'
+        error: error.message || 'Failed to verify token'
       };
     }
   };
