@@ -10,13 +10,16 @@ import OTPVerificationModal from '../components/OTPVerificationModal';
 import PasswordResetModal from '../components/PasswordResetModal';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 interface LocationState {
   message?: string;
+  emailConflictMessage?: string;
   from?: Location;
   bookingReference?: string;
   prefillEmail?: string;
   requireVerification?: boolean;
+  showPasswordReset?: boolean;
 }
 
 const Login = () => {
@@ -27,6 +30,7 @@ const Login = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [bookingReference, setBookingReference] = useState<string>('');
   const [bookingData, setBookingData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,13 +40,11 @@ const Login = () => {
 
   // For verification handling
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const [verificationId, setVerificationId] = useState('');
   const [isUnverifiedUser, setIsUnverifiedUser] = useState(false);
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [isDevEnvironment, setIsDevEnvironment] = useState(false);
-  
-  // Password reset
-  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,6 +87,11 @@ const Login = () => {
       extractedState.message = state.message;
     }
     
+    if (state?.emailConflictMessage) {
+      setConflictMessage(state.emailConflictMessage);
+      extractedState.emailConflictMessage = state.emailConflictMessage;
+    }
+    
     if (state?.bookingReference) {
       setBookingReference(state.bookingReference);
       extractedState.bookingReference = state.bookingReference;
@@ -108,6 +115,12 @@ const Login = () => {
       if (state.prefillEmail) {
         handleSendVerification(state.prefillEmail);
       }
+    }
+    
+    // If we should show the password reset modal
+    if (state?.showPasswordReset) {
+      setShowPasswordResetModal(true);
+      extractedState.showPasswordReset = state.showPasswordReset;
     }
     
     // Clear state after reading it to prevent issues on refresh
@@ -245,6 +258,7 @@ const Login = () => {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setConflictMessage(null);
     
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
@@ -390,6 +404,18 @@ const Login = () => {
     setIsDriver(false);
   }, []);
 
+  // Handle Google auth success
+  const handleGoogleSuccess = () => {
+    // Success is handled by the redirect
+    trackEvent('Authentication', 'Google Auth Initiated', isDriver ? 'Driver' : 'Customer');
+  };
+
+  // Handle Google auth error
+  const handleGoogleError = (error: Error) => {
+    setError(`Google authentication error: ${error.message}`);
+    trackEvent('Authentication', 'Google Auth Error', error.message);
+  };
+
   // Memoized driver/customer tab buttons to prevent re-renders
   const tabButtons = useMemo(() => (
     <div className="flex bg-gray-100 p-1 rounded-lg mb-8">
@@ -452,6 +478,13 @@ const Login = () => {
             {successMessage && (
               <div className="bg-green-50 text-green-700 p-3 rounded-md mb-6 text-sm flex items-start">
                 <div className="ml-2">{successMessage}</div>
+              </div>
+            )}
+
+            {/* Email Conflict Message */}
+            {conflictMessage && (
+              <div className="bg-blue-50 text-blue-700 p-3 rounded-md mb-6 text-sm flex items-start">
+                <div className="ml-2">{conflictMessage}</div>
               </div>
             )}
 
@@ -528,62 +561,78 @@ const Login = () => {
                 </button>
               </div>
             ) : !isUnverifiedUser && (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required
-                  />
+              <div className="space-y-6">
+                {/* Google Sign In Button */}
+                <GoogleAuthButton 
+                  mode="login"
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  className="mb-4"
+                />
+                
+                <div className="relative flex items-center justify-center">
+                  <div className="flex-grow border-t border-gray-300"></div>
+                  <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+                  <div className="flex-grow border-t border-gray-300"></div>
                 </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required
-                  />
-                </div>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      required
+                    />
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting || isLinkingBooking}
-                  className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-all duration-300 flex items-center justify-center"
-                >
-                  {isSubmitting || isLinkingBooking ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {isLinkingBooking ? 'Linking Booking...' : 'Signing in...'}
-                    </>
-                  ) : (
-                    bookingReference ? 'Sign In & Link Booking' : 'Sign In'
-                  )}
-                </button>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      required
+                    />
+                  </div>
 
-                <div className="text-center mt-3">
                   <button
-                    type="button"
-                    onClick={handlePasswordResetClick}
-                    className="text-sm text-blue-600 hover:text-blue-700"
+                    type="submit"
+                    disabled={isSubmitting || isLinkingBooking}
+                    className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-all duration-300 flex items-center justify-center"
                   >
-                    Forgot your password?
+                    {isSubmitting || isLinkingBooking ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        {isLinkingBooking ? 'Linking Booking...' : 'Signing in...'}
+                      </>
+                    ) : (
+                      bookingReference ? 'Sign In & Link Booking' : 'Sign In'
+                    )}
                   </button>
-                </div>
-              </form>
+
+                  <div className="text-center mt-3">
+                    <button
+                      type="button"
+                      onClick={handlePasswordResetClick}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                </form>
+              </div>
             )}
 
             {/* Back Link */}

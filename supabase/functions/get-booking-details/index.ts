@@ -3,8 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 // CORS headers that handle origin dynamically
 const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
-  "Access-Control-Max-Age": "86400"
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // Helper function to retry database operations
@@ -24,21 +23,13 @@ Deno.serve(async (req) => {
   // Get the client's origin
   const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
   
-  // Check if the origin is allowed
-  const allowedOrigins = [
-    'https://royaltransfereu.com',
-    'https://www.royaltransfereu.com', 
-    'http://localhost:3000', 
-    'http://localhost:5173'
-  ];
-  
-  // Set the correct CORS origin header based on the request's origin
+  // Set CORS headers
   const headersWithOrigin = {
     ...corsHeaders,
-    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+    "Access-Control-Allow-Origin": origin
   };
 
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -47,116 +38,82 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with service role key (server-side only)
+    // Initialize Supabase with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing Supabase environment variables");
-    }
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Only allow POST requests
-    if (req.method === 'POST') {
-      const { booking_reference, customer_email } = await req.json();
-      
-      if (!booking_reference) {
+    // Parse request body
+    const { booking_reference } = await req.json();
+    
+    if (!booking_reference) {
+      return new Response(
+        JSON.stringify({ error: 'Booking reference is required' }),
+        {
+          status: 400,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Fetch booking details
+    const { data, error } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('trips')
+        .select('*')
+        .eq('booking_reference', booking_reference)
+        .single();
+    });
+
+    if (error) {
+      // Try a more permissive query as fallback
+      try {
+        const { data: fallbackData, error: fallbackError } = await retryDatabaseOperation(async () => {
+          return await supabase
+            .from('trips')
+            .select('*')
+            .ilike('booking_reference', `%${booking_reference}%`)
+            .limit(1);
+        });
+        
+        if (fallbackError || !fallbackData || fallbackData.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Booking not found' }),
+            {
+              status: 404,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
         return new Response(
-          JSON.stringify({ 
-            error: 'Booking reference is required' 
-          }),
+          JSON.stringify(fallbackData[0]),
           {
-            status: 400,
+            status: 200,
             headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
-      }
-
-      // Fetch booking details
-      console.log(`Fetching booking with reference: ${booking_reference}`);
-      
-      // Build the query based on inputs
-      let query = supabase
-        .from('trips')
-        .select(`
-          id,
-          booking_reference,
-          pickup_address,
-          dropoff_address,
-          estimated_distance_km,
-          estimated_duration_min,
-          estimated_price,
-          status,
-          datetime,
-          vehicle_type,
-          passengers,
-          customer_name,
-          customer_email,
-          customer_phone,
-          is_return,
-          return_datetime,
-          extra_items,
-          payment_method,
-          notes,
-          customer_title,
-          flight_number,
-          extra_stops,
-          child_seats,
-          luggage_count,
-          user_id
-        `)
-        .eq('booking_reference', booking_reference);
-        
-      // If customer email is provided, use it for additional verification
-      if (customer_email) {
-        query = query.eq('customer_email', customer_email);
-      }
-
-      const { data, error } = await retryDatabaseOperation(async () => {
-        return await query.single();
-      });
-
-      if (error) {
-        console.error('Error fetching booking:', error);
+      } catch (fallbackSearchError) {
         return new Response(
-          JSON.stringify({ 
-            error: 'Booking not found or access denied' 
-          }),
+          JSON.stringify({ error: 'Booking not found' }),
           {
             status: 404,
             headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
-
-      // Return sanitized booking data
-      return new Response(
-        JSON.stringify(data),
-        {
-          status: 200,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-        }
-      );
     }
 
-    // Method not allowed
     return new Response(
-      JSON.stringify({ 
-        error: 'Method not allowed' 
-      }),
-      {
-        status: 405,
-        headers: { ...headersWithOrigin, 'Content-Type': 'application/json', 'Allow': 'POST, OPTIONS' }
+      JSON.stringify(data),
+      { 
+        status: 200,
+        headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
       }
     );
   } catch (error) {
-    console.error('Error:', error);
-    
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'An unexpected error occurred' 
-      }),
+      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
       {
         status: 500,
         headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }

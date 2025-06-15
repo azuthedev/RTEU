@@ -12,6 +12,7 @@ import BookingReferenceInput from '../components/BookingReferenceInput';
 import { sendOtpEmail } from '../utils/emailValidator';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 // Simple debounce function to prevent excessive API calls
 const debounce = (fn: Function, ms = 300) => {
@@ -587,6 +588,18 @@ const CustomerSignup = () => {
     return (formTouched && !isValid) || isSubmitting || isProcessing || userHasAccount;
   };
 
+  // Handle Google auth success
+  const handleGoogleSuccess = () => {
+    // Success is handled by the redirect
+    trackEvent('Authentication', 'Google Sign Up Initiated');
+  };
+
+  // Handle Google auth error
+  const handleGoogleError = (error: Error) => {
+    setError(`Google authentication error: ${error.message}`);
+    trackEvent('Authentication', 'Google Sign Up Error', error.message);
+  };
+
   if (loading || inviteLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -661,148 +674,164 @@ const CustomerSignup = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <EmailValidator
-                value={formData.email}
-                onChange={handleEmailChange}
-                onValidationChange={handleEmailValidationChange}
-                onBlur={handleEmailBlur}
-                label="Email Address"
-                id="email"
-                name="email"
-                required={true}
+            <div className="space-y-4">
+              {/* Google Sign Up Button */}
+              <GoogleAuthButton 
+                mode="signup"
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                className="mb-4"
               />
-
-              <FormField
-                id="name"
-                name="name"
-                label="Full Name"
-                value={formData.name}
-                onChange={handleInputChange}
-                onBlur={() => handleBlur('name')}
-                error={errors.name}
-                required
-                icon={<User className="h-5 w-5" />}
-                autoComplete="name"
-              />
-
-              <FormField
-                id="phone"
-                name="phone"
-                label="Phone Number"
-                type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                icon={<Phone className="h-5 w-5" />}
-                helpText="Optional, but recommended for booking notifications"
-                autoComplete="tel"
-              />
-
-              <div className="relative">
-                <FormField
-                  id="password"
-                  name="password"
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  onBlur={() => handleBlur('password')}
-                  error={errors.password}
-                  required
-                  icon={<Lock className="h-5 w-5" />}
-                  autoComplete="new-password"
-                  helpText="Must be at least 6 characters"
-                  inputClassName="pr-10"
-                  validateOnChange={true}
-                />
-                <button 
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-
-              <div className="relative">
-                <FormField
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  label="Confirm Password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  onBlur={() => handleBlur('confirmPassword')}
-                  error={errors.confirmPassword}
-                  required
-                  icon={<Lock className="h-5 w-5" />}
-                  autoComplete="new-password"
-                  inputClassName="pr-10"
-                  validateOnChange={true}
-                />
-                <button 
-                  type="button"
-                  onClick={toggleConfirmPasswordVisibility}
-                  className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
-                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isButtonDisabled()}
-                aria-busy={isSubmitting || isProcessing}
-                className={`w-full py-3 rounded-md transition-all duration-300 flex justify-center items-center mt-6
-                  ${isButtonDisabled() 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-              >
-                {isSubmitting || isProcessing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : bookingReference ? (
-                  'Create Account & Link Booking'
-                ) : (
-                  'Create Account'
-                )}
-              </button>
               
-              {/* Error message moved below the button for better visibility */}
-              {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md mt-3 text-sm flex items-start">
-                  <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>{error}</span>
+              <div className="relative flex items-center justify-center">
+                <div className="flex-grow border-t border-gray-300"></div>
+                <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+                <div className="flex-grow border-t border-gray-300"></div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <EmailValidator
+                  value={formData.email}
+                  onChange={handleEmailChange}
+                  onValidationChange={handleEmailValidationChange}
+                  onBlur={handleEmailBlur}
+                  label="Email Address"
+                  id="email"
+                  name="email"
+                  required={true}
+                />
+
+                <FormField
+                  id="name"
+                  name="name"
+                  label="Full Name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  onBlur={() => handleBlur('name')}
+                  error={errors.name}
+                  required
+                  icon={<User className="h-5 w-5" />}
+                  autoComplete="name"
+                />
+
+                <FormField
+                  id="phone"
+                  name="phone"
+                  label="Phone Number"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  icon={<Phone className="h-5 w-5" />}
+                  helpText="Optional, but recommended for booking notifications"
+                  autoComplete="tel"
+                />
+
+                <div className="relative">
+                  <FormField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    onBlur={() => handleBlur('password')}
+                    error={errors.password}
+                    required
+                    icon={<Lock className="h-5 w-5" />}
+                    autoComplete="new-password"
+                    helpText="Must be at least 6 characters"
+                    inputClassName="pr-10"
+                    validateOnChange={true}
+                  />
+                  <button 
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
-              )}
-            </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                Already have an account?{' '}
-                <Link
-                  to="/login"
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                <div className="relative">
+                  <FormField
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    label="Confirm Password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    onBlur={() => handleBlur('confirmPassword')}
+                    error={errors.confirmPassword}
+                    required
+                    icon={<Lock className="h-5 w-5" />}
+                    autoComplete="new-password"
+                    inputClassName="pr-10"
+                    validateOnChange={true}
+                  />
+                  <button 
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isButtonDisabled()}
+                  aria-busy={isSubmitting || isProcessing}
+                  className={`w-full py-3 rounded-md transition-all duration-300 flex justify-center items-center mt-6
+                    ${isButtonDisabled() 
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
                 >
-                  Sign In
-                </Link>
-              </p>
-            </div>
+                  {isSubmitting || isProcessing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : bookingReference ? (
+                    'Create Account & Link Booking'
+                  ) : (
+                    'Create Account'
+                  )}
+                </button>
+                
+                {/* Error message moved below the button for better visibility */}
+                {error && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-md mt-3 text-sm flex items-start">
+                    <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+              </form>
 
-            {/* Back Link */}
-            <div className="mt-8 text-center">
-              <Link
-                to="/"
-                className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Link>
+              <div className="mt-6 text-center">
+                <p className="text-gray-600">
+                  Already have an account?{' '}
+                  <Link
+                    to="/login"
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Sign In
+                  </Link>
+                </p>
+              </div>
+
+              {/* Back Link */}
+              <div className="mt-8 text-center">
+                <Link
+                  to="/"
+                  className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Link>
+              </div>
             </div>
           </div>
 
