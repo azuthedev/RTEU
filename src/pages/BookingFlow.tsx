@@ -28,7 +28,7 @@ const BookingFlow = () => {
   const pricingRequestedRef = useRef(false);
 
   // State to control full-screen loading until we have all data
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
 
   // Clean up booking state when component unmounts
   useEffect(() => {
@@ -155,14 +155,14 @@ const BookingFlow = () => {
     isInitializedRef.current = true;
   }, [from, to, type, date, returnDate, passengers, setBookingState]);
   
-  // Fetch pricing if needed
+  // Fetch pricing if needed (only if accessed directly via URL, not from search form)
   useEffect(() => {
     // Skip if not initialized or already requested pricing
     if (!isInitializedRef.current || pricingRequestedRef.current || !isMountedRef.current) {
       return;
     }
     
-    // Check if we need to fetch pricing data
+    // Check if we need to fetch pricing data (this should only happen if user navigates directly to this URL)
     const needsPricing = 
       !bookingState.isPricingLoading && 
       !bookingState.pricingResponse && 
