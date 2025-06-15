@@ -43,6 +43,7 @@ const Bookings = lazy(() => import('./pages/Bookings'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const Terms = lazy(() => import('./pages/Terms'));
 const CookieBanner = lazy(() => import('./components/ui/CookieBanner'));
 const Sitemap = lazy(() => import('./components/Sitemap'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
@@ -211,6 +212,7 @@ function AppRoutes() {
           <Route path="/booking-cancelled" element={<BookingCancelled />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route 
             path="/profile" 
             element={
