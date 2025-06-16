@@ -334,7 +334,6 @@ const Services = () => {
         </div>
       </section>
 
-      <Sitemap />
     </div>
   );
 };
