@@ -149,7 +149,6 @@ const Privacy = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
