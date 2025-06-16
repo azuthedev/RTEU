@@ -586,7 +586,6 @@ const BookingSuccess = () => {
         />
       )}
 
-      <Sitemap />
     </div>
   );
 };
