@@ -355,17 +355,18 @@ const SearchForm = () => {
     const dropoffDateTime = isReturn ? formData.dateRange?.to : undefined;
     
     try {
+      // CRITICAL FIX: Always pass the display names to fetchPricingData
       // Use the context's fetchPricingData function and AWAIT the result
       const pricingResponse = await fetchPricingData({
         from: formData.pickup,
         to: formData.dropoff,
         fromCoords: pickupCoords,
         toCoords: dropoffCoords,
-        pickupDateTime: pickupDateTime,
+        pickupDateTime: pickupDateTime!,
         dropoffDateTime: dropoffDateTime,
         isReturn,
-        fromDisplay: formData.pickupDisplay,
-        toDisplay: formData.dropoffDisplay,
+        fromDisplay: formData.pickupDisplay || formData.pickup, // Pass display name explicitly
+        toDisplay: formData.dropoffDisplay || formData.dropoff, // Pass display name explicitly
         passengers
       });
       
@@ -410,8 +411,8 @@ const SearchForm = () => {
         isReturn,
         pickup: formData.pickup,
         dropoff: formData.dropoff,
-        pickupDisplay: formData.pickupDisplay,
-        dropoffDisplay: formData.dropoffDisplay,
+        pickupDisplay: formData.pickupDisplay || formData.pickup,
+        dropoffDisplay: formData.dropoffDisplay || formData.dropoff,
         pickupDateTime: isReturn ? formData.dateRange?.from : formData.pickupDateTime,
         dropoffDateTime: isReturn ? formData.dateRange?.to : undefined,
         dateRange: isReturn && formData.dateRange?.from && formData.dateRange?.to 
@@ -468,12 +469,13 @@ const SearchForm = () => {
     userInteractedRef.current = true;
     console.log(`Place selected for ${field}:`, displayName);
     
+    // CRITICAL FIX: Store both the raw value and display name
     if (field === 'pickup') {
       console.log('Setting pickup value from place selection:', displayName);
       setFormData(prev => ({ 
         ...prev, 
         pickup: displayName,
-        pickupDisplay: displayName
+        pickupDisplay: displayName  // Store display name explicitly
       }));
       
       // Store place_id if available
@@ -486,7 +488,7 @@ const SearchForm = () => {
       setFormData(prev => ({ 
         ...prev, 
         dropoff: displayName,
-        dropoffDisplay: displayName
+        dropoffDisplay: displayName  // Store display name explicitly
       }));
       
       // Store place_id if available
@@ -625,7 +627,7 @@ const SearchForm = () => {
               setFormData(prev => ({ 
                 ...prev, 
                 pickup: value,
-                pickupDisplay: value
+                pickupDisplay: value  // CRITICAL FIX: Store display name explicitly
               }));
               // Clear coordinates when changing pickup manually
               setPickupCoords(null);
@@ -649,7 +651,7 @@ const SearchForm = () => {
               setFormData(prev => ({ 
                 ...prev, 
                 dropoff: value,
-                dropoffDisplay: value
+                dropoffDisplay: value  // CRITICAL FIX: Store display name explicitly
               }));
               // Clear coordinates when changing dropoff manually
               setDropoffCoords(null);

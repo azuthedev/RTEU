@@ -187,6 +187,11 @@ const deserializeBookingState = (serialized: string | null): BookingState | null
       parsed.validationErrors = [];
     }
     
+    // CRITICAL FIX: Ensure isReturn is properly deserialized as a boolean
+    if (parsed.isReturn !== undefined) {
+      parsed.isReturn = Boolean(parsed.isReturn);
+    }
+    
     // CRITICAL FIX: Ensure fromValid and toValid are properly deserialized
     if (parsed.fromValid === undefined && parsed.fromDisplay) {
       parsed.fromValid = true; // If we have a display name, it was validated
@@ -269,12 +274,13 @@ const initializeFromUrlParams = (pathname: string): Partial<BookingState> | null
   const pickupDateTime = parseUrlDate(date);
   const dropoffDateTime = returnDate !== '0' ? parseUrlDate(returnDate) : undefined;
   
+  // CRITICAL FIX: Ensure isReturn is properly set as a Boolean value
   return {
     from: decodedFrom,
     to: decodedTo,
     fromDisplay: decodedFrom,
     toDisplay: decodedTo,
-    isReturn: type === '2',
+    isReturn: type === '2',  // Explicit conversion to Boolean
     pickupDateTime,
     dropoffDateTime,
     departureDate: date,
@@ -384,13 +390,14 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       toValid: bookingState.toValid,
       fromCoords: bookingState.fromCoords ? 'Present' : 'None',
       toCoords: bookingState.toCoords ? 'Present' : 'None',
+      isReturn: bookingState.isReturn,
       pricingData: bookingState.pricingResponse ? 'Available' : 'None',
       pricingError: bookingState.pricingError,
       isPricingLoading: bookingState.isPricingLoading
     });
   }, [bookingState.from, bookingState.to, bookingState.fromDisplay, bookingState.toDisplay, 
       bookingState.pickupDateTime, bookingState.dropoffDateTime, bookingState.fromValid, 
-      bookingState.toValid, bookingState.fromCoords, bookingState.toCoords,
+      bookingState.toValid, bookingState.fromCoords, bookingState.toCoords, bookingState.isReturn,
       bookingState.pricingResponse, bookingState.pricingError, 
       bookingState.isPricingLoading]);
 
@@ -599,6 +606,16 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Clear the active request ID since it completed successfully
       activeRequestRef.current = null;
       
+      // CRITICAL FIX: Always preserve display names from the search form
+      // Use the provided display names or fall back to the raw values
+      const finalFromDisplay = fromDisplay || from;
+      const finalToDisplay = toDisplay || to;
+      
+      console.log("Setting display names in booking state:", {
+        fromDisplay: finalFromDisplay,
+        toDisplay: finalToDisplay
+      });
+      
       // Update state with all necessary data, using display names from params or URL-decoded versions
       setBookingState(prev => ({
         ...prev,
@@ -606,9 +623,9 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         pricingResponse: data,
         from: from, 
         to: to,
-        fromDisplay: fromDisplay || from, 
-        toDisplay: toDisplay || to,
-        isReturn: isReturn,
+        fromDisplay: finalFromDisplay, 
+        toDisplay: finalToDisplay,
+        isReturn: isReturn,  // CRITICAL FIX: Store the boolean value directly
         fromCoords: pickup,
         toCoords: dropoff,
         fromValid: true,  // Mark address as valid since we have coordinates

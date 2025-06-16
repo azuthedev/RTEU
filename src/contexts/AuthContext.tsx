@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Session, User, Provider } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 import { sendOtpEmail, checkEmailVerification as checkEmailVerificationUtil } from '../utils/emailValidator';
 import { normalizeEmail } from '../utils/emailNormalizer';
+import { withRetry } from '../utils/retryHelper';
 
 type UserData = Database['public']['Tables']['users']['Row'];
 
@@ -18,7 +19,6 @@ interface AuthContextType {
   setUserId: (id: string) => void;
   signUp: (email: string, password: string, name: string, phone?: string, inviteCode?: string) => Promise<{ error: Error | null, data?: { user: User | null } }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null, session: Session | null }>;
-  signInWithGoogle: (options?: { redirectTo?: string }) => Promise<{ error: Error | null, data?: any }>;
   signOut: () => Promise<void>;
   updateUserData: (updates: Partial<Omit<UserData, 'id' | 'email' | 'created_at'>>) => 
     Promise<{ error: Error | null, data: UserData | null }>;
@@ -78,6 +78,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     )
   );
 
+  // Helper function to determine if we should use Edge Functions
+  const shouldUseEdgeFunction = () => {
+    // In development, check if Supabase URL is accessible
+    // In production, always try Edge Functions first
+    return !isDevEnvironment.current || import.meta.env.VITE_SUPABASE_URL;
+  };
+
   // Helper function to get the correct API URL based on environment
   const getApiUrl = (endpoint: string): string => {
     if (isDevEnvironment.current) {
@@ -105,27 +112,141 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     return headers;
   };
 
-  // Function to fetch user data
+  // Enhanced error helper to classify error types
+  const classifyError = (error: any): { type: 'network' | 'auth' | 'permission' | 'server' | 'unknown', message: string } => {
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('TypeError: Failed to fetch')) {
+      return { type: 'network', message: 'Network connection failed. Please check your internet connection.' };
+    }
+    
+    if (errorMessage.includes('infinite recursion') || errorMessage.includes('42P17')) {
+      return { type: 'permission', message: 'Database configuration issue. Please contact support.' };
+    }
+    
+    if (errorMessage.includes('Invalid session') || errorMessage.includes('401')) {
+      return { type: 'auth', message: 'Authentication session expired. Please sign in again.' };
+    }
+    
+    if (errorMessage.includes('403') || errorMessage.includes('Unauthorized')) {
+      return { type: 'permission', message: 'Access denied. You do not have permission to access this data.' };
+    }
+    
+    if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+      return { type: 'server', message: 'Server error occurred. Please try again later.' };
+    }
+    
+    return { type: 'unknown', message: errorMessage };
+  };
+
+  // Function to fetch user data with improved error handling and fallbacks
   const fetchUserData = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      console.log(`[fetchUserData] Starting fetch for user: ${userId}`);
+      
+      // Get current session for auth token
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        console.error('[fetchUserData] No active session when fetching user data');
+        throw new Error('No active session - please sign in again');
+      }
+      
+      // Try Edge Function first if available and not in problematic dev environment
+      if (shouldUseEdgeFunction()) {
+        try {
+          console.log('[fetchUserData] Attempting Edge Function approach');
+          
+          const response = await withRetry(async () => {
+            return fetch(getApiUrl('get-user-data?type=profile'), {
+              method: 'GET',
+              headers: {
+                ...getApiHeaders(),
+                'Authorization': `${currentSession.access_token}`
+              }
+            });
+          }, {
+            maxRetries: 5,
+            initialDelay: 1000,
+            onRetry: (attempt) => console.log(`[fetchUserData] Retrying Edge Function, attempt ${attempt}`)
+          });
+          
+          if (response.ok) {
+            const { data, error } = await response.json();
+            
+            if (error) {
+              console.error('[fetchUserData] Error in Edge Function response:', error);
+              throw new Error(error);
+            }
+            
+            console.log('[fetchUserData] Successfully fetched user data via Edge Function');
+            setUserData(data);
+            setEmailVerified(!!data.email_verified);
+            setEmailVerificationChecked(true);
+            
+            return data;
+          } else {
+            const errorText = await response.text();
+            console.error('[fetchUserData] Edge Function failed:', response.status, errorText);
+            throw new Error(`Edge Function failed: ${response.status}`);
+          }
+        } catch (edgeFunctionError) {
+          console.warn('[fetchUserData] Edge Function failed, falling back to direct query:', edgeFunctionError);
+        }
+      }
+      
+      // Fallback to direct database query
+      console.log('[fetchUserData] Using direct database query approach');
+      
+      const { data, error } = await withRetry(async () => {
+        return await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single();
+      }, {
+        maxRetries: 5,
+        initialDelay: 500,
+        onRetry: (attempt) => console.log(`[fetchUserData] Retrying direct query, attempt ${attempt}`)
+      });
 
       if (error) {
-        console.error('Error fetching user data:', error);
-        return null;
+        const classifiedError = classifyError(error);
+        console.error('[fetchUserData] Direct query error:', error);
+        
+        // If it's an auth/permission error, don't throw - user might need to re-authenticate
+        if (classifiedError.type === 'auth' || classifiedError.type === 'permission') {
+          console.warn('[fetchUserData] Authentication/permission issue, will handle gracefully');
+          setUserData(null);
+          setEmailVerified(false);
+          setEmailVerificationChecked(true);
+          return null;
+        }
+        
+        throw new Error(classifiedError.message);
       }
 
+      console.log('[fetchUserData] Successfully fetched user data via direct query');
       setUserData(data);
       setEmailVerified(!!data.email_verified);
       setEmailVerificationChecked(true);
       
       return data;
+      
     } catch (error) {
-      console.error('Unexpected error fetching user data:', error);
+      const classifiedError = classifyError(error);
+      console.error('[fetchUserData] All methods failed:', classifiedError);
+      
+      // Set default safe state
+      setUserData(null);
+      setEmailVerified(false);
+      setEmailVerificationChecked(true);
+      
+      // Only throw if it's not an auth issue (which should be handled by re-authentication)
+      if (classifiedError.type !== 'auth') {
+        throw new Error(classifiedError.message);
+      }
+      
       return null;
     }
   };
@@ -154,31 +275,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('[initializeAuth] Starting auth initialization');
+        
         // Get session with JWT claims
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession?.user) {
+          console.log('[initializeAuth] Found existing session');
           setSession(currentSession);
           setUser(currentSession.user);
           
           // Track signed in user
           setUserId(currentSession.user.id);
           
-          // Fetch user data and update JWT claims if needed
-          const userData = await fetchUserData(currentSession.user.id);
-          if (userData?.user_role) {
-            // Set user properties in GA
-            trackEvent('Authentication', 'Auto Sign In', userData.user_role);
-            
-            // Refresh session to get updated JWT claims
-            await refreshSession();
+          // Try to fetch user data, but don't fail initialization if it fails
+          try {
+            const userData = await fetchUserData(currentSession.user.id);
+            if (userData?.user_role) {
+              // Set user properties in GA
+              trackEvent('Authentication', 'Auto Sign In', userData.user_role);
+              
+              // Refresh session to get updated JWT claims
+              await refreshSession();
+            }
+          } catch (userDataError) {
+            console.warn('[initializeAuth] Failed to fetch user data during initialization:', userDataError);
+            // Don't fail initialization - user can still use the app
           }
+        } else {
+          console.log('[initializeAuth] No existing session found');
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('[initializeAuth] Error initializing auth:', error);
       } finally {
         setLoading(false);
         initialStateLoadedRef.current = true;
+        console.log('[initializeAuth] Auth initialization complete');
       }
     };
 
@@ -190,7 +322,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     if (!initialStateLoadedRef.current || authStateChangeSubscribed.current) return;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log('Auth state change:', event);
+      console.log('[onAuthStateChange] Auth state change:', event);
       
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setSession(null);
@@ -213,14 +345,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         }
         
         if (!userData || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          const userData = await fetchUserData(currentSession.user.id);
-          
-          if (userData?.user_role) {
-            // Track user role
-            trackEvent('Authentication', 'User Role', userData.user_role);
+          try {
+            const userData = await fetchUserData(currentSession.user.id);
             
-            // Refresh session to get updated JWT claims
-            await refreshSession();
+            if (userData?.user_role) {
+              // Track user role
+              trackEvent('Authentication', 'User Role', userData.user_role);
+              
+              // Refresh session to get updated JWT claims
+              await refreshSession();
+            }
+          } catch (userDataError) {
+            console.warn('[onAuthStateChange] Failed to fetch user data during auth change:', userDataError);
           }
         }
       }
@@ -325,7 +461,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       const metadata: Record<string, string | null> = {
         name: name.trim(),
         phone: phone ? phone.trim() : null,
-        email_verified: 'false' // Start with unverified
+        email_verified: 'false', // Start with unverified
+        user_role: inviteData?.role || 'customer' // Set role from invite or default to customer
       };
       
       // Important: Add invite code to metadata if provided
@@ -359,7 +496,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       trackEvent('Authentication', 'Sign Up Success', inviteData?.role || 'customer');
       
       // Update invite link status if an invite code was used
-      // NOTE: Using the authenticated user's context, not signing out
       if (inviteCode && inviteData && data.user) {
         try {
           const userId = data.user.id;
@@ -381,22 +517,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             console.error('Error updating invite link status:', updateError);
           } else {
             console.log('Successfully updated invite link status');
-          }
-          
-          // If the invite specified a role, update the user's role
-          if (inviteData.role) {
-            console.log('Setting user role from invite:', inviteData.role);
-            
-            const { error: roleUpdateError } = await supabase
-              .from('users')
-              .update({ user_role: inviteData.role })
-              .eq('id', userId);
-              
-            if (roleUpdateError) {
-              console.error('Error updating user role:', roleUpdateError);
-            } else {
-              console.log('Successfully updated user role');
-            }
           }
         } catch (updateError) {
           // Log the error but don't fail the signup
@@ -423,7 +543,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       // Track sign in attempt
       trackEvent('Authentication', 'Sign In Attempt');
       
-      console.log('Attempting sign in with normalized email:', normalizedEmail);
+      console.log('[signIn] Attempting sign in with normalized email:', normalizedEmail);
       
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: normalizedEmail, 
@@ -446,15 +566,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         // Set user ID in GA
         setUserId(data.session.user.id);
         
-        // Fetch user data
-        const userData = await fetchUserData(data.session.user.id);
-        
-        if (userData?.user_role) {
-          // Track user role
-          trackEvent('Authentication', 'User Role', userData.user_role);
+        // Try to fetch user data but don't fail the sign in if it fails
+        try {
+          const userData = await fetchUserData(data.session.user.id);
           
-          // Refresh session to get updated JWT claims
-          await refreshSession();
+          if (userData?.user_role) {
+            // Track user role
+            trackEvent('Authentication', 'User Role', userData.user_role);
+            
+            // Refresh session to get updated JWT claims
+            await refreshSession();
+          }
+        } catch (userDataError) {
+          console.warn('[signIn] Failed to fetch user data after sign in:', userDataError);
+          // Don't fail the sign in - user can still use the app
         }
       }
       
@@ -462,42 +587,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     } catch (error) {
       console.error('Sign in error:', error);
       return { error: error as Error, session: null };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sign in with Google
-  const signInWithGoogle = async (options?: { redirectTo?: string }) => {
-    try {
-      setLoading(true);
-      
-      // Track sign in attempt
-      trackEvent('Authentication', 'Google Sign In Attempt');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: options?.redirectTo || `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
-        }
-      });
-      
-      if (error) {
-        trackEvent('Authentication', 'Google Sign In Error', error.message);
-        throw error;
-      }
-
-      // Track successful sign in initiation
-      trackEvent('Authentication', 'Google Sign In Redirect');
-      
-      return { error: null, data };
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      return { error: error as Error, data: null };
     } finally {
       setLoading(false);
     }
@@ -944,7 +1033,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     setUserId,
     signUp,
     signIn,
-    signInWithGoogle,
     signOut,
     updateUserData,
     sendVerificationEmail,

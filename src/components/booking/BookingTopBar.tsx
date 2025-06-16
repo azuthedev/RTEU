@@ -48,8 +48,17 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   // Flag to track user interaction
   const userInteractedRef = useRef(false);
   
-  // Determine if it's a one-way trip based on bookingState first, then URL params as fallback
-  const [isOneWay, setIsOneWay] = useState(!bookingState.isReturn);
+  // CRITICAL FIX: Default to URL type when initializing, but NEVER default to false/undefined
+  // This ensures isOneWay is set to false for round-trip (type=2) and true otherwise
+  const [isOneWay, setIsOneWay] = useState(() => {
+    // First check if bookingState has isReturn defined
+    if (bookingState.isReturn !== undefined) {
+      return !bookingState.isReturn;
+    }
+    // Then fall back to URL type
+    return type !== '2';
+  });
+  
   const [displayPassengers, setDisplayPassengers] = useState(bookingState.passengers || parseInt(passengers, 10) || 1);
   const [hasChanges, setHasChanges] = useState(false);
   
@@ -127,18 +136,27 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       fromValid: bookingState.fromValid,
       toValid: bookingState.toValid,
       fromCoords: bookingState.fromCoords,
-      toCoords: bookingState.toCoords
+      toCoords: bookingState.toCoords,
+      isReturn: bookingState.isReturn
     });
     
     // CRITICAL CHANGE: Always use bookingContext as the primary source of truth
     // URL parameters should only be used as fallbacks
     
-    // Set initial values directly from bookingState
+    // CRITICAL FIX: Preserve capitalization and formatting by using exact display names
+    // Don't just use the lower-case values
     setPickupValue(bookingState.fromDisplay || bookingState.from || '');
     setDropoffValue(bookingState.toDisplay || bookingState.to || '');
     
-    // Use isReturn from bookingState (default to URL param type if not set)
-    setIsOneWay(!bookingState.isReturn);
+    // CRITICAL FIX: Explicitly check for undefined to prevent treating false as undefined
+    // Use isReturn from bookingState if defined, otherwise default to URL param type
+    if (bookingState.isReturn !== undefined) {
+      console.log("Using bookingState.isReturn:", bookingState.isReturn);
+      setIsOneWay(!bookingState.isReturn);
+    } else {
+      console.log("Falling back to URL type param:", type);
+      setIsOneWay(type !== '2');
+    }
     
     // Use passengers from bookingState (default to URL param if not set)
     setDisplayPassengers(bookingState.passengers || parseInt(passengers, 10) || 1);
@@ -172,7 +190,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // Store original values for comparison
     originalValuesRef.current = {
-      isReturn: !!bookingState.isReturn,
+      isReturn: !!bookingState.isReturn,  // CRITICAL FIX: Explicitly convert to boolean
       pickup: bookingState.fromDisplay || bookingState.from || '',
       dropoff: bookingState.toDisplay || bookingState.to || '',
       pickupDisplay: bookingState.fromDisplay || bookingState.from || '',
@@ -194,7 +212,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       fromCoords: bookingState.fromCoords ? 'Present' : 'None',
       toCoords: bookingState.toCoords ? 'Present' : 'None',
       initialPickupValid: !!bookingState.fromValid,
-      initialDropoffValid: !!bookingState.toValid
+      initialDropoffValid: !!bookingState.toValid,
+      isReturn: bookingState.isReturn
     });
     
     // Mark as initialized
@@ -272,6 +291,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       return;
     }
     
+    // CRITICAL FIX: Use a definitive boolean comparison
     const formType = isOneWay ? '1' : '2';
     const original = originalValuesRef.current;
     
@@ -285,7 +305,8 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       : formData.dateRange?.from?.getTime() !== original.dateRange?.from?.getTime() ||
         formData.dateRange?.to?.getTime() !== original.dateRange?.to?.getTime();
     
-    const hasTypeChange = formType !== (original.isReturn ? '2' : '1');
+    // CRITICAL FIX: Use triple equals to compare true boolean isReturn values
+    const hasTypeChange = formType !== (original.isReturn === true ? '2' : '1');
     const hasPassengerChange = formData.passengers !== original.passengers;
     
     // Determine if there are any changes
@@ -297,7 +318,11 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       hasDateChanges,
       hasTypeChange,
       hasPassengerChange,
-      userInteracted: userInteractedRef.current
+      userInteracted: userInteractedRef.current,
+      isOneWay,
+      originalIsReturn: original.isReturn,
+      formType,
+      originalFormType: (original.isReturn === true ? '2' : '1')
     });
     
     setHasChanges(formHasChanges);
@@ -379,9 +404,9 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
       toCoords: dropoffCoords,
       pickupDateTime: pickupDateObj!,
       dropoffDateTime: dropoffDateTime,
-      isReturn: !isOneWay,
-      fromDisplay: pickupValue,
-      toDisplay: dropoffValue,
+      isReturn: !isOneWay,  // Pass the explicit boolean value
+      fromDisplay: pickupValue,  // Pass the display name explicitly
+      toDisplay: dropoffValue,   // Pass the display name explicitly
       passengers: formData.passengers
     });
     
@@ -414,7 +439,7 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
     
     // Reset original values to match the new state
     originalValuesRef.current = {
-      isReturn: !isOneWay,
+      isReturn: !isOneWay,  // CRITICAL FIX: Store the correct boolean value
       pickup: pickupValue,
       dropoff: dropoffValue,
       pickupDisplay: pickupValue,
@@ -530,8 +555,10 @@ const BookingTopBar: React.FC<BookingTopBarProps> = ({
   const handleTripTypeChange = (oneWay: boolean) => {
     userInteractedRef.current = true;
     const newIsOneWay = oneWay;
+    
+    // CRITICAL FIX: Properly compare boolean values
     // If toggling back to original state without saving, restore original values
-    if (newIsOneWay === originalValuesRef.current.isReturn && !hasChanges) {
+    if ((newIsOneWay === !originalValuesRef.current.isReturn) && !hasChanges) {
       setIsOneWay(newIsOneWay);
       setFormData(prev => ({
         ...prev,
