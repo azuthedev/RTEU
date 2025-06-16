@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { Calendar, Clock, MapPin, DollarSign, ChevronRight, Loader2, Phone, Mail, User, Car, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
