@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, ChevronDown, ChevronRight, Instagram, MessageSquareMore, BotMessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Phone, Mail, MapPin, ChevronDown, ChevronRight, Instagram, MessageSquareMore, BotMessageSquare, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { smoothScrollTo } from '../utils/smoothScroll';
 import { useAnalytics } from '../hooks/useAnalytics';
+import Newsletter from './Newsletter';
 
 // Accordion component for mobile collapsible sections
 const FooterAccordion = ({ title, children }: { title: string; children: React.ReactNode }) => {
@@ -203,6 +204,13 @@ const Sitemap = () => {
             </a>
           </div>
           
+          {/* Newsletter instead of CTA */}
+          <div className="my-6">
+            <Newsletter 
+              webhookUrl="https://hook.eu1.make.com/newsletter-signup" 
+              darkMode={true}
+            />
+          </div>
           
           {/* Quick Links Accordion */}
           <FooterAccordion title={t('sitemap.quicklinks.head', 'Quick Links')}>
@@ -403,17 +411,15 @@ const Sitemap = () => {
               </div>
             </div>
             
-            {/* Fourth column - Newsletter and CTA */}
+            {/* Fourth column - Newsletter */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Stay Connected</h3>
               <p className="text-gray-300 mb-4">Get exclusive offers, news, and updates about our services.</p>
-              
-              <button
-                onClick={handleCTAClick}
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md font-bold hover:bg-blue-700 transition-colors mb-6"
-              >
-                {t('nav.bookNow', 'Book Now')}
-              </button>
+              <Newsletter 
+                webhookUrl="" 
+                darkMode={true} 
+                className="mb-0"
+              />
             </div>
           </div>
           
