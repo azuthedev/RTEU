@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { CheckCircle, ArrowRight, Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import SignUpModal from '../components/SignUpModal';
