@@ -466,7 +466,6 @@ const Partners = () => {
         <Newsletter webhookUrl="https://your-webhook-url.com/subscribe" />
       </section>
 
-      <Sitemap />
     </div>
   );
 };
