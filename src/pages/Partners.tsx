@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Car, ChevronDown, CheckCircle2, Star } from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import Newsletter from '../components/Newsletter';
 import { smoothScrollTo } from '../utils/smoothScroll';
 import { useNavigate, useLocation } from 'react-router-dom';
