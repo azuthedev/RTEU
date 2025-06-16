@@ -348,7 +348,6 @@ const BookingSuccess = () => {
           </div>
         </main>
 
-        <Sitemap />
       </div>
     );
   }
@@ -584,7 +583,7 @@ const BookingSuccess = () => {
           phone={bookingDetails.customer_phone || ''}
         />
       )}
-
+      
     </div>
   );
 };
