@@ -285,13 +285,6 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
             <div className={`h-[72px] rounded-full ${isSlotted ? 'opacity-0' : 'opacity-0'}`} />
           </div>
 
-          {/* Newsletter Section */}
-          {showNewsletter && (
-            <div ref={newsletterRef} className="mt-0">
-              <Newsletter ref={newsletterRef} webhookUrl="https://hook.eu1.make.com/newsletter-signup" />
-            </div>
-          )}
-
           {/* This div serves as a reference point for the end of content when newsletter isn't shown */}
           <div ref={contentEndRef} className="h-8"></div>
         </div>
