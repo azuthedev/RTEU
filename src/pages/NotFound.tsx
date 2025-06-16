@@ -90,7 +90,6 @@ const NotFound = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
