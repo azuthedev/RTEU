@@ -370,7 +370,6 @@ const FAQ = () => {
         isOpen={isContactDialogOpen}
         onClose={() => setIsContactDialogOpen(false)}
       />
-      <Sitemap />
     </div>
   );
 };
