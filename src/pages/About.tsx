@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import TrustBadges from '../components/TrustBadges';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
