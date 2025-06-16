@@ -366,7 +366,6 @@ const ResetPassword = () => {
         </div>
       </main>
       
-      <Sitemap />
     </div>
   );
 };
