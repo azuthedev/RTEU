@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { updateMetaTags, addStructuredData } from '../utils/seo';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
