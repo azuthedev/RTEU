@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, Loader2, Users } from 'lucide-react';
 import { useBooking } from '../../contexts/BookingContext';
 import BookingLayout from './BookingLayout';
 import VehicleCard from './VehicleCard';
@@ -132,6 +132,7 @@ const VehicleSelection = () => {
   const [categorizedVehicles, setCategorizedVehicles] = useState<Record<string, typeof vehicles>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [capacityWarning, setCapacityWarning] = useState<string | null>(null);
   
   const carouselRef = useRef<HTMLDivElement>(null);
   const categoryTabsRef = useRef<HTMLDivElement>(null);
@@ -139,12 +140,16 @@ const VehicleSelection = () => {
   const itemsPerView = isMobile ? 1 : 3;
   const initializeAttemptRef = useRef(false);
   
+  // Get passenger count from booking state
+  const passengerCount = bookingState.passengers || 1;
+  
   // Logging prices from API for debugging
   useEffect(() => {
     console.log("Booking state updated:", { 
       hasPricingResponse: !!bookingState.pricingResponse,
       pricingError: bookingState.pricingError,
-      isPricingLoading: bookingState.isPricingLoading
+      isPricingLoading: bookingState.isPricingLoading,
+      passengerCount: bookingState.passengers
     });
     
     if (bookingState.pricingResponse) {
@@ -157,7 +162,7 @@ const VehicleSelection = () => {
       console.error("Pricing Error:", bookingState.pricingError);
       setValidationError(`Pricing Error: ${bookingState.pricingError}`);
     }
-  }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading]);
+  }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading, bookingState.passengers]);
 
   // Set initial categorized vehicles
   useEffect(() => {
@@ -368,10 +373,34 @@ const VehicleSelection = () => {
       }
     }
     
+    // Check for passenger capacity warnings
+    checkPassengerCapacity();
+    
     console.log("✅ Applied API prices to vehicles");
   }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading,
       bookingState.selectedVehicle, bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.from, bookingState.to, bookingState.pickupDateTime]);
+      bookingState.from, bookingState.to, bookingState.pickupDateTime, bookingState.passengers]);
+
+  // Check passenger capacity
+  const checkPassengerCapacity = () => {
+    // Clear any existing capacity warning
+    setCapacityWarning(null);
+    
+    // If no selected vehicle or no passenger count, skip check
+    if (!selectedVehicle || !bookingState.passengers) return;
+    
+    // Compare passenger count with vehicle capacity
+    if (bookingState.passengers > selectedVehicle.seats) {
+      setCapacityWarning(
+        `This vehicle can only accommodate ${selectedVehicle.seats} passengers, but you've selected ${bookingState.passengers} passengers.`
+      );
+    }
+  };
+
+  // Run passenger capacity check whenever selected vehicle or passenger count changes
+  useEffect(() => {
+    checkPassengerCapacity();
+  }, [selectedVehicle, bookingState.passengers]);
 
   // Handle modal open state
   const handleOpenModal = (vehicle: typeof vehicles[0]) => {
@@ -447,6 +476,17 @@ const VehicleSelection = () => {
       toast({
         title: "Vehicle Selection Required",
         description: "Please select a vehicle to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check passenger capacity
+    if (bookingState.passengers > selectedVehicle.seats) {
+      setValidationError(`The selected vehicle cannot accommodate ${bookingState.passengers} passengers. Please select a vehicle with at least ${bookingState.passengers} seats.`);
+      toast({
+        title: "Insufficient Vehicle Capacity",
+        description: `Please select a vehicle that can accommodate ${bookingState.passengers} passengers`,
         variant: "destructive"
       });
       return;
@@ -543,6 +583,12 @@ const VehicleSelection = () => {
     });
   };
 
+  // Filter vehicles that meet passenger capacity requirements
+  const filterPassengerCapableVehicles = (vehicles: typeof activeVehicles) => {
+    // Filter vehicles that can accommodate the passenger count
+    return vehicles.filter(vehicle => vehicle.seats >= bookingState.passengers);
+  };
+
   // Calculate active vehicles
   const activeVehicles = categorizedVehicles[activeCategory] || [];
   const canScrollLeft = currentIndex > 0;
@@ -550,12 +596,18 @@ const VehicleSelection = () => {
   
   // Filter available vehicles
   const availableVehicles = filterAvailableVehicles(activeVehicles);
+  
+  // Filter vehicles that can accommodate the passenger count
+  const capableVehicles = filterPassengerCapableVehicles(availableVehicles);
 
   // Do we have a pricing error to display?
   const hasPricingError = bookingState.pricingError !== null && bookingState.pricingError !== undefined;
   
   // No available vehicles in this category
   const noVehiclesAvailable = bookingState.pricingResponse && availableVehicles.length === 0;
+  
+  // No vehicles in this category that meet passenger requirements
+  const noCapableVehicles = availableVehicles.length > 0 && capableVehicles.length === 0;
   
   // Check if we're waiting for essential data to load
   const isWaitingForData = bookingState.isPricingLoading || 
@@ -581,6 +633,17 @@ const VehicleSelection = () => {
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
             <span>{validationError}</span>
+          </div>
+        )}
+        
+        {/* Passenger capacity warning */}
+        {capacityWarning && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg flex items-start">
+            <Users className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p><strong>Passenger Capacity Warning:</strong> {capacityWarning}</p>
+              <p className="mt-2 text-sm">Please select a vehicle with sufficient capacity or consider making multiple bookings.</p>
+            </div>
           </div>
         )}
         
@@ -627,10 +690,20 @@ const VehicleSelection = () => {
                     return !bookingState.pricingResponse || (apiPrice !== null && apiPrice > 0);
                   }).length;
                   
+                  // Count vehicles that can accommodate the passenger count
+                  const capableCount = vehiclesInCategory.filter(v => {
+                    const apiPrice = getVehiclePrice(v.id);
+                    return (!bookingState.pricingResponse || (apiPrice !== null && apiPrice > 0)) && 
+                           v.seats >= bookingState.passengers;
+                  }).length;
+                  
                   // Only show categories with available vehicles when we have pricing data
                   if (bookingState.pricingResponse && availableCount === 0) {
                     return null;
                   }
+                  
+                  // Highlight categories that have vehicles capable of accommodating all passengers
+                  const hasCapableVehicles = capableCount > 0;
                   
                   return (
                     <button
@@ -638,9 +711,11 @@ const VehicleSelection = () => {
                       onClick={() => handleCategoryChange(category.id)}
                       className={`px-3 py-1 text-sm md:text-base md:px-4 md:py-2 rounded-lg transition-colors ${
                         activeCategory === category.id 
-                          ? `bg-blue-600 text-white shadow-sm`
+                          ? hasCapableVehicles
+                            ? `bg-blue-600 text-white shadow-sm`
+                            : `bg-amber-500 text-white shadow-sm`
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      } ${!hasCapableVehicles ? 'relative' : ''}`}
                       aria-selected={activeCategory === category.id}
                       id={`category-tab-${category.id}`}
                     >
@@ -648,6 +723,14 @@ const VehicleSelection = () => {
                       {bookingState.pricingResponse && (
                         <span className="ml-1 text-xs">
                           ({availableCount})
+                        </span>
+                      )}
+                      
+                      {/* Add indicator for categories without vehicles that can fit passengers */}
+                      {!hasCapableVehicles && availableCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                         </span>
                       )}
                     </button>
@@ -660,6 +743,11 @@ const VehicleSelection = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl" id="vehicle-category-heading">
                 {vehicleCategories.find(c => c.id === activeCategory)?.name} Options
+                {bookingState.passengers > 1 && (
+                  <span className="ml-2 text-sm font-normal text-gray-500">
+                    (Showing vehicles for {bookingState.passengers} passengers)
+                  </span>
+                )}
               </h2>
               <div className="flex items-center">
                 <button
@@ -696,6 +784,52 @@ const VehicleSelection = () => {
               </div>
             )}
             
+            {/* No vehicles that can handle passenger count */}
+            {noCapableVehicles && (
+              <div className="bg-amber-50 p-6 rounded-lg text-center mb-6">
+                <Users className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-amber-800 mb-2">Passenger Capacity Warning</h3>
+                <p className="text-amber-700 mb-4">
+                  None of the vehicles in this category can accommodate {bookingState.passengers} passengers.
+                </p>
+                <div className="flex flex-col md:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      // Find first category with capable vehicles
+                      for (const category of vehicleCategories) {
+                        const vehicles = categorizedVehicles[category.id] || [];
+                        const capableVehicles = filterPassengerCapableVehicles(filterAvailableVehicles(vehicles));
+                        if (capableVehicles.length > 0) {
+                          handleCategoryChange(category.id);
+                          toast({
+                            title: "Category Changed",
+                            description: `Switched to ${category.name} category with vehicles that can accommodate ${bookingState.passengers} passengers.`,
+                            variant: "default"
+                          });
+                          break;
+                        }
+                      }
+                    }}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700"
+                  >
+                    Find Suitable Vehicles
+                  </button>
+                  <button
+                    onClick={() => {
+                      toast({
+                        title: "Multiple Bookings Needed",
+                        description: "For your group size, we recommend making multiple bookings.",
+                        variant: "default"
+                      });
+                    }}
+                    className="px-4 py-2 border border-amber-600 text-amber-700 rounded-md hover:bg-amber-50"
+                  >
+                    Book Multiple Vehicles
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {/* Vehicles Carousel */}
             <div className="relative overflow-hidden p-2" aria-labelledby="vehicle-category-heading">
               <div 
@@ -721,8 +855,8 @@ const VehicleSelection = () => {
                 }}
                 role="list"
               >
-                {availableVehicles.length > 0 ? (
-                  availableVehicles.map((vehicle) => {
+                {capableVehicles.length > 0 ? (
+                  capableVehicles.map((vehicle) => {
                     // Get API price if available
                     const apiPrice = getVehiclePrice(vehicle.id);
                     
@@ -737,6 +871,9 @@ const VehicleSelection = () => {
                     // Create a vehicle copy with updated price
                     const vehicleWithPrice = {...vehicle, price: finalPrice};
                     
+                    // Determine if this vehicle can handle the passenger count
+                    const canHandlePassengers = vehicle.seats >= bookingState.passengers;
+                    
                     return (
                       <div 
                         key={vehicle.id}
@@ -748,6 +885,16 @@ const VehicleSelection = () => {
                           {...vehicleWithPrice}
                           isSelected={selectedVehicle?.id === vehicle.id}
                           onSelect={() => {
+                            // First check if this vehicle can handle the passenger count
+                            if (!canHandlePassengers) {
+                              toast({
+                                title: "Passenger Capacity Exceeded",
+                                description: `This vehicle can only accommodate ${vehicle.seats} passengers, but you've selected ${bookingState.passengers} passengers.`,
+                                variant: "destructive"
+                              });
+                              return;
+                            }
+                            
                             // Validate the vehicle has a price if we have pricing data
                             if (bookingState.pricingResponse && (apiPrice === null || apiPrice <= 0)) {
                               toast({
@@ -759,6 +906,10 @@ const VehicleSelection = () => {
                             }
                             setSelectedVehicle(vehicleWithPrice);
                             setValidationError(null); // Clear validation error when a vehicle is selected
+                            // Clear capacity warning if this vehicle can handle the passenger count
+                            if (canHandlePassengers) {
+                              setCapacityWarning(null);
+                            }
                           }}
                           onLearnMore={() => handleOpenModal(vehicleWithPrice)}
                           aria-label={`${vehicle.name} - €${finalPrice} - ${vehicle.seats} passengers`}
@@ -777,9 +928,9 @@ const VehicleSelection = () => {
               </div>
               
               {/* Mobile Navigation Indicators */}
-              {availableVehicles.length > 1 && (
+              {capableVehicles.length > 1 && (
                 <div className="flex justify-center mt-4 md:hidden">
-                  {availableVehicles.map((_, index) => (
+                  {capableVehicles.map((_, index) => (
                     <button
                       key={index}
                       className={`h-2 w-2 rounded-full mx-1 ${
@@ -818,6 +969,19 @@ const VehicleSelection = () => {
               </div>
             </div>
             
+            {/* Passenger capacity information */}
+            {bookingState.passengers > 1 && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg flex items-start">
+                <Users className="w-5 h-5 text-gray-500 mt-0.5 mr-2" />
+                <div>
+                  <p className="text-gray-700 font-medium">You have selected {bookingState.passengers} passengers</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Make sure to choose a vehicle with enough capacity. Some vehicles may require multiple bookings.
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {/* Pricing information from API */}
             {bookingState.pricingResponse && (
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
@@ -839,6 +1003,16 @@ const VehicleSelection = () => {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onSelect={() => {
+            // Check if this vehicle can handle the passenger count
+            if (modalVehicle.seats < bookingState.passengers) {
+              toast({
+                title: "Passenger Capacity Exceeded",
+                description: `This vehicle can only accommodate ${modalVehicle.seats} passengers, but you've selected ${bookingState.passengers} passengers.`,
+                variant: "destructive"
+              });
+              return;
+            }
+            
             // Check if vehicle is available based on API price
             const apiPrice = getVehiclePrice(modalVehicle.id);
             if (bookingState.pricingResponse && (apiPrice === null || apiPrice <= 0)) {
@@ -856,6 +1030,11 @@ const VehicleSelection = () => {
             
             setSelectedVehicle(vehicleWithPrice);
             setValidationError(null); // Clear validation error when a vehicle is selected
+            
+            // Clear capacity warning if this vehicle can handle the passenger count
+            if (modalVehicle.seats >= bookingState.passengers) {
+              setCapacityWarning(null);
+            }
           }}
           vehicle={modalVehicle}
           isSelected={selectedVehicle?.id === modalVehicle.id}
