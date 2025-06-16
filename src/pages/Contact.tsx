@@ -385,7 +385,6 @@ const Contact = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
