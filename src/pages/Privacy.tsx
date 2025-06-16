@@ -1,6 +1,5 @@
 import React from 'react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 
 const Privacy = () => {
   return (
