@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { XCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { motion } from 'framer-motion';
 import { useAnalytics } from '../hooks/useAnalytics';
 
