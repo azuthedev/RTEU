@@ -756,7 +756,6 @@ const Bookings = () => {
         )}
       </AnimatePresence>
 
-      <Sitemap />
     </div>
   );
 };
