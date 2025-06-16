@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Car, Plane, Bus, ChevronDown } from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import Testimonials from '../components/Testimonials';
 import { smoothScrollTo } from '../utils/smoothScroll';
 import { useNavigate } from 'react-router-dom';
