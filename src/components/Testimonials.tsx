@@ -65,7 +65,7 @@ const Testimonials = () => {
               ))}
             </div>
             <p className="text-lg text-white mb-6">"{testimonials[currentIndex].text}"</p>
-            <p className="font-semibold">
+            <p className="font-semibold text-white">
               {testimonials[currentIndex].author}
               <span className="text-white"> • {testimonials[currentIndex].location}</span>
             </p>
