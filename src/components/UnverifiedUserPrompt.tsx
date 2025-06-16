@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import OTPVerificationModal from './OTPVerificationModal';
 import Header from './Header';
-import Sitemap from './Sitemap';
 
 interface UnverifiedUserPromptProps {
   email: string;
@@ -164,8 +163,7 @@ const UnverifiedUserPrompt = ({ email, redirectUrl = '/' }: UnverifiedUserPrompt
           </motion.div>
         </div>
       </main>
-      
-      <Sitemap />
+
       
       {/* OTP Verification Modal */}
       <OTPVerificationModal
