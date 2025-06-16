@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Home, ArrowLeft } from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 
 const NotFound = () => {
   const [searchQuery, setSearchQuery] = useState('');
