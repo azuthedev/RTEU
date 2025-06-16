@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import Newsletter from '../components/Newsletter';
 import { Phone, Mail, MapPin, ArrowRight, MessageCircle, Building2, Users, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
