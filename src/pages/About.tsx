@@ -134,7 +134,6 @@ const About = () => {
         </motion.div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
