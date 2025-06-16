@@ -383,7 +383,6 @@ const Contact = () => {
           <Newsletter webhookUrl="https://hook.eu1.make.com/newsletter-signup" />
         </div>
       </main>
-
     </div>
   );
 };

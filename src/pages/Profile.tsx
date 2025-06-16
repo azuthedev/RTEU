@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
+import Sitemap from '../components/Sitemap';
 import FormField from '../components/ui/form-field';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -336,6 +337,7 @@ const Profile = () => {
           </div>
         </div>
       </main>
+      
       
       {/* Password Reset Modal */}
       <PasswordResetModal

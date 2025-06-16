@@ -10,19 +10,19 @@ interface Destination {
 const destinations: Record<string, Destination> = {
   rome: {
     city: 'Rome',
-    imageUrl: '-rome-background.jpg'
+    imageUrl: 'https://wallpapercat.com/w/full/0/7/b/293465-1920x1080-desktop-1080p-rome-background.jpg'
   },
   paris: {
     city: 'Paris',
-    imageUrl: 'eiffel-tower-background-image.jpg'
+    imageUrl: 'https://wallpapercat.com/w/full/b/f/3/30528-3840x2160-desktop-4k-eiffel-tower-background-image.jpg'
   },
   barcelona: {
     city: 'Barcelona',
-    imageUrl: 'barcelona.jpg'
+    imageUrl: 'https://wallpapers.com/images/hd/barcelona-1920-x-1080-picture-y19qwj8its708dty.jpg'
   },
   milan: {
     city: 'Milan',
-    imageUrl: 'milano.jpeg'
+    imageUrl: 'https://img.travelnaut.com/web/db/photose/location/eu/it/milan/28ed6358c8d39fb9ad74d343877d94f8.jpeg'
   }
 };
 
@@ -39,7 +39,6 @@ const BlogPost = () => {
             <h1 className="text-4xl font-bold text-center">Destination Not Found</h1>
           </div>
         </main>
-        <Sitemap />
       </div>
     );
   }

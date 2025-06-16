@@ -173,7 +173,6 @@ const ResetPassword = () => {
             </motion.div>
           </div>
         </main>
-        <Sitemap />
       </div>
     );
   }
@@ -214,7 +213,6 @@ const ResetPassword = () => {
           </div>
         </main>
         
-        <Sitemap />
       </div>
     );
   }
@@ -253,7 +251,6 @@ const ResetPassword = () => {
           </div>
         </main>
         
-        <Sitemap />
       </div>
     );
   }
