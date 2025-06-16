@@ -106,7 +106,6 @@ const CookiePolicy = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
