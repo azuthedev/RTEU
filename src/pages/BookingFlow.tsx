@@ -57,14 +57,20 @@ const BookingFlow = () => {
       // Create a new state object based on current state
       const updatedState = { ...prev };
       
-      // CRITICAL CHANGE: Only update state fields if they don't exist in context
-      // This prioritizes existing context data over URL parameters
-      
-      // Location information - preserve context data when available
+      // CRITICAL FIX: Only update display names from URL if context has NO display names at all
+      // Prioritize context display names over URL decoding
       updatedState.from = prev.from || decodedFrom;
       updatedState.to = prev.to || decodedTo;
-      updatedState.fromDisplay = prev.fromDisplay || decodedFrom;
-      updatedState.toDisplay = prev.toDisplay || decodedTo;
+      updatedState.fromDisplay = prev.fromDisplay || prev.from || decodedFrom;
+      updatedState.toDisplay = prev.toDisplay || prev.to || decodedTo;
+      
+      // Log for debugging
+      console.log("Display name preservation:", {
+        prevFromDisplay: prev.fromDisplay,
+        prevToDisplay: prev.toDisplay,
+        finalFromDisplay: updatedState.fromDisplay,
+        finalToDisplay: updatedState.toDisplay
+      });
       
       // CRITICAL: Preserve coordinate data which is obtained via geocoding
       // These are expensive to calculate and should never be lost
@@ -75,7 +81,9 @@ const BookingFlow = () => {
       updatedState.fromValid = prev.fromValid !== undefined ? prev.fromValid : !!prev.fromDisplay;
       updatedState.toValid = prev.toValid !== undefined ? prev.toValid : !!prev.toDisplay;
       
-      // Trip type - preserve context data
+      // CRITICAL FIX: Trip type - ensure isReturn is a proper boolean value
+      // First check if there's a defined value in the context, if so, respect it
+      // If not, derive from URL type parameter
       updatedState.isReturn = prev.isReturn !== undefined 
         ? prev.isReturn 
         : type === '2';
@@ -88,40 +96,24 @@ const BookingFlow = () => {
       updatedState.departureDate = date;
       updatedState.returnDate = returnDate === '0' ? undefined : returnDate;
       
-      // Date objects with time information
-      // Parse dates from URL, but keep time from context if available
-      const pickupDateParsed = parseDateFromUrl(date);
-      if (!prev.pickupDateTime && pickupDateParsed) {
-        // If no pickup date in context, use parsed date
-        updatedState.pickupDateTime = pickupDateParsed;
-      } else if (prev.pickupDateTime && pickupDateParsed) {
-        // If we have both, update the date part but preserve time
-        const contextDate = prev.pickupDateTime;
-        pickupDateParsed.setHours(
-          contextDate.getHours(),
-          contextDate.getMinutes(),
-          contextDate.getSeconds(),
-          contextDate.getMilliseconds()
-        );
-        updatedState.pickupDateTime = pickupDateParsed;
+      // CRITICAL FIX: Only update date objects from URL if they don't already exist in context
+      // This preserves the time component that was set in the SearchForm
+      if (!prev.pickupDateTime) {
+        // Only parse the date if pickupDateTime isn't already set
+        const pickupDateParsed = parseDateFromUrl(date);
+        if (pickupDateParsed) {
+          updatedState.pickupDateTime = pickupDateParsed;
+        }
       }
       
       // Same logic for return date
       if (updatedState.isReturn && returnDate !== '0') {
-        const dropoffDateParsed = parseDateFromUrl(returnDate);
-        if (!prev.dropoffDateTime && dropoffDateParsed) {
-          // If no dropoff date in context, use parsed date
-          updatedState.dropoffDateTime = dropoffDateParsed;
-        } else if (prev.dropoffDateTime && dropoffDateParsed) {
-          // If we have both, update the date part but preserve time
-          const contextDate = prev.dropoffDateTime;
-          dropoffDateParsed.setHours(
-            contextDate.getHours(),
-            contextDate.getMinutes(),
-            contextDate.getSeconds(),
-            contextDate.getMilliseconds()
-          );
-          updatedState.dropoffDateTime = dropoffDateParsed;
+        if (!prev.dropoffDateTime) {
+          // Only parse the date if dropoffDateTime isn't already set
+          const dropoffDateParsed = parseDateFromUrl(returnDate);
+          if (dropoffDateParsed) {
+            updatedState.dropoffDateTime = dropoffDateParsed;
+          }
         }
       }
       
@@ -139,6 +131,8 @@ const BookingFlow = () => {
         
         fromFinal: updatedState.from,
         toFinal: updatedState.to,
+        fromDisplayFinal: updatedState.fromDisplay,
+        toDisplayFinal: updatedState.toDisplay,
         fromCoordsFinal: !!updatedState.fromCoords,
         toCoordsFinal: !!updatedState.toCoords,
         fromValidFinal: updatedState.fromValid,
@@ -185,7 +179,7 @@ const BookingFlow = () => {
           toCoords: bookingState.toCoords,
           pickupDateTime: bookingState.pickupDateTime!,
           dropoffDateTime: bookingState.dropoffDateTime,
-          isReturn: !!bookingState.isReturn,
+          isReturn: !!bookingState.isReturn, // CRITICAL FIX: Explicitly convert to boolean
           fromDisplay: bookingState.fromDisplay,
           toDisplay: bookingState.toDisplay,
           passengers: bookingState.passengers || 1

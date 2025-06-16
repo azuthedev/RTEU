@@ -11,6 +11,7 @@ import FormField from '../components/ui/form-field';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import PasswordResetModal from '../components/PasswordResetModal';
+import { withRetry } from '../utils/retryHelper';
 
 const Profile = () => {
   const { user, userData, loading, updateUserData, signOut } = useAuth();
@@ -28,6 +29,7 @@ const Profile = () => {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   
+  // Initialize form with user data when available
   useEffect(() => {
     if (userData) {
       setFormData({
@@ -35,8 +37,60 @@ const Profile = () => {
         phone: userData.phone || '',
         email: userData.email || ''
       });
+    } else if (user) {
+      // If userData is not available but user is, try to fetch it
+      const fetchUserData = async () => {
+        try {
+          // Get the current session for auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            throw new Error('No active session');
+          }
+          
+          // Call the Edge Function with proper authorization
+          const response = await withRetry(async () => {
+            return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-data?type=profile`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `${session.access_token}`
+              }
+            });
+          }, {
+            maxRetries: 3,
+            initialDelay: 500,
+            onRetry: (attempt) => console.log(`Retrying user data fetch, attempt ${attempt}`)
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response from get-user-data:', errorText);
+            throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
+          }
+          
+          const { data, error: responseError } = await response.json();
+          
+          if (responseError) {
+            throw new Error(responseError);
+          }
+          
+          if (data) {
+            setFormData({
+              name: data.name || '',
+              phone: data.phone || '',
+              email: data.email || ''
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setUpdateError('Failed to load your profile data. Please try refreshing the page.');
+        }
+      };
+      
+      fetchUserData();
     }
-  }, [userData]);
+  }, [userData, user]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

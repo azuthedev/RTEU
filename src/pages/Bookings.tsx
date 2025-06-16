@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, DollarSign, ChevronRight, Loader2, Phone, Mail, User, Car, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, DollarSign, ChevronRight, Loader2, Phone, Mail, User, Car, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import Sitemap from '../components/Sitemap';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
+import { withRetry } from '../utils/retryHelper';
 
 interface Trip {
   id: string;
@@ -36,7 +37,45 @@ const Bookings = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
+
+  // Helper function to classify error types
+  const classifyError = (error: any): { type: 'network' | 'auth' | 'permission' | 'server' | 'unknown', message: string } => {
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('TypeError: Failed to fetch')) {
+      return { type: 'network', message: 'Network connection failed. Please check your internet connection and try again.' };
+    }
+    
+    if (errorMessage.includes('infinite recursion') || errorMessage.includes('42P17')) {
+      return { type: 'permission', message: 'Database configuration issue. Please try refreshing the page or contact support if the problem persists.' };
+    }
+    
+    if (errorMessage.includes('Invalid session') || errorMessage.includes('401')) {
+      return { type: 'auth', message: 'Your session has expired. Please sign in again.' };
+    }
+    
+    if (errorMessage.includes('403') || errorMessage.includes('Unauthorized')) {
+      return { type: 'permission', message: 'Access denied. You do not have permission to view these bookings.' };
+    }
+    
+    if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+      return { type: 'server', message: 'Server error occurred. Please try again in a few moments.' };
+    }
+    
+    return { type: 'unknown', message: errorMessage };
+  };
+
+  // Helper function to determine if we should use Edge Function
+  const shouldUseEdgeFunction = () => {
+    // In development, check if Supabase URL is accessible
+    // In production, always try Edge Functions first
+    const isDevEnvironment = window.location.hostname === 'localhost' || 
+                            window.location.hostname.includes('local-credentialless') ||
+                            window.location.hostname.includes('webcontainer');
+    return !isDevEnvironment || import.meta.env.VITE_SUPABASE_URL;
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -48,105 +87,262 @@ const Bookings = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Fetch trips - both user's trips and trips made with user's email
-  useEffect(() => {
-    const fetchTrips = async () => {
-      if (!user) return;
+  // Enhanced fetch trips function with better error handling
+  const fetchTrips = async (showLoadingState = true) => {
+    if (!user) return;
 
-      try {
-        const now = new Date().toISOString();
+    try {
+      if (showLoadingState) {
         setLoading(true);
-        setError(null);
-
-        // First get the user's email
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('email')
-          .eq('id', user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error fetching user email:', userError);
-          throw new Error('Could not retrieve your user information. Please try again.');
-        }
-
-        if (!userData?.email) {
-          throw new Error('User email not found');
-        }
-
-        console.log('Fetching trips for user:', user.id, 'with email:', userData.email);
-
-        // Build query to fetch both user_id-linked AND email-matched bookings
-        const query = supabase
-          .from('trips')
-          .select('*')
-          .or(`user_id.eq.${user.id},customer_email.eq.${userData.email}`)
-          .order('datetime', { ascending: activeTab === 'upcoming' });
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        console.log(`Found ${data?.length || 0} trips for user`);
-
-        // Filter by date based on the active tab
-        let filteredTrips = [];
-        if (activeTab === 'upcoming') {
-          filteredTrips = data.filter(trip => 
-            new Date(trip.datetime) >= new Date(now)
-          );
-        } else {
-          filteredTrips = data.filter(trip => 
-            new Date(trip.datetime) < new Date(now)
-          );
-        }
-
-        setTrips(filteredTrips);
-        console.log(`Filtered to ${filteredTrips.length} ${activeTab} trips`);
-
-        // If no trips found, show toast
-        if (filteredTrips.length === 0) {
-          toast({
-            title: `No ${activeTab} bookings`,
-            description: activeTab === 'upcoming' 
-              ? "You don't have any upcoming bookings." 
-              : "You don't have any past bookings.",
-            variant: "default"
-          });
-        }
-      } catch (error: any) {
-        console.error('Error fetching trips:', error);
-        setError(error.message || 'Failed to load bookings');
-        
-        toast({
-          title: "Error Loading Bookings",
-          description: error.message || "Could not load your bookings. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
       }
-    };
+      setError(null);
 
+      console.log(`[fetchTrips] Fetching ${activeTab} trips for user:`, user.id);
+
+      // Try Edge Function first if available
+      if (shouldUseEdgeFunction()) {
+        try {
+          console.log('[fetchTrips] Attempting Edge Function approach');
+          
+          // Get the current session for auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            throw new Error('No active session - please sign in again');
+          }
+
+          // Call the Edge Function with proper authorization
+          const response = await withRetry(async () => {
+            return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-data?type=bookings&filter=${activeTab}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `${session.access_token}`
+              }
+            });
+          }, {
+            maxRetries: 5,
+            initialDelay: 1000,
+            onRetry: (attempt) => console.log(`[fetchTrips] Retrying Edge Function, attempt ${attempt}`)
+          });
+          
+          if (response.ok) {
+            const { data, error: responseError } = await response.json();
+            
+            if (responseError) {
+              throw new Error(responseError);
+            }
+
+            console.log(`[fetchTrips] Found ${data?.length || 0} trips via Edge Function`);
+            setTrips(data || []);
+            setRetryCount(0); // Reset retry count on success
+
+            // If no trips found, show appropriate message
+            if (!data || data.length === 0) {
+              toast({
+                title: `No ${activeTab} bookings`,
+                description: activeTab === 'upcoming' 
+                  ? "You don't have any upcoming bookings." 
+                  : "You don't have any past bookings.",
+                variant: "default"
+              });
+            }
+            
+            return; // Success, exit function
+          } else {
+            const errorText = await response.text();
+            console.error('[fetchTrips] Edge Function failed:', response.status, errorText);
+            throw new Error(`Edge Function failed: ${response.status}`);
+          }
+        } catch (edgeFunctionError) {
+          console.warn('[fetchTrips] Edge Function failed, falling back to direct query:', edgeFunctionError);
+        }
+      }
+
+      // Fallback to direct database query
+      console.log('[fetchTrips] Using direct database query approach');
+      
+      // Get user's email for email-based booking matching
+      let userEmail: string;
+      
+      if (userData?.email) {
+        userEmail = userData.email;
+      } else {
+        // Try to get email from user object
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          userEmail = session.user.email;
+        } else {
+          throw new Error('Could not determine user email for booking lookup');
+        }
+      }
+
+      console.log(`[fetchTrips] Using email for booking lookup: ${userEmail}`);
+
+      // Build query to fetch both user_id-linked AND email-matched bookings
+      const now = new Date().toISOString();
+      let query = supabase
+        .from('trips')
+        .select('*')
+        .or(`user_id.eq.${user.id},customer_email.eq.${userEmail}`);
+
+      // Apply date filters
+      if (activeTab === 'upcoming') {
+        query = query.gte('datetime', now);
+      } else {
+        query = query.lt('datetime', now);
+      }
+
+      // Order by date
+      query = query.order('datetime', { ascending: activeTab === 'upcoming' });
+
+      const { data, error } = await withRetry(async () => {
+        return await query;
+      }, {
+        maxRetries: 5,
+        initialDelay: 500,
+        onRetry: (attempt) => console.log(`[fetchTrips] Retrying direct query, attempt ${attempt}`)
+      });
+
+      if (error) {
+        const classifiedError = classifyError(error);
+        console.error('[fetchTrips] Direct query error:', error);
+        
+        // If it's an auth/permission error and we haven't retried much, try to refresh session
+        if ((classifiedError.type === 'auth' || classifiedError.type === 'permission') && retryCount < 2) {
+          console.log('[fetchTrips] Auth/permission error, attempting session refresh');
+          setRetryCount(prev => prev + 1);
+          
+          // Try to refresh the session
+          const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && session) {
+            console.log('[fetchTrips] Session refreshed, retrying...');
+            setTimeout(() => fetchTrips(false), 1000);
+            return;
+          }
+        }
+        
+        throw new Error(classifiedError.message);
+      }
+
+      console.log(`[fetchTrips] Found ${data?.length || 0} trips via direct query`);
+      setTrips(data || []);
+      setRetryCount(0); // Reset retry count on success
+
+      // If no trips found, show appropriate message
+      if (!data || data.length === 0) {
+        toast({
+          title: `No ${activeTab} bookings`,
+          description: activeTab === 'upcoming' 
+            ? "You don't have any upcoming bookings." 
+            : "You don't have any past bookings.",
+          variant: "default"
+        });
+      }
+
+    } catch (error: any) {
+      const classifiedError = classifyError(error);
+      console.error('[fetchTrips] All methods failed:', classifiedError);
+      setError(classifiedError.message);
+      
+      // Show user-friendly error message
+      toast({
+        title: "Error Loading Bookings",
+        description: classifiedError.message,
+        variant: "destructive",
+        action: classifiedError.type === 'network' ? (
+          <button 
+            onClick={() => fetchTrips()} 
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+          >
+            Retry
+          </button>
+        ) : undefined
+      });
+      
+      // For auth errors, suggest re-authentication
+      if (classifiedError.type === 'auth') {
+        setTimeout(() => {
+          navigate('/login', { 
+            state: { from: location, message: 'Please sign in again to access your bookings.' },
+            replace: true 
+          });
+        }, 3000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch trips when user or activeTab changes
+  useEffect(() => {
     if (user) {
       fetchTrips();
     }
-  }, [user, activeTab, toast]);
+  }, [user, activeTab]);
 
   const fetchBookingDetails = async (tripId: string) => {
     setLoadingDetails(true);
     try {
-      // Simplified query to only fetch trip data
+      // Try Edge Function first if available
+      if (shouldUseEdgeFunction()) {
+        try {
+          // Get the current session for auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            throw new Error('No active session');
+          }
+
+          // Call the Edge Function with proper authorization
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-data?type=booking-details&id=${tripId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `${session.access_token}`
+            }
+          });
+          
+          if (response.ok) {
+            const { data, error: responseError } = await response.json();
+            
+            if (responseError) {
+              throw new Error(responseError);
+            }
+
+            return data;
+          } else {
+            const errorText = await response.text();
+            console.error('[fetchBookingDetails] Edge Function failed:', response.status, errorText);
+            throw new Error('Edge Function failed');
+          }
+        } catch (edgeFunctionError) {
+          console.warn('[fetchBookingDetails] Edge Function failed, falling back to direct query:', edgeFunctionError);
+        }
+      }
+      
+      // Fallback to direct query
       const { data, error } = await supabase
         .from('trips')
         .select('*')
         .eq('id', tripId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const classifiedError = classifyError(error);
+        throw new Error(classifiedError.message);
+      }
+      
       return data;
     } catch (error) {
-      console.error('Error fetching booking details:', error);
+      console.error('[fetchBookingDetails] Error fetching booking details:', error);
+      
+      toast({
+        title: "Error Loading Details",
+        description: "Could not load booking details. Please try again.",
+        variant: "destructive"
+      });
+      
       return null;
     } finally {
       setLoadingDetails(false);
@@ -155,8 +351,10 @@ const Bookings = () => {
 
   const handleBookingClick = async (trip: Trip) => {
     const details = await fetchBookingDetails(trip.id);
-    setSelectedBooking(details);
-    setShowDetails(true);
+    if (details) {
+      setSelectedBooking(details);
+      setShowDetails(true);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -187,7 +385,10 @@ const Bookings = () => {
         .eq('id', trip.id)
         .eq('customer_email', userData?.email || '');
       
-      if (error) throw error;
+      if (error) {
+        const classifiedError = classifyError(error);
+        throw new Error(classifiedError.message);
+      }
       
       // Update the trip in the UI
       const updatedTrips = trips.map(t => 
@@ -203,13 +404,13 @@ const Bookings = () => {
       toast({
         title: "Booking Linked",
         description: "This booking has been linked to your account.",
-        variant: "success"
+        variant: "default"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error linking booking:', error);
       toast({
         title: "Error",
-        description: "Failed to link booking to your account.",
+        description: error.message || "Failed to link booking to your account.",
         variant: "destructive"
       });
     } finally {
@@ -217,13 +418,31 @@ const Bookings = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p>Loading your bookings...</p>
+          <p>Loading authentication...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loading && trips.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="pt-32 pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                <p>Loading your bookings...</p>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -234,12 +453,32 @@ const Bookings = () => {
       
       <main className="pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl mb-8">Your Bookings</h1>
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl">Your Bookings</h1>
+            
+            {/* Refresh button */}
+            <button
+              onClick={() => fetchTrips()}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <p>{error}</p>
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center justify-between">
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                <p>{error}</p>
+              </div>
+              <button
+                onClick={() => fetchTrips()}
+                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -277,6 +516,12 @@ const Bookings = () => {
                     : 'No past bookings'
                   }
                 </p>
+                <button
+                  onClick={() => navigate('/booking')}
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Book a Transfer
+                </button>
               </div>
             ) : (
               trips.map((trip) => (

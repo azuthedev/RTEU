@@ -89,18 +89,15 @@ const BookingSuccess = () => {
     try {
       console.log('Fetching booking details for reference:', reference);
       
-      // Use the secure Edge Function instead of direct database access
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-booking-details`, 
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ booking_reference: reference })
-        }
-      );
+      // Use the proxy route instead of direct Supabase URL to handle CORS properly
+      const response = await fetch('/api/get-booking-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ booking_reference: reference })
+      });
       
       if (!response.ok) {
         const errorText = await response.text();
