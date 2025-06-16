@@ -14,7 +14,7 @@ const OTP_FORMAT = '00a000'; // 2 digits, 1 letter, 3 digits
 const RESEND_LIMIT_PER_HOUR = 5;
 
 // Helper function to retry database operations
-const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+const retryDatabaseOperation = async (operation, maxRetries = 5) => {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();

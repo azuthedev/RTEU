@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // Helper function to retry database operations
-const retryDatabaseOperation = async (operation, maxRetries = 2) => {
+const retryDatabaseOperation = async (operation, maxRetries = 5) => {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
