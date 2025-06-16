@@ -125,7 +125,6 @@ const BlogsDestinations = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
