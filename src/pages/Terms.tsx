@@ -285,7 +285,6 @@ const Terms = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
