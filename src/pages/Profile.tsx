@@ -338,8 +338,6 @@ const Profile = () => {
         </div>
       </main>
       
-      <Sitemap />
-      
       {/* Password Reset Modal */}
       <PasswordResetModal
         isOpen={showPasswordResetModal}
