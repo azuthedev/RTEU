@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { XCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { useAnalytics } from '../hooks/useAnalytics';
 
 const VerificationFailed = () => {
@@ -75,7 +74,6 @@ const VerificationFailed = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
