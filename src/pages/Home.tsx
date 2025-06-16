@@ -112,9 +112,6 @@ function HomeContent() {
 
       <TrustBadges />
       
-      <LazyComponent>
-        <AboutPreview />
-      </LazyComponent>
       
       <LazyComponent>
         <FAQPreview />
@@ -124,7 +121,6 @@ function HomeContent() {
         <Testimonials />
       </LazyComponent>
       
-      <CallToAction />
     </>
   );
 }
