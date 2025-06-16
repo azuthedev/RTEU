@@ -47,13 +47,13 @@ const Testimonials = () => {
   };
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-blue-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl text-center mb-12">{t('testimonials.head')}</h2>
+        <h2 className="text-3xl text-white text-center mb-12">{t('testimonials.head')}</h2>
         <div className="relative max-w-3xl mx-auto px-8">
           <button 
             onClick={prevTestimonial}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 text-gray-400 hover:text-blue-600"
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 text-white hover:text-gray-400"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -64,16 +64,16 @@ const Testimonials = () => {
                 <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
               ))}
             </div>
-            <p className="text-lg text-gray-600 mb-6">"{testimonials[currentIndex].text}"</p>
+            <p className="text-lg text-white mb-6">"{testimonials[currentIndex].text}"</p>
             <p className="font-semibold">
               {testimonials[currentIndex].author}
-              <span className="text-gray-500"> • {testimonials[currentIndex].location}</span>
+              <span className="text-white"> • {testimonials[currentIndex].location}</span>
             </p>
           </div>
 
           <button 
             onClick={nextTestimonial}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-gray-400 hover:text-blue-600"
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-white hover:text-gray-400"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
