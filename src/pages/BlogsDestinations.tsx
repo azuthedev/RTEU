@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 
 interface DestinationPost {
   id: string;
