@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import FormField from '../components/ui/form-field';
 import useFormValidation from '../hooks/useFormValidation';
 
