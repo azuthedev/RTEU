@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import ContactDialog from '../components/ContactDialog';
 import Newsletter from '../components/Newsletter';
 
