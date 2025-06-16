@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 
@@ -176,7 +175,6 @@ const VerifyEmail = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
