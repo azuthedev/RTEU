@@ -69,7 +69,6 @@ const BookingCancelled = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
