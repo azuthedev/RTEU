@@ -203,15 +203,6 @@ const Sitemap = () => {
             </a>
           </div>
           
-          {/* Primary CTA - Book Now Button - Updated to use handleCTAClick */}
-          <div className="my-6">
-            <button
-              onClick={handleCTAClick}
-              className="block w-full py-3 bg-blue-600 text-white text-center rounded-md font-bold text-lg hover:bg-blue-700 transition-colors"
-            >
-              {t('nav.bookNow', 'Book Now')}
-            </button>
-          </div>
           
           {/* Quick Links Accordion */}
           <FooterAccordion title={t('sitemap.quicklinks.head', 'Quick Links')}>
