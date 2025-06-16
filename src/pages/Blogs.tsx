@@ -17,28 +17,28 @@ const blogPosts: BlogPost[] = [
     id: '1',
     title: 'Top 10 Hidden Gems in Rome',
     summary: 'Discover the secret spots and local favorites in the Eternal City.',
-    imageUrl: 'https://wallpapercat.com/w/full/0/7/b/293465-1920x1080-desktop-1080p-rome-background.jpg',
+    imageUrl: 'rome-background.jpg',
     category: 'Travel Tips'
   },
   {
     id: '2',
     title: 'A Weekend in Paris',
     summary: 'Make the most of your short stay in the City of Light.',
-    imageUrl: 'https://wallpapercat.com/w/full/b/f/3/30528-3840x2160-desktop-4k-eiffel-tower-background-image.jpg',
+    imageUrl: 'paris-background-image.jpg',
     category: 'Travel Tips'
   },
   {
     id: '3',
     title: 'Barcelona: A Local\'s Guide',
     summary: 'Experience Barcelona like a true local with our comprehensive guide.',
-    imageUrl: 'https://wallpapers.com/images/hd/barcelona-1920-x-1080-picture-y19qwj8its708dty.jpg',
+    imageUrl: 'barca.jpg',
     category: 'Local Guides'
   },
   {
     id: '4',
     title: 'Milan Fashion Week Guide',
     summary: 'Navigate the fashion capital during its most exciting time.',
-    imageUrl: 'https://img.travelnaut.com/web/db/photose/location/eu/it/milan/28ed6358c8d39fb9ad74d343877d94f8.jpeg',
+    imageUrl: 'milan.jpeg',
     category: 'Events'
   },
   {
@@ -126,7 +126,6 @@ const Blogs = () => {
         </div>
       </main>
 
-      <Sitemap />
     </div>
   );
 };
