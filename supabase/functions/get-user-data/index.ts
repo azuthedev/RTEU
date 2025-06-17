@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.41.0";
 // CORS headers that handle origin dynamically
 const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
   "Access-Control-Max-Age": "86400"
 };
 
