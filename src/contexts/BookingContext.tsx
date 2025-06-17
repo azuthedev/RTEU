@@ -257,13 +257,26 @@ const initializeFromUrlParams = (pathname: string): Partial<BookingState> | null
     if (!dateStr || dateStr === '0') return undefined;
     
     try {
-      // Format is YYMMDD
-      const year = parseInt(`20${dateStr.slice(0, 2)}`);
-      const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
-      const day = parseInt(dateStr.slice(4, 6));
+      // Format can be either YYMMDD (old) or YYMMDDHHMM (new)
+      if (dateStr.length === 6 || dateStr.length === 10) {
+        const year = parseInt(`20${dateStr.slice(0, 2)}`);
+        const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
+        const day = parseInt(dateStr.slice(4, 6));
+        
+        let hours = 0;
+        let minutes = 0;
+        
+        // If we have time component (YYMMDDHHMM format)
+        if (dateStr.length === 10) {
+          hours = parseInt(dateStr.slice(6, 8));
+          minutes = parseInt(dateStr.slice(8, 10));
+        }
+        
+        // Create date with time information
+        return new Date(year, month, day, hours, minutes, 0);
+      }
       
-      // Create date with default time (noon)
-      return new Date(year, month, day, 12, 0, 0);
+      return undefined;
     } catch (e) {
       console.error('Error parsing URL date:', e);
       return undefined;
