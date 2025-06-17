@@ -47,77 +47,82 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Handle POST request to fetch booking details
-    if (req.method === 'POST') {
-      // Parse request body
-      const { booking_reference } = await req.json();
-      
-      // Validate required parameters
-      if (!booking_reference) {
-        return new Response(
-          JSON.stringify({ error: 'Booking reference is required' }),
-          {
-            status: 400,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
+    // Handle both GET and POST methods
+    let booking_reference;
+    
+    if (req.method === 'GET') {
+      // Get booking reference from URL query parameters
+      const url = new URL(req.url);
+      booking_reference = url.searchParams.get('booking_reference');
+    } else if (req.method === 'POST') {
+      // Get booking reference from request body
+      const { booking_reference: ref } = await req.json();
+      booking_reference = ref;
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        {
+          status: 405,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json', 'Allow': 'GET, POST, OPTIONS' }
+        }
+      );
+    }
+    
+    // Validate required parameters
+    if (!booking_reference) {
+      return new Response(
+        JSON.stringify({ error: 'Booking reference is required' }),
+        {
+          status: 400,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
-      // Initialize Supabase client with service role key to bypass RLS
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Initialize Supabase client with service role key to bypass RLS
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Fetch booking details
-      console.log(`Fetching booking details for reference: ${booking_reference}`);
+    // Fetch booking details
+    console.log(`Fetching booking details for reference: ${booking_reference}`);
+    
+    // First try an exact match
+    const { data, error } = await retryDatabaseOperation(async () => {
+      return await supabase
+        .from('trips')
+        .select('*')
+        .eq('booking_reference', booking_reference)
+        .single();
+    });
+    
+    if (error || !data) {
+      console.log(`No exact match found for ${booking_reference}, trying fuzzy search`);
       
-      // First try an exact match
-      const { data, error } = await retryDatabaseOperation(async () => {
+      // Try a case-insensitive search
+      const { data: fuzzyData, error: fuzzyError } = await retryDatabaseOperation(async () => {
         return await supabase
           .from('trips')
           .select('*')
-          .eq('booking_reference', booking_reference)
-          .single();
+          .ilike('booking_reference', `%${booking_reference}%`)
+          .limit(1);
       });
       
-      if (error || !data) {
-        console.log(`No exact match found for ${booking_reference}, trying fuzzy search`);
-        
-        // Try a case-insensitive search
-        const { data: fuzzyData, error: fuzzyError } = await retryDatabaseOperation(async () => {
-          return await supabase
-            .from('trips')
-            .select('*')
-            .ilike('booking_reference', `%${booking_reference}%`)
-            .limit(1);
-        });
-        
-        if (fuzzyError || !fuzzyData || fuzzyData.length === 0) {
-          console.error('No booking found after fuzzy search:', fuzzyError);
-          return new Response(
-            JSON.stringify({ error: 'Booking not found' }),
-            {
-              status: 404,
-              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        
-        // Found a booking with fuzzy search
-        console.log('Found booking with fuzzy search:', fuzzyData[0].booking_reference);
+      if (fuzzyError || !fuzzyData || fuzzyData.length === 0) {
+        console.error('No booking found after fuzzy search:', fuzzyError);
         return new Response(
-          JSON.stringify(fuzzyData[0]),
+          JSON.stringify({ error: 'Booking not found' }),
           {
-            status: 200,
+            status: 404,
             headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
           }
         );
       }
       
-      // Found an exact match
-      console.log('Found booking with exact match:', data.booking_reference);
+      // Found a booking with fuzzy search
+      console.log('Found booking with fuzzy search:', fuzzyData[0].booking_reference);
       return new Response(
-        JSON.stringify(data),
+        JSON.stringify(fuzzyData[0]),
         {
           status: 200,
           headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
@@ -125,12 +130,13 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Method not allowed
+    // Found an exact match
+    console.log('Found booking with exact match:', data.booking_reference);
     return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
+      JSON.stringify(data),
       {
-        status: 405,
-        headers: { ...headersWithOrigin, 'Content-Type': 'application/json', 'Allow': 'POST, OPTIONS' }
+        status: 200,
+        headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
       }
     );
     
