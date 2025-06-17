@@ -224,10 +224,10 @@ const SearchForm = () => {
         
         return {
           ...prev,
-          pickupDateTime: prev.pickupDateTime || getMinimumBookingTime(),
-          dropoffDateTime: prev.dropoffDateTime || defaultDropoffDate,
+          pickupDateTime: undefined,
+          dropoffDateTime: undefined,
           dateRange: {
-            from: prev.pickupDateTime || getMinimumBookingTime(),
+            from: pickupDate,
             to: prev.dropoffDateTime || defaultDropoffDate
           }
         };
@@ -386,8 +386,8 @@ const SearchForm = () => {
       }
       
       // Store URL-friendly versions of pickup and dropoff (lowercase for URL)
-      const encodedPickup = encodeURIComponent(formData.pickup.toLowerCase().replace(/\s+/g, '-'));
-      const encodedDropoff = encodeURIComponent(formData.dropoff.toLowerCase().replace(/\s+/g, '-'));
+      const encodedPickup = encodeURIComponent(formData.pickup.replace(/\s+/g, '-'));
+      const encodedDropoff = encodeURIComponent(formData.dropoff.replace(/\s+/g, '-'));
       
       // Important: Type is '1' for One Way, '2' for Round Trip 
       const urlType = isReturn ? '2' : '1';
