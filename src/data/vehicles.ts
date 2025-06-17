@@ -63,27 +63,6 @@ export const vehicles = [
     ]
   },
   {
-    id: 'standard-minivan',
-    name: 'Standard Minivan',
-    image: 'https://files.royaltransfereu.com/assets/Standard-Minivan.jpg',
-    rating: 4.8,
-    reviews: 120,
-    seats: 7,
-    suitcases: 7,
-    price: 1299.99,
-    description: 'Standard minivan for up to 7 passengers and 7 luggage.',
-    sampleVehicles: [
-      'Volkswagen Sharan',
-      'Ford Galaxy',
-      'Toyota Proace'
-    ],
-    features: [
-      { icon: 'https://files.royaltransfereu.com/assets', title: 'Family Friendly', description: 'Ideal for families' },
-      { icon: 'https://files.royaltransfereu.com/assets', title: 'Flexible Seating', description: 'Roomy & configurable' },
-      { icon: 'https://files.royaltransfereu.com/assets', title: 'Large Storage', description: 'Space for bags' }
-    ]
-  },
-  {
     id: 'xl-minivan',
     name: 'XL Minivan',
     image: 'https://files.royaltransfereu.com/assets/XL-Minivan.jpg',
