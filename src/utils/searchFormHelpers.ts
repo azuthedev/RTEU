@@ -5,7 +5,7 @@ import { initGoogleMaps } from './optimizeThirdParty';
 import { errorTracker, ErrorContext, ErrorSeverity } from './errorTracker';
 import { sanitizeInput } from './dataValidator';
 
-// Formatter for date URL parameters (strips time information - only for URL use)
+// Formatter for date URL parameters (includes time information - YYMMDDHHMM format)
 export const formatDateForUrl = (date: Date): string => {
   if (!date || isNaN(date.getTime())) {
     return '';
@@ -13,12 +13,14 @@ export const formatDateForUrl = (date: Date): string => {
   const year = date.getFullYear().toString().slice(-2);
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
-  return `${year}${month}${day}`;
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${year}${month}${day}${hours}${minutes}`;
 };
 
-// Parse date from URL parameters (preserves time from context when available)
+// Parse date from URL parameters (extracts both date and time components)
 export const parseDateFromUrl = (dateStr: string): Date | undefined => {
-  if (!dateStr || dateStr === '0' || dateStr.length !== 6) {
+  if (!dateStr || dateStr === '0') {
     return undefined;
   }
   
@@ -27,36 +29,45 @@ export const parseDateFromUrl = (dateStr: string): Date | undefined => {
     const month = parseInt(dateStr.slice(2, 4)) - 1; // JS months are 0-indexed
     const day = parseInt(dateStr.slice(4, 6));
     
-    // Create date with midnight time to avoid overwriting time information
-    const parsedDate = new Date(year, month, day, 0, 0, 0);
+    // Check if time information is included (YYMMDDHHMM format)
+    const hasTimeComponent = dateStr.length === 10;
+    
+    // Extract hours and minutes if available, otherwise default to minimum booking time
+    let hours = 0;
+    let minutes = 0;
+    
+    if (hasTimeComponent) {
+      hours = parseInt(dateStr.slice(6, 8));
+      minutes = parseInt(dateStr.slice(8, 10));
+    }
+    
+    // Create date with extracted time
+    const parsedDate = new Date(year, month, day, hours, minutes, 0);
     
     // If date is invalid, return undefined
     if (isNaN(parsedDate.getTime())) {
       return undefined;
     }
     
-    // We set the time to midnight (00:00) here - this is important!
-    // This ensures we don't overwrite any time information that might be set later
-    // or already exist in the context
-    
     // Get current time plus minimum booking time
     const now = new Date();
     const minBookingHoursAhead = 4; // Minimum 4 hours in the future
     const minBookingTime = new Date(now.getTime() + minBookingHoursAhead * 60 * 60 * 1000);
     
-    // If the parsed date is today and time is midnight, set time to at least minimum booking time
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (parsedDate.getTime() === today.getTime()) {
-      // For today, ensure time is at least min booking hours ahead
-      parsedDate.setHours(minBookingTime.getHours(), minBookingTime.getMinutes(), 0, 0);
-    } else {
-      // For future dates, keep midnight time - the caller will set the time component
-      // Only if date is already past, set to minimumBookingTime
-      if (parsedDate.getTime() < minBookingTime.getTime()) {
-        return minBookingTime;
+    // If no time component was provided or the parsed date is today with default time
+    if (!hasTimeComponent) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (new Date(year, month, day).getTime() === today.getTime()) {
+        // For today, ensure time is at least min booking hours ahead
+        parsedDate.setHours(minBookingTime.getHours(), minBookingTime.getMinutes(), 0, 0);
       }
+    }
+    
+    // Ensure the booking time meets the minimum requirement
+    if (parsedDate.getTime() < minBookingTime.getTime()) {
+      return minBookingTime;
     }
     
     return parsedDate;
