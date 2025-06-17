@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CheckCircle, ArrowRight, Loader2, User } from 'lucide-react';
+import { 
+  CheckCircle, ArrowRight, Loader2, User, 
+  Phone, Mail, Car, AlertCircle, RefreshCw, Copy, 
+  CheckCircle2, XCircle, ArrowLeft, FileText, ExternalLink, 
+  Users, Briefcase, CreditCard
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -88,8 +93,10 @@ const BookingSuccess = () => {
     try {
       console.log('Fetching booking details for reference:', reference);
       
-      // Use the proxy route instead of direct Supabase URL to handle CORS properly
-      const response = await fetch('/api/get-booking-details', {
+      // Use the direct Supabase URL instead of a relative path
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-booking-details`;
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
