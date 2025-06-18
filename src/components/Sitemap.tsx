@@ -186,11 +186,11 @@ const Sitemap = () => {
             </a>
             
             <a 
-              href="mailto:contact@royaltransfer.eu" 
+              href="mailto:contact@royaltransfereu.com" 
               className="flex items-center py-3"
             >
               <Mail className="h-6 w-6 mr-3 text-blue-400" />
-              <span>contact@royaltransfer.eu</span>
+              <span>contact@royaltransfereu.com</span>
             </a>
             
             <a 
@@ -355,7 +355,7 @@ const Sitemap = () => {
                 </li>
                 <li className="flex items-center">
                   <Mail className="h-5 w-5 mr-2 text-blue-400" />
-                  <a href="mailto:contact@royaltransfer.eu" className="hover:text-blue-300 transition-colors">contact@royaltransfer.eu</a>
+                  <a href="mailto:contact@royaltransfereu.com" className="hover:text-blue-300 transition-colors">contact@royaltransfereu.com</a>
                 </li>
                 <li className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-blue-400" />
