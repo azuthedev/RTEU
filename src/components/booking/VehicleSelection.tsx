@@ -41,7 +41,7 @@ const categorizeVehicles = () => {
     ),
     minivan: vehicles.filter(v => 
       v.id.includes('minivan') || 
-      ['standard-minivan', 'xl-minivan', 'premium-minivan', 'vip-minivan'].includes(v.id)
+      ['xl-minivan', 'premium-minivan', 'vip-minivan'].includes(v.id)
     ),
     sprinter: vehicles.filter(v => 
       v.id.includes('sprinter') || 
@@ -133,6 +133,7 @@ const VehicleSelection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [capacityWarning, setCapacityWarning] = useState<string | null>(null);
+  const [preSelectionMessage, setPreSelectionMessage] = useState<string | null>(null);
   
   const carouselRef = useRef<HTMLDivElement>(null);
   const categoryTabsRef = useRef<HTMLDivElement>(null);
@@ -279,97 +280,120 @@ const VehicleSelection = () => {
     // Update categorized vehicles with API prices
     setCategorizedVehicles(updatedVehiclesByCategory);
     
-    // Find the recommended vehicle based on API response
-    const recommendedCategory = bookingState.pricingResponse.selected_category;
-    if (recommendedCategory) {
-      console.log("🔄 API recommended category:", recommendedCategory);
-      const vehicleId = apiCategoryMap[recommendedCategory];
+    // For 4+ passengers, default to XL minivan if available
+    const defaultToMinivan = passengerCount >= 4;
+    let minivansAvailable = false;
+    
+    // Check if there are any minivans available
+    const minivans = updatedVehiclesByCategory['minivan'] || [];
+    const xlMinivan = minivans.find(v => v.id === 'xl-minivan' && v.price > 0);
+    if (xlMinivan) {
+      minivansAvailable = true;
+    }
+    
+    if (defaultToMinivan && minivansAvailable && xlMinivan) {
+      console.log(`✅ Setting XL minivan as default for ${passengerCount} passengers`);
+      setSelectedVehicle(xlMinivan);
+      setActiveCategory('minivan');
       
-      if (vehicleId) {
-        // Find which category this vehicle belongs to and the vehicle itself
-        for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
-          const matchingVehicle = vehicleList.find(v => v.id === vehicleId);
-          if (matchingVehicle) {
-            // Use API price for this vehicle
-            const apiPrice = bookingState.pricingResponse?.prices.find(
-              p => p.category === recommendedCategory
-            )?.price || matchingVehicle.price;
-            
-            console.log(`✅ Setting recommended vehicle: ${matchingVehicle.name} at €${apiPrice}`);
-            
-            // Update selected vehicle and category
-            setSelectedVehicle({...matchingVehicle, price: apiPrice});
-            setActiveCategory(category);
-            break;
-          }
-        }
-      }
-    } else if (bookingState.selectedVehicle) {
-      // If we have a previously selected vehicle, check if it has an API price
-      const apiCategory = reverseApiCategoryMap[bookingState.selectedVehicle.id];
-      const priceInfo = apiCategory ? bookingState.pricingResponse.prices.find(
-        p => p.category === apiCategory
-      ) : null;
-      
-      if (priceInfo) {
-        // Update the selected vehicle with API price
-        setSelectedVehicle({
-          ...bookingState.selectedVehicle,
-          price: priceInfo.price
-        });
-      } else {
-        // If the previously selected vehicle doesn't have an API price,
-        // find the first available vehicle
-        for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
-          const availableVehicle = vehicleList.find(v => {
-            const apiCat = reverseApiCategoryMap[v.id];
-            return apiCat && bookingState.pricingResponse?.prices.some(p => p.category === apiCat);
-          });
-          
-          if (availableVehicle) {
-            const apiCat = reverseApiCategoryMap[availableVehicle.id];
-            const price = bookingState.pricingResponse?.prices.find(
-              p => p.category === apiCat
-            )?.price || 0;
-            
-            console.log(`✅ Selected first available vehicle: ${availableVehicle.name} at €${price}`);
-            
-            setSelectedVehicle({...availableVehicle, price});
-            setActiveCategory(category);
-            break;
-          }
-        }
-      }
+      // Set the preselection message
+      setPreSelectionMessage(
+        `You've entered ${passengerCount} passengers. Need a smaller car? Lower the passenger count and book separate rides.`
+      );
     } else {
-      // No previously selected vehicle - find the first available vehicle
-      let foundVehicle = false;
+      // Get the recommended category from the API response
+      const recommendedCategory = bookingState.pricingResponse.selected_category || null;
       
-      for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
-        // Find first vehicle with a valid API price
-        for (const vehicle of vehicleList) {
-          const apiCategory = reverseApiCategoryMap[vehicle.id];
-          const priceInfo = apiCategory ? bookingState.pricingResponse.prices.find(
-            p => p.category === apiCategory
-          ) : null;
-          
-          if (priceInfo && priceInfo.price > 0) {
-            console.log(`✅ Selected first vehicle with price: ${vehicle.name} at €${priceInfo.price}`);
-            
-            // Set as selected vehicle
-            setSelectedVehicle({...vehicle, price: priceInfo.price});
-            setActiveCategory(category);
-            foundVehicle = true;
-            break;
+      if (recommendedCategory) {
+        console.log("🔄 API recommended category:", recommendedCategory);
+        const vehicleId = apiCategoryMap[recommendedCategory];
+        
+        if (vehicleId) {
+          // Find which category this vehicle belongs to and the vehicle itself
+          for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
+            const matchingVehicle = vehicleList.find(v => v.id === vehicleId);
+            if (matchingVehicle) {
+              // Use API price for this vehicle
+              const apiPrice = bookingState.pricingResponse?.prices.find(
+                p => p.category === recommendedCategory
+              )?.price || matchingVehicle.price;
+              
+              console.log(`✅ Setting recommended vehicle: ${matchingVehicle.name} at €${apiPrice}`);
+              
+              // Update selected vehicle and category
+              setSelectedVehicle({...matchingVehicle, price: apiPrice});
+              setActiveCategory(category);
+              break;
+            }
           }
+        }
+      } else if (bookingState.selectedVehicle) {
+        // If we have a previously selected vehicle, check if it has an API price
+        const apiCategory = reverseApiCategoryMap[bookingState.selectedVehicle.id];
+        const priceInfo = apiCategory ? bookingState.pricingResponse.prices.find(
+          p => p.category === apiCategory
+        ) : null;
+        
+        if (priceInfo) {
+          // Update the selected vehicle with API price
+          setSelectedVehicle({
+            ...bookingState.selectedVehicle,
+            price: priceInfo.price
+          });
+        } else {
+          // If the previously selected vehicle doesn't have an API price,
+          // find the first available vehicle
+          for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
+            const availableVehicle = vehicleList.find(v => {
+              const apiCat = reverseApiCategoryMap[v.id];
+              return apiCat && bookingState.pricingResponse?.prices.some(p => p.category === apiCat);
+            });
+            
+            if (availableVehicle) {
+              const apiCat = reverseApiCategoryMap[availableVehicle.id];
+              const price = bookingState.pricingResponse?.prices.find(
+                p => p.category === apiCat
+              )?.price || 0;
+              
+              console.log(`✅ Selected first available vehicle: ${availableVehicle.name} at €${price}`);
+              
+              setSelectedVehicle({...availableVehicle, price});
+              setActiveCategory(category);
+              break;
+            }
+          }
+        }
+      } else {
+        // No previously selected vehicle - find the first available vehicle
+        let foundVehicle = false;
+        
+        for (const [category, vehicleList] of Object.entries(updatedVehiclesByCategory)) {
+          // Find first vehicle with a valid API price
+          for (const vehicle of vehicleList) {
+            const apiCategory = reverseApiCategoryMap[vehicle.id];
+            const priceInfo = apiCategory ? bookingState.pricingResponse.prices.find(
+              p => p.category === apiCategory
+            ) : null;
+            
+            if (priceInfo && priceInfo.price > 0) {
+              console.log(`✅ Selected first vehicle with price: ${vehicle.name} at €${priceInfo.price}`);
+              
+              // Set as selected vehicle
+              setSelectedVehicle({...vehicle, price: priceInfo.price});
+              setActiveCategory(category);
+              foundVehicle = true;
+              break;
+            }
+          }
+          
+          if (foundVehicle) break;
         }
         
-        if (foundVehicle) break;
-      }
-      
-      // If no vehicle with price was found, show error
-      if (!foundVehicle) {
-        console.error("❌ No vehicles with prices found");
-        setValidationError("No vehicles are available for this route. Please try a different route.");
+        // If no vehicle with price was found, show error
+        if (!foundVehicle) {
+          console.error("❌ No vehicles with prices found");
+          setValidationError("No vehicles are available for this route. Please try a different route.");
+        }
       }
     }
     
@@ -379,11 +403,11 @@ const VehicleSelection = () => {
     console.log("✅ Applied API prices to vehicles");
   }, [bookingState.pricingResponse, bookingState.pricingError, bookingState.isPricingLoading,
       bookingState.selectedVehicle, bookingState.fromDisplay, bookingState.toDisplay, 
-      bookingState.from, bookingState.to, bookingState.pickupDateTime, bookingState.passengers]);
+      bookingState.from, bookingState.to, bookingState.pickupDateTime, bookingState.passengers, passengerCount]);
 
   // Check passenger capacity
   const checkPassengerCapacity = () => {
-    // Clear any existing capacity warning
+    // Clear any existing capacity warning and preselection message
     setCapacityWarning(null);
     
     // If no selected vehicle or no passenger count, skip check
@@ -583,10 +607,12 @@ const VehicleSelection = () => {
     });
   };
 
-  // Filter vehicles that meet passenger capacity requirements
-  const filterPassengerCapableVehicles = (vehicles: typeof activeVehicles) => {
-    // Filter vehicles that can accommodate the passenger count
-    return vehicles.filter(vehicle => vehicle.seats >= bookingState.passengers);
+  // This function now doesn't filter out vehicles but marks them as capable or not
+  const getVehiclesWithCapacityFlags = (vehicles: typeof activeVehicles) => {
+    return vehicles.map(vehicle => ({
+      ...vehicle,
+      canAccommodate: vehicle.seats >= bookingState.passengers
+    }));
   };
 
   // Calculate active vehicles
@@ -597,8 +623,8 @@ const VehicleSelection = () => {
   // Filter available vehicles
   const availableVehicles = filterAvailableVehicles(activeVehicles);
   
-  // Filter vehicles that can accommodate the passenger count
-  const capableVehicles = filterPassengerCapableVehicles(availableVehicles);
+  // Add capacity flags to available vehicles
+  const vehiclesWithCapacityFlags = getVehiclesWithCapacityFlags(availableVehicles);
 
   // Do we have a pricing error to display?
   const hasPricingError = bookingState.pricingError !== null && bookingState.pricingError !== undefined;
@@ -607,7 +633,7 @@ const VehicleSelection = () => {
   const noVehiclesAvailable = bookingState.pricingResponse && availableVehicles.length === 0;
   
   // No vehicles in this category that meet passenger requirements
-  const noCapableVehicles = availableVehicles.length > 0 && capableVehicles.length === 0;
+  const noCapableVehicles = vehiclesWithCapacityFlags.length > 0 && !vehiclesWithCapacityFlags.some(v => v.canAccommodate);
   
   // Check if we're waiting for essential data to load
   const isWaitingForData = bookingState.isPricingLoading || 
@@ -636,17 +662,6 @@ const VehicleSelection = () => {
           </div>
         )}
         
-        {/* Passenger capacity warning */}
-        {capacityWarning && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg flex items-start">
-            <Users className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
-            <div>
-              <p><strong>Passenger Capacity Warning:</strong> {capacityWarning}</p>
-              <p className="mt-2 text-sm">Please select a vehicle with sufficient capacity or consider making multiple bookings.</p>
-            </div>
-          </div>
-        )}
-        
         {/* API Pricing Error Alert */}
         {hasPricingError && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
@@ -655,7 +670,7 @@ const VehicleSelection = () => {
               <p className="font-medium">Pricing Error</p>
               <p className="mt-1">{bookingState.pricingError}</p>
               <p className="text-sm mt-2">
-                Please try searching again with different locations or contact customer support if the issue persists.
+                Please try searching again with different locations or contact our customer support if the issue persists.
               </p>
             </div>
           </div>
@@ -740,16 +755,18 @@ const VehicleSelection = () => {
             </div>
             
             {/* Category Title */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl" id="vehicle-category-heading">
-                {vehicleCategories.find(c => c.id === activeCategory)?.name} Options
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div>
+                <h2 className="text-xl" id="vehicle-category-heading">
+                  {vehicleCategories.find(c => c.id === activeCategory)?.name} Options
+                </h2>
                 {bookingState.passengers > 1 && (
-                  <span className="ml-2 text-sm font-normal text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1 sm:mt-0 sm:ml-2">
                     (Showing vehicles for {bookingState.passengers} passengers)
-                  </span>
+                  </p>
                 )}
-              </h2>
-              <div className="flex items-center">
+              </div>
+              <div className="flex items-center mt-2 sm:mt-0">
                 <button
                   onClick={handlePrevious}
                   disabled={!canScrollLeft}
@@ -798,7 +815,8 @@ const VehicleSelection = () => {
                       // Find first category with capable vehicles
                       for (const category of vehicleCategories) {
                         const vehicles = categorizedVehicles[category.id] || [];
-                        const capableVehicles = filterPassengerCapableVehicles(filterAvailableVehicles(vehicles));
+                        const vehiclesWithFlags = getVehiclesWithCapacityFlags(filterAvailableVehicles(vehicles));
+                        const capableVehicles = vehiclesWithFlags.filter(v => v.canAccommodate);
                         if (capableVehicles.length > 0) {
                           handleCategoryChange(category.id);
                           toast({
@@ -855,8 +873,8 @@ const VehicleSelection = () => {
                 }}
                 role="list"
               >
-                {capableVehicles.length > 0 ? (
-                  capableVehicles.map((vehicle) => {
+                {vehiclesWithCapacityFlags.length > 0 ? (
+                  vehiclesWithCapacityFlags.map((vehicle) => {
                     // Get API price if available
                     const apiPrice = getVehiclePrice(vehicle.id);
                     
@@ -871,9 +889,6 @@ const VehicleSelection = () => {
                     // Create a vehicle copy with updated price
                     const vehicleWithPrice = {...vehicle, price: finalPrice};
                     
-                    // Determine if this vehicle can handle the passenger count
-                    const canHandlePassengers = vehicle.seats >= bookingState.passengers;
-                    
                     return (
                       <div 
                         key={vehicle.id}
@@ -884,9 +899,10 @@ const VehicleSelection = () => {
                         <VehicleCard
                           {...vehicleWithPrice}
                           isSelected={selectedVehicle?.id === vehicle.id}
+                          canAccommodate={vehicle.canAccommodate}
                           onSelect={() => {
                             // First check if this vehicle can handle the passenger count
-                            if (!canHandlePassengers) {
+                            if (!vehicle.canAccommodate) {
                               toast({
                                 title: "Passenger Capacity Exceeded",
                                 description: `This vehicle can only accommodate ${vehicle.seats} passengers, but you've selected ${bookingState.passengers} passengers.`,
@@ -907,8 +923,13 @@ const VehicleSelection = () => {
                             setSelectedVehicle(vehicleWithPrice);
                             setValidationError(null); // Clear validation error when a vehicle is selected
                             // Clear capacity warning if this vehicle can handle the passenger count
-                            if (canHandlePassengers) {
+                            if (vehicle.canAccommodate) {
                               setCapacityWarning(null);
+                            }
+                            
+                            // Clear the preselection message when user explicitly selects a vehicle
+                            if (preSelectionMessage) {
+                              setPreSelectionMessage(null);
                             }
                           }}
                           onLearnMore={() => handleOpenModal(vehicleWithPrice)}
@@ -928,9 +949,9 @@ const VehicleSelection = () => {
               </div>
               
               {/* Mobile Navigation Indicators */}
-              {capableVehicles.length > 1 && (
+              {vehiclesWithCapacityFlags.length > 1 && (
                 <div className="flex justify-center mt-4 md:hidden">
-                  {capableVehicles.map((_, index) => (
+                  {vehiclesWithCapacityFlags.map((_, index) => (
                     <button
                       key={index}
                       className={`h-2 w-2 rounded-full mx-1 ${
@@ -969,28 +990,11 @@ const VehicleSelection = () => {
               </div>
             </div>
             
-            {/* Passenger capacity information */}
-            {bookingState.passengers > 1 && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg flex items-start">
-                <Users className="w-5 h-5 text-gray-500 mt-0.5 mr-2" />
-                <div>
-                  <p className="text-gray-700 font-medium">You have selected {bookingState.passengers} passengers</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Make sure to choose a vehicle with enough capacity. Some vehicles may require multiple bookings.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Pricing information from API */}
-            {bookingState.pricingResponse && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p className="text-blue-800 font-medium mb-2">
-                  Live pricing based on your route:
-                </p>
-                <p className="text-sm text-gray-600">
-                  {bookingState.fromDisplay || bookingState.from} → {bookingState.toDisplay || bookingState.to}
-                </p>
+            {/* Preselection message */}
+            {preSelectionMessage && (
+              <div className="mb-6 bg-[#f6f8fc] text-[#334155] px-4 py-3 rounded-lg flex items-start">
+                <Users className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-sm md:text-[15px] leading-tight max-w-[90%]">{preSelectionMessage}</span>
               </div>
             )}
           </>
@@ -1034,6 +1038,11 @@ const VehicleSelection = () => {
             // Clear capacity warning if this vehicle can handle the passenger count
             if (modalVehicle.seats >= bookingState.passengers) {
               setCapacityWarning(null);
+            }
+            
+            // Clear the preselection message when user explicitly selects a vehicle
+            if (preSelectionMessage) {
+              setPreSelectionMessage(null);
             }
           }}
           vehicle={modalVehicle}

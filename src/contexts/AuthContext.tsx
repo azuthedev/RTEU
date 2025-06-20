@@ -51,6 +51,15 @@ interface AuthContextType {
     email?: string,
     error?: string
   }>;
+  signInWithGoogle: (options?: { redirectTo?: string }) => Promise<{
+    error: Error | null;
+    data: {
+      provider?: string;
+      url?: string;
+      session?: Session | null;
+      user?: User | null;
+    } | null;
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -574,7 +583,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
             // Track user role
             trackEvent('Authentication', 'User Role', userData.user_role);
             
-            // Refresh session to get updated JWT claims
+            // Refresh session to update the JWT claims
             await refreshSession();
           }
         } catch (userDataError) {
@@ -589,6 +598,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       return { error: error as Error, session: null };
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const signInWithGoogle = async (options?: { redirectTo?: string }) => {
+    try {
+      trackEvent('Authentication', 'Google Sign In Attempt');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: options?.redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      
+      if (error) {
+        trackEvent('Authentication', 'Google Sign In Error', error.message);
+        return { error, data: null };
+      }
+      
+      trackEvent('Authentication', 'Google Sign In Initiated');
+      return { error: null, data };
+      
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      trackEvent('Authentication', 'Google Sign In Error', (error as Error).message);
+      return { error: error as Error, data: null };
     }
   };
 
@@ -675,7 +714,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       trackEvent('Authentication', 'Send Verification Email Attempt', normalizedEmail);
       
-      // Use the dedicated function to send OTP email
+      console.log('Sending verification email to:', normalizedEmail);
+      console.log('With name:', name || 'Not provided'); // Log the name being sent
+      
+      // Use the dedicated function to send OTP email - EXPLICITLY passing the name parameter
       const result = await sendOtpEmail(normalizedEmail, name);
       
       if (!result.success) {
@@ -1040,7 +1082,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
     refreshSession,
     requestPasswordReset,
     resetPassword,
-    verifyPasswordResetToken
+    verifyPasswordResetToken,
+    signInWithGoogle
   };
 
   return (

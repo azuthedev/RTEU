@@ -7,7 +7,6 @@ import BookingTopBar from './BookingTopBar';
 import ProgressBar from './ProgressBar';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAnalytics } from '../../hooks/useAnalytics';
-import Newsletter from '../Newsletter';
 import { useToast } from '../ui/use-toast';
 
 interface BookingLayoutProps {
@@ -45,7 +44,6 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
   // Refs for scroll calculations
   const priceBarRef = useRef<HTMLDivElement>(null);
   const priceBarPlaceholderRef = useRef<HTMLDivElement>(null);
-  const newsletterRef = useRef<HTMLDivElement>(null);
   const contentEndRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
   
@@ -244,7 +242,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
     <div className="min-h-screen bg-[#f8fafc]">
       <Header />
       
-      <main className="pt-20 pb-20 booking-flow" ref={mainContentRef}>
+      <main className="pt-20 pb-4 booking-flow" ref={mainContentRef}>
         {/* Content */}
         <div className="relative z-10">
           {/* Top Booking Bar */}
@@ -279,14 +277,14 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
           {/* Price Bar Placeholder - always present even if newsletter isn't shown */}
           <div 
             ref={priceBarPlaceholderRef}
-            className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 my-12"
+            className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 my-4"
           >
             {/* Empty placeholder with correct height */}
             <div className={`h-[72px] rounded-full ${isSlotted ? 'opacity-0' : 'opacity-0'}`} />
           </div>
 
           {/* This div serves as a reference point for the end of content when newsletter isn't shown */}
-          <div ref={contentEndRef} className="h-8"></div>
+          <div ref={contentEndRef} className="h-2"></div>
         </div>
 
         {/* Floating/Docked Price Bar */}

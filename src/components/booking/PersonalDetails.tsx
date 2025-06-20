@@ -8,6 +8,7 @@ import FormField from '../ui/form-field';
 import FormSelect from '../ui/form-select';
 import { isAirport, extractAirportName } from '../../utils/airportDetection';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
+import FlightInfoModal from './FlightInfoModal';
 
 const PersonalDetails = () => {
   const { bookingState, setBookingState, validateStep, scrollToError } = useBooking();
@@ -31,6 +32,7 @@ const PersonalDetails = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [luggageExceedsCapacity, setLuggageExceedsCapacity] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [showFlightInfoModal, setShowFlightInfoModal] = useState(false);
   
   // Determine if pickup or dropoff is an airport
   const [pickupIsAirport, setPickupIsAirport] = useState(false);
@@ -320,6 +322,7 @@ const PersonalDetails = () => {
     return basePrice + extrasTotal;
   };
 
+  // Validate form
   const validateForm = () => {
     const errors: Record<string, string> = {};
     let isValid = true;
@@ -442,8 +445,8 @@ const PersonalDetails = () => {
             <div className="flex items-start mb-4">
               <Plane className="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
               <div>
-                <h3 className="font-medium text-blue-800">Flight Information Required</h3>
-                <p className="text-sm text-blue-600 mt-1">
+                <h3 className="font-medium text-blue-800 md:text-[16px] text-[14px]">Flight Information Required</h3>
+                <p className="text-[11px] md:text-[14px] text-blue-600 mt-1">
                   We detected an airport in your {pickupIsAirport ? 'pickup' : 'dropoff'} location:
                   <strong className="font-semibold ml-1">{detectedAirportName || (pickupIsAirport ? bookingState.fromDisplay : bookingState.toDisplay)}</strong>
                 </p>
@@ -462,14 +465,168 @@ const PersonalDetails = () => {
               icon={<Plane className="h-5 w-5" />}
             />
             
-            <div className="mt-4 bg-blue-100 rounded p-3 text-sm text-blue-800">
-              <p>
-                <strong>Why we need this:</strong> Your flight number helps us track your flight status and adjust pickup times 
-                automatically in case of delays. This ensures you'll always have a driver waiting when you arrive.
-              </p>
+            <div className="mt-2 text-right">
+              <button
+                type="button" 
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                onClick={() => setShowFlightInfoModal(true)}
+              >
+                Why do we need this?
+              </button>
             </div>
           </section>
         )}
+
+        {/* Personal Details Form - Moved ABOVE Equipment & Extras */}
+        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <User className="w-5 h-5 mr-2 text-blue-600" />
+            Personal Information
+          </h2>
+          
+          <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
+            {/* Title Selection */}
+            <div className="flex space-x-4 mb-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="title"
+                  value="mr"
+                  checked={formData.title === 'mr'}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-black"
+                  id="title-mr"
+                />
+                <span>Mr.</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="title"
+                  value="ms"
+                  checked={formData.title === 'ms'}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-black"
+                  id="title-ms"
+                />
+                <span>Ms.</span>
+              </label>
+            </div>
+
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                id="firstName"
+                name="firstName"
+                label="First Name"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                error={fieldErrors.firstName}
+                required={true}
+                autoComplete="given-name"
+              />
+              <FormField
+                id="lastName"
+                name="lastName"
+                label="Last Name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                error={fieldErrors.lastName}
+                required={true}
+                autoComplete="family-name"
+              />
+            </div>
+
+            {/* Email */}
+            <FormField
+              id="email"
+              name="email"
+              label="Email Address"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              error={fieldErrors.email}
+              required={true}
+              autoComplete="email"
+            />
+
+            {/* Country & Phone */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormSelect
+                id="country"
+                name="country"
+                label="Country"
+                options={[
+                  { value: "", label: "Select a country" },
+                  { value: "IT", label: "Italy" },
+                  { value: "FR", label: "France" },
+                  { value: "ES", label: "Spain" },
+                  { value: "DE", label: "Germany" },
+                  { value: "UK", label: "United Kingdom" },
+                  { value: "US", label: "United States" },
+                  { value: "CA", label: "Canada" },
+                  { value: "AU", label: "Australia" },
+                  { value: "CH", label: "Switzerland" },
+                  { value: "AT", label: "Austria" },
+                  { value: "NL", label: "Netherlands" },
+                  { value: "BE", label: "Belgium" },
+                  { value: "PT", label: "Portugal" },
+                  { value: "GR", label: "Greece" },
+                  { value: "SE", label: "Sweden" },
+                  { value: "NO", label: "Norway" },
+                  { value: "DK", label: "Denmark" },
+                  { value: "FI", label: "Finland" },
+                  { value: "IE", label: "Ireland" },
+                  { value: "RU", label: "Russia" },
+                  { value: "PL", label: "Poland" }
+                ]}
+                value={formData.country}
+                onChange={handleInputChange}
+                error={fieldErrors.country}
+                required={true}
+              />
+              <div className="relative">
+                <FormField
+                  id="phone"
+                  name="phone"
+                  label="Phone Number"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  error={fieldErrors.phone}
+                  autoComplete="tel"
+                  helpText="Recommended for booking notifications"
+                />
+                <div className="absolute right-3 top-[38px]">
+                  <Info className="w-5 h-5 text-gray-400" title="We'll only contact you about your transfer" />
+                </div>
+              </div>
+            </div>
+
+            {/* Form-wide error display */}
+            {Object.keys(fieldErrors).length > 0 && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 flex items-start">
+                <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Please complete all required fields</p>
+                  <ul className="list-disc list-inside mt-1 text-sm">
+                    {Object.entries(fieldErrors).map(([field, message]) => (
+                      <li key={field} className="ml-2">
+                        <button 
+                          className="underline hover:text-red-800"
+                          onClick={() => scrollToError(field)}
+                          type="button"
+                        >
+                          {message}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </form>
+        </section>
 
         {/* Equipment & Extras */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-8" id="equipment-section">
@@ -714,153 +871,11 @@ const PersonalDetails = () => {
           )}
         </section>
 
-        {/* Personal Details Form */}
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-6">Personal Details</h2>
-          
-          <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
-            {/* Title Selection */}
-            <div className="flex space-x-4 mb-6">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="title"
-                  value="mr"
-                  checked={formData.title === 'mr'}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-black"
-                  id="title-mr"
-                />
-                <span>Mr.</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="title"
-                  value="ms"
-                  checked={formData.title === 'ms'}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-black"
-                  id="title-ms"
-                />
-                <span>Ms.</span>
-              </label>
-            </div>
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                id="firstName"
-                name="firstName"
-                label="First Name"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                error={fieldErrors.firstName}
-                required={true}
-                autoComplete="given-name"
-              />
-              <FormField
-                id="lastName"
-                name="lastName"
-                label="Last Name"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                error={fieldErrors.lastName}
-                required={true}
-                autoComplete="family-name"
-              />
-            </div>
-
-            {/* Email */}
-            <FormField
-              id="email"
-              name="email"
-              label="Email Address"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              error={fieldErrors.email}
-              required={true}
-              autoComplete="email"
-            />
-
-            {/* Country & Phone */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormSelect
-                id="country"
-                name="country"
-                label="Country"
-                options={[
-                  { value: "", label: "Select a country" },
-                  { value: "IT", label: "Italy" },
-                  { value: "FR", label: "France" },
-                  { value: "ES", label: "Spain" },
-                  { value: "DE", label: "Germany" },
-                  { value: "UK", label: "United Kingdom" },
-                  { value: "US", label: "United States" },
-                  { value: "CA", label: "Canada" },
-                  { value: "AU", label: "Australia" },
-                  { value: "CH", label: "Switzerland" },
-                  { value: "AT", label: "Austria" },
-                  { value: "NL", label: "Netherlands" },
-                  { value: "BE", label: "Belgium" },
-                  { value: "PT", label: "Portugal" },
-                  { value: "GR", label: "Greece" },
-                  { value: "SE", label: "Sweden" },
-                  { value: "NO", label: "Norway" },
-                  { value: "DK", label: "Denmark" },
-                  { value: "FI", label: "Finland" },
-                  { value: "IE", label: "Ireland" },
-                  { value: "RU", label: "Russia" },
-                  { value: "PL", label: "Poland" }
-                ]}
-                value={formData.country}
-                onChange={handleInputChange}
-                error={fieldErrors.country}
-                required={true}
-              />
-              <div className="relative">
-                <FormField
-                  id="phone"
-                  name="phone"
-                  label="Phone Number"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  error={fieldErrors.phone}
-                  autoComplete="tel"
-                  helpText="Recommended for booking notifications"
-                />
-                <div className="absolute right-3 top-[38px]">
-                  <Info className="w-5 h-5 text-gray-400" title="We'll only contact you about your transfer" />
-                </div>
-              </div>
-            </div>
-
-            {/* Form-wide error display */}
-            {Object.keys(fieldErrors).length > 0 && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 flex items-start">
-                <AlertCircle className="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Please complete all required fields</p>
-                  <ul className="list-disc list-inside mt-1 text-sm">
-                    {Object.entries(fieldErrors).map(([field, message]) => (
-                      <li key={field} className="ml-2">
-                        <button 
-                          className="underline hover:text-red-800"
-                          onClick={() => scrollToError(field)}
-                          type="button"
-                        >
-                          {message}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </form>
-        </section>
+        {/* Flight Info Modal */}
+        <FlightInfoModal
+          isOpen={showFlightInfoModal}
+          onClose={() => setShowFlightInfoModal(false)}
+        />
       </div>
     </BookingLayout>
   );

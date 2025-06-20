@@ -12,6 +12,7 @@ interface VehicleCardProps {
   suitcases: number;
   price: number;
   isSelected: boolean;
+  canAccommodate?: boolean; // New prop to indicate if vehicle can accommodate passenger count
   onSelect: () => void;
   onLearnMore: () => void;
   'aria-label'?: string;
@@ -27,6 +28,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   suitcases,
   price,
   isSelected,
+  canAccommodate = true, // Default to true
   onSelect,
   onLearnMore,
   'aria-label': ariaLabel
@@ -112,19 +114,25 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
           <div className="text-sm text-gray-600">From</div>
           <div className="text-2xl font-bold">{formattedPrice}</div>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={onSelect}
-          className={`px-6 py-2 rounded-lg transition-colors ${
-            isSelected
-              ? 'bg-green-100 text-green-800 border border-green-200'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-          aria-pressed={isSelected}
-          id={id}
-        >
-          {isSelected ? 'Selected' : 'Choose'}
-        </motion.button>
+        {canAccommodate ? (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onSelect}
+            className={`px-6 py-2 rounded-lg transition-colors ${
+              isSelected
+                ? 'bg-green-100 text-green-800 border border-green-200'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+            aria-pressed={isSelected}
+            id={id}
+          >
+            {isSelected ? 'Selected' : 'Choose'}
+          </motion.button>
+        ) : (
+          <div className="text-xs text-amber-600 px-3 py-2 bg-amber-50 rounded border border-amber-100">
+            Requires multiple bookings
+          </div>
+        )}
       </div>
     </motion.div>
   );

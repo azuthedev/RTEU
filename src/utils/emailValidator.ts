@@ -111,6 +111,7 @@ export const sendOtpEmail = async (
 }> => {
   try {
     console.log(`Sending verification email to ${email}${userId ? ` for user ${userId}` : ''}`);
+    console.log(`With name: ${name || 'Not provided'}`);
     
     // Check if we're in development mode first for faster fallback
     const isDev = isDevelopmentEnvironment();
@@ -156,6 +157,11 @@ export const sendOtpEmail = async (
     try {
       console.log('Calling Edge Function with X-Auth header');
       
+      // Determine URL based on environment
+      const baseUrl = isDev 
+        ? '/api/email-verification'  // Use local proxy in development
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
+      
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -163,20 +169,18 @@ export const sendOtpEmail = async (
       };
       
       console.log('Request headers:', Object.keys(headers).join(', '));
+      console.log('Using base URL:', baseUrl);
       
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            email,
-            name,
-            user_id: userId,
-            action: 'send-otp'
-          })
-        }
-      );
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          email,
+          name, // Explicitly include name in the request
+          user_id: userId,
+          action: 'send-otp'
+        })
+      });
       
       console.log('Response status:', response.status);
       
@@ -289,22 +293,25 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
     try {
       console.log('Calling verify Edge Function with token and verificationId');
       
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'X-Auth': webhookSecret
-          },
-          body: JSON.stringify({
-            token: otp,
-            verificationId,
-            action: 'verify-otp'
-          })
-        }
-      );
+      // Determine URL based on environment
+      const isDev = isDevelopmentEnvironment();
+      const baseUrl = isDev 
+        ? '/api/email-verification'  // Use local proxy in development
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
+      
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'X-Auth': webhookSecret
+        },
+        body: JSON.stringify({
+          token: otp,
+          verificationId,
+          action: 'verify-otp'
+        })
+      });
       
       console.log('Verify response status:', response.status);
       
@@ -424,25 +431,27 @@ export const checkEmailVerification = async (email: string): Promise<{
       };
     }
     
+    // Determine URL based on environment
+    const baseUrl = isDev 
+      ? '/api/email-verification'  // Use local proxy in development
+      : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
+    
     // Call the Edge Function to check verification status
     try {
       console.log('Checking verification status with webhook secret');
       
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'X-Auth': webhookSecret
-          },
-          body: JSON.stringify({
-            email,
-            action: 'check-verification'
-          })
-        }
-      );
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'X-Auth': webhookSecret
+        },
+        body: JSON.stringify({
+          email,
+          action: 'check-verification'
+        })
+      });
       
       if (!response.ok) {
         const errorText = await response.text();

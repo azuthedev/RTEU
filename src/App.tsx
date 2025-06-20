@@ -106,9 +106,13 @@ const RouteObserver = () => {
     // Preload images for the current route
     preloadImagesForRoute(location.pathname);
 
+    // Check if this is a booking flow page - we don't want to scroll to top for these
+    const isBookingFlow = location.pathname.includes('/transfer/') && location.pathname.includes('/form');
+
     // Always scroll to top on navigation or forced scroll
     // Either when path changes OR when forceScrollRef is true
-    if (prevPathRef.current !== location.pathname || forceScrollRef.current) {
+    // But NOT for booking flow pages (let them handle their own scrolling)
+    if ((prevPathRef.current !== location.pathname || forceScrollRef.current) && !isBookingFlow) {
       if (!scrollInProgressRef.current) {
         scrollInProgressRef.current = true;
         window.scrollTo({
@@ -136,26 +140,26 @@ const RouteObserver = () => {
 
 // Updated ProtectedRoute to handle unverified users
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, emailVerified, emailVerificationChecked, trackEvent } = useAuth();
+  const { user, loading: authLoading, emailVerified, emailVerificationChecked, trackEvent } = useAuth();
   const location = useLocation();
   const [showUnverifiedPrompt, setShowUnverifiedPrompt] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       trackEvent('Authentication', 'Access Denied', 'Protected Route', 0, true);
     }
-  }, [user, loading, trackEvent]);
+  }, [user, authLoading, trackEvent]);
   
   useEffect(() => {
     // Check if user needs email verification
-    if (!loading && user && emailVerificationChecked && !emailVerified) {
+    if (!authLoading && user && emailVerificationChecked && !emailVerified) {
       setShowUnverifiedPrompt(true);
     } else {
       setShowUnverifiedPrompt(false);
     }
-  }, [loading, user, emailVerified, emailVerificationChecked]);
+  }, [authLoading, user, emailVerified, emailVerificationChecked]);
   
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
