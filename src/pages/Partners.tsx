@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, ArrowRight, AlertCircle, Loader2, Mail } from 'lucide-react';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import FormField from '../components/ui/form-field';
 import FormSelect from '../components/ui/form-select';
 import { useToast } from '../components/ui/use-toast';
 import useFormValidation from '../hooks/useFormValidation';
 import { useAnalytics } from '../hooks/useAnalytics';
+import OTPVerificationModal from '../components/OTPVerificationModal';
 
 const Partners = () => {
   const location = useLocation();
@@ -23,12 +23,20 @@ const Partners = () => {
     email: '',
     phone: '',
     company_name: '',
+    vat_number: '',
+    vehicle_type: '',
     message: '',
     interests: []
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  
+  // States for OTP verification
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [verificationId, setVerificationId] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationComplete, setVerificationComplete] = useState(false);
 
   // Define validation rules for the form
   const validationRules = {
@@ -40,7 +48,17 @@ const Partners = () => {
       { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' }
     ],
     phone: [
+      { required: true, message: 'Phone number is required' },
       { pattern: /^\+?[0-9\s\-()]{6,20}$/, message: 'Please enter a valid phone number' }
+    ],
+    company_name: [
+      { required: true, message: 'Company name is required' }
+    ],
+    vat_number: [
+      { required: true, message: 'VAT number is required' }
+    ],
+    message: [
+      { required: true, message: 'Additional information is required' }
     ]
   };
 
@@ -116,8 +134,12 @@ const Partners = () => {
     trackEvent('Partner Form', 'Submit Attempt');
 
     try {
-      // Call the Supabase Edge Function instead of direct submission
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/partner-signup`, {
+      // Use the proxied API endpoint for development, direct URL for production
+      const apiUrl = import.meta.env.DEV 
+        ? '/api/partner-signup'
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/partner-signup`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,6 +150,8 @@ const Partners = () => {
           email: formData.email,
           phone: formData.phone,
           company_name: formData.company_name,
+          vat_number: formData.vat_number,
+          vehicle_type: formData.vehicle_type,
           message: formData.message
         })
       });
@@ -140,33 +164,54 @@ const Partners = () => {
         throw new Error(data.error || "Something went wrong. Please try again later.");
       }
 
-      // Handle successful submission
-      setSubmitSuccess(true);
-      
-      // Show success toast
-      toast({
-        title: "Application Submitted",
-        description: "Your partner application has been received. We will contact you soon!",
-        variant: "default"
-      });
-      
-      // Track successful submission
-      trackEvent('Partner Form', 'Submit Success');
-      
-      // Reset form
-      resetForm();
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        company_name: '',
-        message: '',
-        interests: []
-      });
+      // Check if we have a verification ID for OTP verification
+      if (data.verificationId) {
+        // Store verification data
+        setVerificationId(data.verificationId);
+        setVerificationEmail(data.email);
+        
+        // Show OTP modal
+        setShowOtpModal(true);
+        
+        // Track event
+        trackEvent('Partner Form', 'OTP Verification Initiated');
+        
+        // Show toast instructing the user to check their email
+        toast({
+          title: "Verify Your Email",
+          description: "Please check your email for a verification code.",
+          variant: "default"
+        });
+      } else {
+        // Handle successful submission without OTP verification
+        setSubmitSuccess(true);
+        
+        // Show success toast
+        toast({
+          title: "Application Submitted",
+          description: "Your partner application has been received. We will contact you soon!",
+          variant: "default"
+        });
+        
+        // Track successful submission
+        trackEvent('Partner Form', 'Submit Success');
+        
+        // Reset form
+        resetForm();
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          company_name: '',
+          vat_number: '',
+          vehicle_type: '',
+          message: '',
+          interests: []
+        });
 
-      // Auto-scroll to top after submission
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
+        // Auto-scroll to top after submission
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (error) {
       console.error("Form submission error:", error);
       
@@ -182,6 +227,44 @@ const Partners = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handle OTP verification completion
+  const handleVerificationComplete = () => {
+    // Close OTP modal
+    setShowOtpModal(false);
+    
+    // Set verification complete state
+    setVerificationComplete(true);
+    
+    // Set success state
+    setSubmitSuccess(true);
+    
+    // Track event
+    trackEvent('Partner Form', 'Email Verification Complete');
+    
+    // Show success toast
+    toast({
+      title: "Email Verified Successfully",
+      description: "Your partner application has been received and your email is verified. Please check your email for an invitation link to complete your registration.",
+      variant: "default"
+    });
+    
+    // Reset form
+    resetForm();
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      company_name: '',
+      vat_number: '',
+      vehicle_type: '',
+      message: '',
+      interests: []
+    });
+
+    // Auto-scroll to top after verification
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -347,13 +430,31 @@ const Partners = () => {
                 >
                   <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
                   <h3 className="text-2xl font-bold mb-3">Application Submitted!</h3>
-                  <p className="mb-6">
-                    Thank you for your interest in partnering with Royal Transfer EU. We've received your application and our team will review it shortly. We'll contact you within 2-3 business days with next steps.
-                  </p>
+                  {verificationComplete ? (
+                    <div>
+                      <p className="mb-4">
+                        Thank you for verifying your email! We have sent you an invitation link to complete your registration as a partner. Please check your email inbox.
+                      </p>
+                      <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg mb-4">
+                        <Mail className="w-6 h-6 text-blue-500 mr-3" />
+                        <span className="text-blue-700">
+                          Invite link sent to: <strong>{verificationEmail}</strong>
+                        </span>
+                      </div>
+                      <p className="mb-6 text-sm text-gray-600">
+                        If you don't see the email in your inbox, please check your spam or junk folder.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mb-6">
+                      Thank you for your interest in partnering with Royal Transfer EU. We've received your application and our team will review it shortly. We'll contact you within 2-3 business days with next steps.
+                    </p>
+                  )}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <button
                       onClick={() => {
                         setSubmitSuccess(false);
+                        setVerificationComplete(false);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className="px-6 py-2 border border-green-600 text-green-700 rounded-md hover:bg-green-50 transition-colors"
@@ -413,6 +514,7 @@ const Partners = () => {
                       onChange={handleInputChange}
                       onBlur={() => handleBlur('phone')}
                       error={errors.phone}
+                      required
                       autoComplete="tel"
                       helpText="Include country code, e.g., +39"
                     />
@@ -420,15 +522,30 @@ const Partners = () => {
                     <FormField
                       id="company_name"
                       name="company_name"
-                      label="Company Name (if applicable)"
+                      label="Company Name"
                       value={formData.company_name}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur('company_name')}
+                      error={errors.company_name}
+                      required
+                    />
+
+                    <FormField
+                      id="vat_number"
+                      name="vat_number"
+                      label="VAT Number"
+                      value={formData.vat_number}
+                      onChange={handleInputChange}
+                      onBlur={() => handleBlur('vat_number')}
+                      error={errors.vat_number}
+                      required
+                      helpText="Tax identification number for your business"
                     />
 
                     <FormSelect
                       id="vehicle_type"
                       name="vehicle_type"
-                      label="Vehicle Type"
+                      label="Vehicle Type (Optional)"
                       options={[
                         { value: "", label: "Select a vehicle type" },
                         { value: "sedan", label: "Sedan" },
@@ -442,17 +559,22 @@ const Partners = () => {
 
                     <div>
                       <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                        Additional Information
+                        Additional Information <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         id="message"
                         name="message"
                         rows={4}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        className={`w-full px-4 py-2 border ${errors.message ? 'border-red-500 bg-red-50' : 'border-gray-200'} rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600`}
                         value={formData.message}
                         onChange={handleInputChange}
+                        onBlur={() => handleBlur('message')}
                         placeholder="Tell us about your experience, vehicle details, and availability"
+                        required
                       ></textarea>
+                      {errors.message && (
+                        <p className="mt-1 text-sm text-red-600">{errors.message}</p>
+                      )}
                     </div>
 
                     <div className="pt-4">
@@ -538,7 +660,14 @@ const Partners = () => {
         </section>
       </main>
 
-      <Sitemap />
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={showOtpModal}
+        onClose={() => setShowOtpModal(false)}
+        onVerified={handleVerificationComplete}
+        email={verificationEmail}
+        verificationId={verificationId}
+      />
     </div>
   );
 };

@@ -29,6 +29,10 @@ const BookingFlow = () => {
 
   // State to control full-screen loading until we have all data
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
+  
+  // Reference to the VehicleSelection component for scrolling
+  const vehicleSelectionRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToVehicleSelection = useRef(false);
 
   // Clean up booking state when component unmounts
   useEffect(() => {
@@ -200,6 +204,25 @@ const BookingFlow = () => {
     }
   }, [bookingState, fetchPricingData]);
 
+  // Add auto-scrolling to VehicleSelection component when data is loaded
+  useEffect(() => {
+    if (
+      !isLoadingInitialData &&
+      !bookingState.isPricingLoading &&
+      vehicleSelectionRef.current &&
+      !hasScrolledToVehicleSelection.current
+    ) {
+      // Small delay to ensure component is fully rendered
+      setTimeout(() => {
+        vehicleSelectionRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+        hasScrolledToVehicleSelection.current = true;
+      }, 300);
+    }
+  }, [isLoadingInitialData, bookingState.isPricingLoading]);
+
   // Handle step navigation based on context
   const currentStep = bookingState.step;
   
@@ -221,6 +244,7 @@ const BookingFlow = () => {
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
             <motion.div
+              ref={vehicleSelectionRef}
               key="step1"
               initial={{ opacity: 0, x: bookingState.previousStep && bookingState.previousStep > 1 ? -50 : 50 }}
               animate={{ opacity: 1, x: 0 }}
