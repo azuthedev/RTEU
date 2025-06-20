@@ -127,7 +127,9 @@ Deno.serve(async (req) => {
         total_price,
         flight_number,
         extra_stops,
-        luggage_count
+        luggage_count,
+        // Partner invite specific
+        invite_link
       } = requestData;
       
       // Validate required fields
@@ -260,6 +262,95 @@ Deno.serve(async (req) => {
           );
         }
       } 
+      else if (email_type === 'PARTNER_INVITE') {
+        // Handle partner invite emails
+        console.log("Processing partner invite email");
+        
+        // Validate required fields
+        if (!email || !name || !invite_link) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'Email, name, and invite_link are required for partner invite emails' 
+            }),
+            {
+              status: 400,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        try {
+          console.log("=== PARTNER INVITE EMAIL SENDING ATTEMPT ===");
+          console.log('To:', email);
+          console.log('Name:', name);
+          console.log('Invite Link:', invite_link);
+          
+          // For development/testing in WebContainer, just return success
+          if (isDev) {
+            console.log('DEVELOPMENT MODE: Simulating email sending success');
+            
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                message: 'Partner invite email sent successfully (DEV MODE)'
+              }),
+              {
+                status: 200,
+                headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+          
+          // Forward the request to our n8n webhook
+          const webhookSecret = Deno.env.get('WEBHOOK_SECRET') || '';
+          const response = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth': webhookSecret
+            },
+            body: JSON.stringify({
+              name: name,
+              email: email,
+              invite_link: invite_link,
+              email_type: 'PARTNER_INVITE'
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error from n8n webhook:', errorText);
+            throw new Error('Failed to send partner invite email');
+          }
+          
+          console.log('Partner invite email sent successfully');
+          
+          // Return success response
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: 'Partner invite email sent successfully'
+            }),
+            {
+              status: 200,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        } catch (emailError) {
+          console.error('Error sending partner invite email:', emailError);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: emailError.message || 'Failed to send partner invite email'
+            }),
+            {
+              status: 500,
+              headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+      }
       else if (email_type === 'BookingReference') {
         // Handle booking confirmation emails with separate date/time fields
         console.log("Processing booking confirmation email for reference:", booking_id);
@@ -378,7 +469,7 @@ Deno.serve(async (req) => {
             }
           );
         }
-      } 
+      }
       else {
         // Unsupported email type
         return new Response(

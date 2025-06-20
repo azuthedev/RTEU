@@ -80,23 +80,27 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("========== PARTNER SIGNUP FUNCTION START ==========");
     console.log("Partner signup form submission received");
     
     // Parse the request body
     const formData = await req.json();
     console.log("Form data received:", {
-      hasName: !!formData.name,
-      hasEmail: !!formData.email,
+      name: formData.name,
+      email: formData.email,
       hasPhone: !!formData.phone,
       hasCompanyName: !!formData.company_name,
+      hasVatNumber: !!formData.vat_number,
+      hasVehicleType: !!formData.vehicle_type,
       hasMessage: !!formData.message
     });
 
     // Validate required fields
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.company_name || !formData.vat_number || !formData.message) {
+      console.log("Validation failed - missing required fields");
       return new Response(
         JSON.stringify({ 
-          error: 'Name and email are required fields' 
+          error: 'Name, email, phone, company name, VAT number, and additional information are required fields' 
         }),
         {
           status: 400,
@@ -107,6 +111,7 @@ Deno.serve(async (req) => {
 
     // Validate email format
     if (!isValidEmail(formData.email)) {
+      console.log("Validation failed - invalid email format:", formData.email);
       return new Response(
         JSON.stringify({ 
           error: 'Please provide a valid email address' 
@@ -122,8 +127,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log("Supabase client initialized");
     
     // Check for duplicate submissions (to prevent spam)
+    console.log("Checking for existing applications with email:", formData.email);
     const { data: existingApplications, error: checkError } = await retryDatabaseOperation(async () => {
       return await supabase
         .from('partner_applications')
@@ -145,10 +152,14 @@ Deno.serve(async (req) => {
       const now = new Date();
       const hoursSinceLastApplication = (now.getTime() - applicationTime.getTime()) / (1000 * 60 * 60);
       
+      console.log("Found existing application from:", applicationTime.toISOString());
+      console.log("Hours since last application:", hoursSinceLastApplication);
+      
       if (hoursSinceLastApplication < 24) {
+        console.log("Application rejected due to recent submission");
         return new Response(
           JSON.stringify({ 
-            error: 'You have already submitted an application recently. Please wait 24 hours before submitting another one.',
+            error: 'You have already submitted a partner application. Please wait 3-5 business days for us to reach out to you. If you need to modify your submission, please contact us directly at contact@royaltransfereu.com.',
             existingApplication: {
               id: mostRecentApplication.id,
               submitted: applicationTime.toISOString()
@@ -164,20 +175,25 @@ Deno.serve(async (req) => {
           }
         );
       }
+    } else {
+      console.log("No existing application found for this email");
     }
 
-    // Prepare the data to insert
+    // Prepare the data to insert - include vehicle_type if provided
     const partnerApplication = {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
-      phone: formData.phone ? formData.phone.trim() : null,
-      company_name: formData.company_name ? formData.company_name.trim() : null,
-      message: formData.message ? formData.message.trim() : null,
+      phone: formData.phone.trim(),
+      company_name: formData.company_name.trim(),
+      vat_number: formData.vat_number.trim(),
+      vehicle_type: formData.vehicle_type || null, // Optional field
+      message: formData.message.trim(),
       status: 'pending',  // Default status
       user_id: formData.user_id || null  // If submitted by a logged-in user
     };
 
     // Insert the application into the database
+    console.log("Inserting partner application");
     const { data: insertedApplication, error: insertError } = await retryDatabaseOperation(async () => {
       return await supabase
         .from('partner_applications')
@@ -191,9 +207,135 @@ Deno.serve(async (req) => {
       throw new Error(`Database error when inserting application: ${insertError.message}`);
     }
     
-    console.log("Partner application inserted successfully:", insertedApplication.id);
+    console.log("Partner application inserted successfully with ID:", insertedApplication.id);
+
+    // Now send OTP verification email
+    try {
+      const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+      
+      if (!webhookSecret) {
+        console.error("WEBHOOK_SECRET not found in environment variables");
+        console.log("Available env variables:", Object.keys(Deno.env.toObject())
+          .filter(key => !key.includes('KEY') && key !== 'WEBHOOK_SECRET')
+          .join(', '));
+        throw new Error("Server configuration error: Missing webhook secret");
+      }
+      
+      console.log("Sending OTP verification email to:", partnerApplication.email);
+      console.log("With name:", partnerApplication.name);
+      
+      // For development/testing, generate a mock verification ID
+      const isDev = isDevEnvironment(req);
+      if (isDev) {
+        console.log("Development environment detected - simulating OTP verification");
+        
+        // Return success with mock verification ID
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Partner application submitted successfully! Please verify your email to continue.",
+            applicationId: insertedApplication.id,
+            verificationId: `dev-${Date.now()}`,
+            email: partnerApplication.email
+          }),
+          {
+            status: 200,
+            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Call the email-verification Edge Function to send OTP
+      console.log("Calling email-verification Edge Function");
+      console.log("URL:", `${supabaseUrl}/functions/v1/email-verification`);
+      console.log("Request payload:", {
+        email: partnerApplication.email,
+        name: partnerApplication.name,
+        action: 'send-otp'
+      });
+      
+      const verificationResponse = await fetch(`${supabaseUrl}/functions/v1/email-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'X-Auth': webhookSecret
+        },
+        body: JSON.stringify({
+          email: partnerApplication.email,
+          name: partnerApplication.name,
+          action: 'send-otp'
+        })
+      });
+      
+      console.log("Verification response status:", verificationResponse.status);
+      
+      // Get the full response text regardless of success/failure
+      let responseText;
+      try {
+        responseText = await verificationResponse.text();
+        console.log("Verification response text:", responseText);
+      } catch (textError) {
+        console.error("Error getting response text:", textError);
+        responseText = "Could not read response body";
+      }
+      
+      // Parse the response JSON if it's valid JSON
+      let verificationData;
+      try {
+        verificationData = JSON.parse(responseText);
+        console.log("Parsed verification response data:", verificationData);
+      } catch (parseError) {
+        console.error("Error parsing verification response:", parseError);
+        // If we can't parse the response, use the status and text to determine success/failure
+        if (!verificationResponse.ok) {
+          throw new Error(`Failed to send verification email: ${verificationResponse.status} ${responseText}`);
+        }
+      }
+      
+      if (!verificationResponse.ok) {
+        throw new Error(`Failed to send verification email: ${verificationResponse.statusText}\n${responseText}`);
+      }
+      
+      if (!verificationData?.success || !verificationData?.verificationId) {
+        throw new Error('Failed to generate verification code: ' + (verificationData?.error || 'Unknown error'));
+      }
+      
+      console.log("Verification successful, updating partner application with verification ID");
+      
+      // Update the partner application with the verification ID
+      await retryDatabaseOperation(async () => {
+        return await supabase
+          .from('partner_applications')
+          .update({ verification_id: verificationData.verificationId })
+          .eq('id', insertedApplication.id);
+      });
+      
+      // Return success with verification ID
+      console.log("Returning success response with verification ID");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Partner application submitted successfully! Please verify your email to continue.",
+          applicationId: insertedApplication.id,
+          verificationId: verificationData.verificationId,
+          email: partnerApplication.email
+        }),
+        {
+          status: 200,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (otpError) {
+      console.error("Error sending OTP verification:", otpError);
+      console.log("Error details:", otpError.stack || "No stack trace available");
+      
+      // If OTP sending fails, just continue with standard response
+      console.log("Falling back to admin notification without OTP");
+    }
     
-    // Now send a notification about the new application
+    // If we got here, it means OTP verification was skipped or failed
+    // Fall back to just notifying the admin
     try {
       const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
       
@@ -207,6 +349,23 @@ Deno.serve(async (req) => {
           console.log("Development environment detected - skipping webhook call");
         } else {
           // Send notification to the webhook
+          console.log("Preparing admin notification webhook call");
+          console.log("Webhook URL: https://n8n.capohq.com/webhook/rteu-tx-email");
+          console.log("Webhook payload:", {
+            name: 'Royal Transfer EU Admin',
+            email: 'contact@royaltransfereu.com',  // Admin email to receive notifications
+            partner_name: partnerApplication.name,
+            partner_email: partnerApplication.email,
+            partner_phone: partnerApplication.phone,
+            partner_company: partnerApplication.company_name,
+            partner_vat_number: partnerApplication.vat_number,
+            partner_vehicle_type: partnerApplication.vehicle_type || 'Not specified',
+            partner_message: partnerApplication.message,
+            application_id: insertedApplication.id,
+            application_date: new Date().toISOString(),
+            email_type: 'PartnerApplication'
+          });
+          
           const webhookResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
             method: 'POST',
             headers: {
@@ -219,18 +378,23 @@ Deno.serve(async (req) => {
               email: 'contact@royaltransfereu.com',  // Admin email to receive notifications
               partner_name: partnerApplication.name,
               partner_email: partnerApplication.email,
-              partner_phone: partnerApplication.phone || 'Not provided',
-              partner_company: partnerApplication.company_name || 'Not provided',
-              partner_message: partnerApplication.message || 'No message provided',
+              partner_phone: partnerApplication.phone,
+              partner_company: partnerApplication.company_name,
+              partner_vat_number: partnerApplication.vat_number,
+              partner_vehicle_type: partnerApplication.vehicle_type || 'Not specified',
+              partner_message: partnerApplication.message,
               application_id: insertedApplication.id,
               application_date: new Date().toISOString(),
               email_type: 'PartnerApplication'
             })
           });
           
+          console.log("Admin notification webhook response status:", webhookResponse.status);
+          
           if (!webhookResponse.ok) {
             // Log webhook error but don't fail the request
-            console.error("Webhook notification failed:", await webhookResponse.text());
+            const errorText = await webhookResponse.text();
+            console.error("Webhook notification failed:", errorText);
           } else {
             console.log("Webhook notification sent successfully");
           }
@@ -243,7 +407,9 @@ Deno.serve(async (req) => {
       console.error("Error sending webhook notification:", webhookError);
     }
 
-    // Return success response
+    // Return standard success response (without verification)
+    console.log("Returning standard success response (without verification)");
+    console.log("========== PARTNER SIGNUP FUNCTION END ==========");
     return new Response(
       JSON.stringify({
         success: true,
@@ -258,6 +424,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Error processing partner application:", error);
+    console.log("Error details:", error.stack || "No stack trace available");
+    console.log("========== PARTNER SIGNUP FUNCTION END WITH ERROR ==========");
     
     // Return error response
     return new Response(

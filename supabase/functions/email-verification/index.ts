@@ -150,6 +150,7 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
   try {
     console.log('=== EMAIL VERIFICATION SENDING ATTEMPT ===');
     console.log('To:', email);
+    console.log('Name:', name || email.split('@')[0]);  // Log the name being used
     console.log('OTP Code:', otpCode);
     console.log('Magic Link:', magicLink);
 
@@ -172,7 +173,7 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
     try {
       console.log('=== PREPARING WEBHOOK REQUEST ===');
       const requestBody = {
-        name: name || email.split('@')[0], // Use part before @ if no name provided
+        name: name || email.split('@')[0], // Use name if provided, otherwise use email username
         email: email,
         otp_code: otpCode,
         verify_link: magicLink,
@@ -275,6 +276,10 @@ async function sendVerificationEmail(name: string, email: string, otpCode: strin
 }
 
 Deno.serve(async (req) => {
+  console.log("========== EMAIL VERIFICATION FUNCTION START ==========");
+  console.log("Request method:", req.method);
+  console.log("Request URL:", req.url);
+  
   // Get the client's origin
   const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
   
@@ -294,6 +299,7 @@ Deno.serve(async (req) => {
 
   // Handle CORS preflight request - critical for browser security
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS request (CORS preflight)");
     return new Response(null, {
       status: 204,
       headers: headersWithOrigin
@@ -301,9 +307,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log("Edge Function Called: email-verification");
-    console.log("Request method:", req.method);
-    console.log("Headers received:", Array.from(req.headers.entries())
+    console.log("Request headers received:", Array.from(req.headers.entries())
       .filter(([key]) => !key.toLowerCase().includes('authorization'))
       .map(([key, value]) => `${key}: ${value.substring(0, 20)}${value.length > 20 ? '...' : ''}`)
     );
@@ -411,6 +415,136 @@ Deno.serve(async (req) => {
         }
       }
       
+      // Check if this verification is for a partner application
+      if (verification.email) {
+        try {
+          console.log("Checking for partner application with email:", verification.email);
+          const { data: partnerApplications } = await retryDatabaseOperation(async () => {
+            return await supabase
+              .from('partner_applications')
+              .select('*')
+              .eq('email', verification.email)
+              .eq('verification_id', verification.id)
+              .limit(1);
+          });
+          
+          if (partnerApplications && partnerApplications.length > 0) {
+            console.log("Found partner application for this verification:", partnerApplications[0].id);
+            
+            // Generate partner invite link
+            try {
+              console.log("Generating partner invite link");
+              
+              // Get admin user for created_by
+              const { data: adminUsers } = await retryDatabaseOperation(async () => {
+                return await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('user_role', 'admin')
+                  .limit(1);
+              });
+              
+              const adminId = adminUsers && adminUsers.length > 0 
+                ? adminUsers[0].id 
+                : '00000000-0000-0000-0000-000000000000'; // Default admin ID if none found
+              
+              console.log("Using admin ID for invite:", adminId);
+              
+              // Generate expiration date (7 days from now)
+              const expiryDate = new Date();
+              expiryDate.setDate(expiryDate.getDate() + 7);
+              
+              // Create unique invite code
+              const inviteCode = `partner-${Math.random().toString(36).substring(2, 8)}`;
+              console.log("Generated invite code:", inviteCode);
+              
+              // Insert invite link
+              const { data: inviteLink, error: inviteError } = await retryDatabaseOperation(async () => {
+                return await supabase
+                  .from('invite_links')
+                  .insert([{
+                    code: inviteCode,
+                    role: 'partner',
+                    created_by: adminId,
+                    expires_at: expiryDate.toISOString(),
+                    status: 'active',
+                    note: `Auto-generated invite for partner application ${partnerApplications[0].id}`
+                  }])
+                  .select()
+                  .single();
+              });
+              
+              if (inviteError) {
+                console.error("Error creating invite link:", inviteError);
+              } else {
+                console.log("Created invite link with ID:", inviteLink.id);
+                
+                // Update partner application with invite link ID
+                await retryDatabaseOperation(async () => {
+                  return await supabase
+                    .from('partner_applications')
+                    .update({ invite_link_id: inviteLink.id })
+                    .eq('id', partnerApplications[0].id);
+                });
+                
+                // Send partner invite email
+                try {
+                  if (webhookSecret) {
+                    const baseUrl = getBaseUrl(req);
+                    const inviteUrl = `${baseUrl}/customer-signup?invite=${inviteCode}`;
+                    
+                    console.log("Sending partner invite email");
+                    console.log("Invite URL:", inviteUrl);
+                    console.log("Webhook request payload:", {
+                      name: partnerApplications[0].name,
+                      email: verification.email,
+                      invite_link: inviteUrl,
+                      email_type: 'PARTNER_INVITE'
+                    });
+                    
+                    const emailResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Auth': webhookSecret
+                      },
+                      body: JSON.stringify({
+                        name: partnerApplications[0].name,
+                        email: verification.email,
+                        invite_link: inviteUrl,
+                        email_type: 'PARTNER_INVITE'
+                      })
+                    });
+                    
+                    console.log("Partner invite email response status:", emailResponse.status);
+                    
+                    if (!emailResponse.ok) {
+                      const errorText = await emailResponse.text();
+                      console.error("Error sending partner invite email:", errorText);
+                    } else {
+                      console.log("Partner invite email sent successfully");
+                    }
+                  } else {
+                    console.warn("Webhook secret not available for partner invite email");
+                  }
+                } catch (emailError) {
+                  console.error("Error sending partner invite email:", emailError);
+                  // Non-critical, continue with response
+                }
+              }
+            } catch (inviteError) {
+              console.error("Error in invite link generation:", inviteError);
+              // Non-critical, continue with response
+            }
+          } else {
+            console.log("No partner application found for this verification");
+          }
+        } catch (partnerError) {
+          console.error("Error checking for partner application:", partnerError);
+          // Non-critical, continue with response
+        }
+      }
+      
       // Get the client's origin for redirect
       const clientOrigin = getBaseUrl(req);
       console.log("Redirecting to:", `${clientOrigin}/verification-success?redirect=${encodeURIComponent(redirectUrl)}`);
@@ -475,6 +609,13 @@ Deno.serve(async (req) => {
       try {
         requestData = await req.json();
         console.log("Request data action:", requestData.action);
+        console.log("Request data includes:", Object.keys(requestData));
+        if (requestData.email) {
+          console.log("Email:", requestData.email);
+        }
+        if (requestData.name) {
+          console.log("Name:", requestData.name);
+        }
       } catch (e) {
         console.error("Failed to parse request body:", e);
         return new Response(
@@ -490,6 +631,7 @@ Deno.serve(async (req) => {
       
       // Only require email for non-verification actions
       if (!email && action !== 'verify-otp') {
+        console.error("Email is required but not provided");
         return new Response(
           JSON.stringify({ error: 'Email is required' }),
           {
@@ -517,11 +659,13 @@ Deno.serve(async (req) => {
       } 
       else if (action === 'send-otp') {
         console.log("Processing send-otp action for email:", email);
+        console.log("With name:", name || 'Not provided');
         
         // Check rate limits
         const { allowed, remainingAttempts } = await checkRateLimits(email, supabase);
         
         if (!allowed) {
+          console.log("Rate limit exceeded for email:", email);
           return new Response(
             JSON.stringify({
               success: false,
@@ -546,6 +690,7 @@ Deno.serve(async (req) => {
         
         // Generate unique token for magic link
         const magicLinkToken = generateMagicLinkToken();
+        console.log("Generated magic link token:", `${magicLinkToken.substring(0, 5)}...`);
         
         // Calculate expiration time (15 minutes from now)
         const now = new Date();
@@ -556,6 +701,7 @@ Deno.serve(async (req) => {
         
         if (!userId) {
           // Try to find user by email
+          console.log("Looking up user by email:", email);
           const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
             return await supabase
               .from('users')
@@ -569,10 +715,13 @@ Deno.serve(async (req) => {
           } else if (userData) {
             userId = userData.id;
             console.log(`Found existing user ID for ${email}: ${userId}`);
+          } else {
+            console.log(`No existing user found for email: ${email}`);
           }
         }
         
         // Check for existing verification records for this email
+        console.log("Checking for existing verification records");
         const { data: existingVerifications, error: verificationError } = await retryDatabaseOperation(async () => {
           return await supabase
             .from('email_verifications')
@@ -582,6 +731,10 @@ Deno.serve(async (req) => {
             .order('created_at', { ascending: false });
         });
         
+        if (verificationError) {
+          console.error("Error checking existing verifications:", verificationError);
+        }
+        
         // Delete existing unverified verifications for this email to prevent DB clutter
         if (existingVerifications && existingVerifications.length > 0) {
           // Keep track of the IDs to delete
@@ -589,21 +742,37 @@ Deno.serve(async (req) => {
           console.log(`Cleaning up ${idsToDelete.length} old verification records`);
           
           if (idsToDelete.length > 0) {
-            await retryDatabaseOperation(async () => {
-              return await supabase
-                .from('email_verifications')
-                .delete()
-                .in('id', idsToDelete);
-            });
+            try {
+              await retryDatabaseOperation(async () => {
+                return await supabase
+                  .from('email_verifications')
+                  .delete()
+                  .in('id', idsToDelete);
+              });
+              console.log("Successfully cleaned up old verification records");
+            } catch (deleteError) {
+              console.error("Error deleting old verification records:", deleteError);
+              // Non-critical error, continue
+            }
           }
         }
         
         // Generate magic link URL
         const baseUrl = getBaseUrl(req);
         const magicLink = `${baseUrl}/verify-email?token=${magicLinkToken}&redirect=/login`;
+        console.log("Generated magic link URL:", magicLink);
         
         // Insert new verification with created_at timestamp
         console.log("Creating new verification record");
+        console.log("Verification data:", {
+          user_id: userId || null,
+          token: otpCode,
+          magic_token: magicLinkToken,
+          email: email,
+          expires_at: expiresAt,
+          verified: false
+        });
+        
         const { data: newVerification, error: insertError } = await retryDatabaseOperation(async () => {
           return await supabase
             .from('email_verifications')
@@ -658,6 +827,7 @@ Deno.serve(async (req) => {
         console.log("Processing verify-otp action");
         
         if (!token || !verificationId) {
+          console.error("Missing token or verificationId");
           return new Response(
             JSON.stringify({
               success: false,
@@ -743,13 +913,146 @@ Deno.serve(async (req) => {
           }
         }
         
+        // Check if this verification is for a partner application
+        let partnerApplication = null;
+        if (verification.email) {
+          try {
+            // Look up the partner application by email and verification ID
+            console.log("Looking up partner application for email:", verification.email);
+            const { data: applications, error: appError } = await retryDatabaseOperation(async () => {
+              return await supabase
+                .from('partner_applications')
+                .select('*')
+                .eq('email', verification.email)
+                .eq('verification_id', verification.id)
+                .limit(1);
+            });
+            
+            if (appError) {
+              console.error("Error looking up partner application:", appError);
+            }
+            
+            if (!appError && applications && applications.length > 0) {
+              partnerApplication = applications[0];
+              console.log("Found partner application:", partnerApplication.id);
+              
+              // Generate partner invite link
+              try {
+                // Get admin user for created_by
+                const { data: adminUsers } = await retryDatabaseOperation(async () => {
+                  return await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('user_role', 'admin')
+                    .limit(1);
+                });
+                
+                const adminId = adminUsers && adminUsers.length > 0 
+                  ? adminUsers[0].id 
+                  : '00000000-0000-0000-0000-000000000000'; // Default admin ID if none found
+                
+                // Generate expiration date (7 days from now)
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 7);
+                
+                // Create unique invite code
+                const inviteCode = `partner-${Math.random().toString(36).substring(2, 8)}`;
+                console.log("Generated partner invite code:", inviteCode);
+                
+                // Insert invite link
+                console.log("Creating invite link");
+                const { data: inviteLink, error: inviteError } = await retryDatabaseOperation(async () => {
+                  return await supabase
+                    .from('invite_links')
+                    .insert([{
+                      code: inviteCode,
+                      role: 'partner',
+                      created_by: adminId,
+                      expires_at: expiryDate.toISOString(),
+                      status: 'active',
+                      note: `Auto-generated invite for partner application ${partnerApplication.id}`
+                    }])
+                    .select()
+                    .single();
+                });
+                
+                if (inviteError) {
+                  console.error("Error creating invite link:", inviteError);
+                } else {
+                  console.log("Created invite link with ID:", inviteLink.id);
+                  
+                  // Update partner application with invite link ID
+                  console.log("Updating partner application with invite link ID");
+                  await retryDatabaseOperation(async () => {
+                    return await supabase
+                      .from('partner_applications')
+                      .update({ invite_link_id: inviteLink.id })
+                      .eq('id', partnerApplication.id);
+                  });
+                  
+                  // Send partner invite email
+                  try {
+                    if (webhookSecret) {
+                      const baseUrl = getBaseUrl(req);
+                      const inviteUrl = `${baseUrl}/customer-signup?invite=${inviteCode}`;
+                      
+                      console.log("Sending partner invite email");
+                      console.log("Invite URL:", inviteUrl);
+                      console.log("Email recipient:", verification.email);
+                      console.log("Name:", partnerApplication.name);
+                      
+                      const emailResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'X-Auth': webhookSecret
+                        },
+                        body: JSON.stringify({
+                          name: partnerApplication.name,
+                          email: verification.email,
+                          invite_link: inviteUrl,
+                          email_type: 'PARTNER_INVITE'
+                        })
+                      });
+                      
+                      console.log("Partner invite email response status:", emailResponse.status);
+                      
+                      if (!emailResponse.ok) {
+                        const errorText = await emailResponse.text();
+                        console.error("Error sending partner invite email:", errorText);
+                      } else {
+                        console.log("Partner invite email sent successfully");
+                      }
+                    } else {
+                      console.warn("Cannot send partner invite email - missing webhook secret");
+                    }
+                  } catch (emailError) {
+                    console.error("Error sending partner invite email:", emailError);
+                    // Non-critical, continue with response
+                  }
+                }
+              } catch (inviteError) {
+                console.error("Error in invite link generation:", inviteError);
+                // Non-critical, continue with response
+              }
+            } else {
+              console.log("No partner application found for this verification");
+            }
+          } catch (partnerError) {
+            console.error("Error checking for partner application:", partnerError);
+            // Non-critical, continue with response
+          }
+        }
+        
         // Return success
+        console.log("Returning verification success response");
         return new Response(
           JSON.stringify({
             success: true,
             message: 'Email verified successfully',
             userId: verification.user_id,
-            email: verification.email
+            email: verification.email,
+            isPartnerApplication: !!partnerApplication
           }),
           {
             status: 200,
@@ -854,6 +1157,8 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Error:', error);
+    console.log("Error stack:", error.stack || "No stack trace available");
+    console.log("========== EMAIL VERIFICATION FUNCTION END WITH ERROR ==========");
     
     // Get the client's origin
     const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
@@ -872,5 +1177,7 @@ Deno.serve(async (req) => {
         }
       }
     );
+  } finally {
+    console.log("========== EMAIL VERIFICATION FUNCTION END ==========");
   }
 });
