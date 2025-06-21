@@ -88,7 +88,7 @@ const blogPosts = {
     author: 'Alessandro Conti',
     authorTitle: 'Urban Explorer',
     authorImage: 'https://files.royaltransfereu.com/assets/author-alessandro.webp',
-    excerpt: 'Explore Italy\'s business capital with our comprehensive guide to Milan's transportation network, fashion districts, and cultural landmarks.',
+    excerpt: 'Explore Italy`s business capital with our comprehensive guide to Milan's transportation network, fashion districts, and cultural landmarks.',
     content: [
       "Milan stands apart from other Italian cities with its forward-looking attitude, sleek modern architecture, and status as Italy's financial and fashion powerhouse. While it might lack the ancient ruins of Rome or the canals of Venice, Milan offers a sophisticated urban experience with exceptional transportation infrastructure that makes exploring the city effortless.",
       "## Arriving in Milan\n\nMilan is served by three airports:\n\n- **Malpensa Airport (MXP)**: Milan's main international hub, located about 50km northwest of the city.\n- **Linate Airport (LIN)**: A smaller airport just 7km from the center, handling mostly domestic and short-haul European flights.\n- **Orio al Serio Airport (BGY)**: Often called Milan Bergamo, this airport serves budget airlines and is located near Bergamo, about 50km northeast of Milan.",
