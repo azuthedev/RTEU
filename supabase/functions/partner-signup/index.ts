@@ -26,14 +26,13 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Function to check if request is from a development environment
-const isDevEnvironment = (req: Request): boolean => {
-  const url = new URL(req.url);
-  const host = url.hostname;
-  return host === 'localhost' || 
-         host.includes('local-credentialless') || 
-         host.includes('webcontainer') ||
-         host.endsWith('.supabase.co');
+// Function to get host from URL
+const getHost = (url: string): string => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
 };
 
 Deno.serve(async (req) => {
@@ -179,7 +178,7 @@ Deno.serve(async (req) => {
       console.log("No existing application found for this email");
     }
 
-    // Prepare the data to insert - include vehicle_type if provided
+    // Prepare the data to insert - include vehicle_type and vat_number if provided
     const partnerApplication = {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
@@ -223,27 +222,6 @@ Deno.serve(async (req) => {
       
       console.log("Sending OTP verification email to:", partnerApplication.email);
       console.log("With name:", partnerApplication.name);
-      
-      // For development/testing, generate a mock verification ID
-      const isDev = isDevEnvironment(req);
-      if (isDev) {
-        console.log("Development environment detected - simulating OTP verification");
-        
-        // Return success with mock verification ID
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Partner application submitted successfully! Please verify your email to continue.",
-            applicationId: insertedApplication.id,
-            verificationId: `dev-${Date.now()}`,
-            email: partnerApplication.email
-          }),
-          {
-            status: 200,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
       
       // Call the email-verification Edge Function to send OTP
       console.log("Calling email-verification Edge Function");
@@ -330,98 +308,19 @@ Deno.serve(async (req) => {
       console.error("Error sending OTP verification:", otpError);
       console.log("Error details:", otpError.stack || "No stack trace available");
       
-      // If OTP sending fails, just continue with standard response
-      console.log("Falling back to admin notification without OTP");
-    }
-    
-    // If we got here, it means OTP verification was skipped or failed
-    // Fall back to just notifying the admin
-    try {
-      const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-      
-      // Only proceed with webhook if secret is available
-      if (webhookSecret) {
-        console.log("Sending notification to webhook");
-        
-        // For development/testing, skip the actual webhook call
-        const isDev = isDevEnvironment(req);
-        if (isDev) {
-          console.log("Development environment detected - skipping webhook call");
-        } else {
-          // Send notification to the webhook
-          console.log("Preparing admin notification webhook call");
-          console.log("Webhook URL: https://n8n.capohq.com/webhook/rteu-tx-email");
-          console.log("Webhook payload:", {
-            name: 'Royal Transfer EU Admin',
-            email: 'contact@royaltransfereu.com',  // Admin email to receive notifications
-            partner_name: partnerApplication.name,
-            partner_email: partnerApplication.email,
-            partner_phone: partnerApplication.phone,
-            partner_company: partnerApplication.company_name,
-            partner_vat_number: partnerApplication.vat_number,
-            partner_vehicle_type: partnerApplication.vehicle_type || 'Not specified',
-            partner_message: partnerApplication.message,
-            application_id: insertedApplication.id,
-            application_date: new Date().toISOString(),
-            email_type: 'PartnerApplication'
-          });
-          
-          const webhookResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Auth': webhookSecret
-            },
-            body: JSON.stringify({
-              // Email parameters
-              name: 'Royal Transfer EU Admin',
-              email: 'contact@royaltransfereu.com',  // Admin email to receive notifications
-              partner_name: partnerApplication.name,
-              partner_email: partnerApplication.email,
-              partner_phone: partnerApplication.phone,
-              partner_company: partnerApplication.company_name,
-              partner_vat_number: partnerApplication.vat_number,
-              partner_vehicle_type: partnerApplication.vehicle_type || 'Not specified',
-              partner_message: partnerApplication.message,
-              application_id: insertedApplication.id,
-              application_date: new Date().toISOString(),
-              email_type: 'PartnerApplication'
-            })
-          });
-          
-          console.log("Admin notification webhook response status:", webhookResponse.status);
-          
-          if (!webhookResponse.ok) {
-            // Log webhook error but don't fail the request
-            const errorText = await webhookResponse.text();
-            console.error("Webhook notification failed:", errorText);
-          } else {
-            console.log("Webhook notification sent successfully");
-          }
+      // Return a proper error response
+      return new Response(
+        JSON.stringify({
+          error: "Failed to send verification email. Please try again later.",
+          details: otpError.message,
+          fallback: true
+        }),
+        {
+          status: 500,
+          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
         }
-      } else {
-        console.warn("WEBHOOK_SECRET not found in environment variables - skipping notification");
-      }
-    } catch (webhookError) {
-      // Log but don't fail the main request if notification fails
-      console.error("Error sending webhook notification:", webhookError);
+      );
     }
-
-    // Return standard success response (without verification)
-    console.log("Returning standard success response (without verification)");
-    console.log("========== PARTNER SIGNUP FUNCTION END ==========");
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Partner application submitted successfully! We will contact you soon.",
-        applicationId: insertedApplication.id
-      }),
-      {
-        status: 200,
-        headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-      }
-    );
-
   } catch (error) {
     console.error("Error processing partner application:", error);
     console.log("Error details:", error.stack || "No stack trace available");

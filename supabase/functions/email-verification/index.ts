@@ -83,27 +83,8 @@ function checkEmailTypos(email: string): string | null {
 
 // Create a base URL for verification links based on the request origin
 function getBaseUrl(req: Request): string {
-  // Extract the Origin header which contains the source domain
-  const origin = req.headers.get('origin');
-  
-  // Use referrer as a fallback
-  const referrer = req.headers.get('referer');
-  let refOrigin = null;
-  
-  if (referrer) {
-    try {
-      const refUrl = new URL(referrer);
-      refOrigin = `${refUrl.protocol}//${refUrl.host}`;
-    } catch (e) {
-      console.error("Failed to parse referrer:", e);
-    }
-  }
-  
-  // Use either the Origin header, referer, or fall back to production URL
-  const baseUrl = origin || refOrigin || 'https://royaltransfereu.com';
-  console.log("Using base URL for redirects:", baseUrl);
-  
-  return baseUrl;
+  // Always use the production URL for partner invites - no more localhost in invites!
+  return 'https://royaltransfereu.com';
 }
 
 // Check if we're in a development environment
@@ -113,7 +94,7 @@ function isDevEnvironment(req: Request): boolean {
   return host === 'localhost' || 
          host.includes('local-credentialless') || 
          host.includes('webcontainer') ||
-         host.endsWith('.supabase.co'); // Local Supabase development
+         host.endsWith('.supabase.co');
 }
 
 // Check if a user has exceeded rate limits for OTP/verification requests
@@ -419,7 +400,7 @@ Deno.serve(async (req) => {
       if (verification.email) {
         try {
           console.log("Checking for partner application with email:", verification.email);
-          const { data: partnerApplications } = await retryDatabaseOperation(async () => {
+          const { data: partnerApplications, error: appError } = await retryDatabaseOperation(async () => {
             return await supabase
               .from('partner_applications')
               .select('*')
@@ -428,7 +409,11 @@ Deno.serve(async (req) => {
               .limit(1);
           });
           
-          if (partnerApplications && partnerApplications.length > 0) {
+          if (appError) {
+            console.error("Error looking up partner application:", appError);
+          }
+          
+          if (!appError && partnerApplications && partnerApplications.length > 0) {
             console.log("Found partner application for this verification:", partnerApplications[0].id);
             
             // Generate partner invite link
@@ -489,18 +474,16 @@ Deno.serve(async (req) => {
                 
                 // Send partner invite email
                 try {
+                  // Use the webhook secret from above
+                  const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+                  
                   if (webhookSecret) {
-                    const baseUrl = getBaseUrl(req);
-                    const inviteUrl = `${baseUrl}/customer-signup?invite=${inviteCode}`;
+                    // Always use the production URL for partner invites
+                    const productionUrl = 'https://royaltransfereu.com';
+                    const inviteUrl = `${productionUrl}/partner-signup?invite=${inviteCode}`;
                     
                     console.log("Sending partner invite email");
                     console.log("Invite URL:", inviteUrl);
-                    console.log("Webhook request payload:", {
-                      name: partnerApplications[0].name,
-                      email: verification.email,
-                      invite_link: inviteUrl,
-                      email_type: 'PARTNER_INVITE'
-                    });
                     
                     const emailResponse = await fetch('https://n8n.capohq.com/webhook/rteu-tx-email', {
                       method: 'POST',
@@ -559,7 +542,7 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Verify the X-Auth header if not in development
+    // Verify the X-Auth header
     const authHeader = req.headers.get('X-Auth');
     console.log("X-Auth header present:", !!authHeader);
     
@@ -575,11 +558,8 @@ Deno.serve(async (req) => {
       console.log("Do they match?", authHeader === webhookSecret);
     }
     
-    const isDev = isDevEnvironment(req);
-    console.log("Is dev environment:", isDev);
-    
-    // More permissive in development, strict in production
-    if (!isDev && webhookSecret && authHeader !== webhookSecret) {
+    // Require webhook secret for authentication in all environments
+    if (webhookSecret && authHeader !== webhookSecret) {
       console.error("Authentication failed: Header doesn't match expected secret");
       
       return new Response(
@@ -957,7 +937,7 @@ Deno.serve(async (req) => {
                 
                 // Create unique invite code
                 const inviteCode = `partner-${Math.random().toString(36).substring(2, 8)}`;
-                console.log("Generated partner invite code:", inviteCode);
+                console.log("Generated invite code:", inviteCode);
                 
                 // Insert invite link
                 console.log("Creating invite link");
@@ -993,8 +973,9 @@ Deno.serve(async (req) => {
                   // Send partner invite email
                   try {
                     if (webhookSecret) {
-                      const baseUrl = getBaseUrl(req);
-                      const inviteUrl = `${baseUrl}/customer-signup?invite=${inviteCode}`;
+                      // Always use production URL for partner invites
+                      const productionUrl = 'https://royaltransfereu.com';
+                      const inviteUrl = `${productionUrl}/partner-signup?invite=${inviteCode}`;
                       
                       console.log("Sending partner invite email");
                       console.log("Invite URL:", inviteUrl);

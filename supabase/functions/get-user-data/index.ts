@@ -1,296 +1,205 @@
-import { createClient } from "npm:@supabase/supabase-js@2.41.0";
+import { createClient } from 'npm:@supabase/supabase-js@2.41.0';
+import { corsHeaders } from '../_shared/cors.ts';
 
-// CORS headers that handle origin dynamically
-const corsHeaders = {
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-auth",
-  "Access-Control-Max-Age": "86400"
-};
+// Create a single Supabase client for interacting with your database
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
-// Helper function to retry database operations
-const retryDatabaseOperation = async (operation, maxRetries = 5) => {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      console.log(`Database operation failed, retrying... (${attempt + 1}/${maxRetries})`);
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
+// Helper function to get the user ID from the JWT token
+const getUserIdFromToken = async (token: string) => {
+  try {
+    // Create a client with anonymous key just for JWT verification
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get user from token
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error) throw error;
+    if (!user) throw new Error('Invalid user token');
+    
+    return user.id;
+  } catch (error) {
+    console.error('Error getting user from token:', error);
+    throw new Error('Invalid or expired session');
   }
-};
-
-// Helper function to classify error types
-const classifyError = (error: any): { type: 'network' | 'auth' | 'permission' | 'server' | 'unknown', message: string } => {
-  const errorMessage = error?.message || error?.toString() || 'Unknown error';
-  
-  if (errorMessage.includes('infinite recursion') || errorMessage.includes('42P17')) {
-    return { type: 'permission', message: 'Database configuration issue detected. Please contact support.' };
-  }
-  
-  if (errorMessage.includes('Invalid session') || errorMessage.includes('401')) {
-    return { type: 'auth', message: 'Authentication session expired or invalid.' };
-  }
-  
-  if (errorMessage.includes('403') || errorMessage.includes('Unauthorized')) {
-    return { type: 'permission', message: 'Access denied.' };
-  }
-  
-  if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
-    return { type: 'server', message: 'Internal server error occurred.' };
-  }
-  
-  return { type: 'unknown', message: errorMessage };
 };
 
 Deno.serve(async (req) => {
-  // Get the client's origin
-  const origin = req.headers.get('Origin') || 'https://royaltransfereu.com';
-  
-  // Check if the origin is allowed
-  const allowedOrigins = [
-    'https://royaltransfereu.com',
-    'https://www.royaltransfereu.com', 
-    'http://localhost:3000', 
-    'http://localhost:5173'
-  ];
-  
-  // Set the correct CORS origin header based on the request's origin
-  const headersWithOrigin = {
-    ...corsHeaders,
-    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
-  };
-
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: headersWithOrigin
+      headers: corsHeaders
     });
   }
 
   try {
-    console.log("Edge Function Called: get-user-data");
-    
     // Get the authorization header
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get('authorization');
+    
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization header is required' }),
-        {
-          status: 401,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         }
-      );
+      });
+    }
+
+    // Extract the token from Authorization header
+    // The header should be in format: "Bearer <token>"
+    const token = authHeader.replace('Bearer ', '');
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Invalid authorization header format' }), {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
     }
     
-    // Initialize Supabase client with service role key to bypass RLS
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Get the user ID from the token
+    const userId = await getUserIdFromToken(token);
+    
+    // Create a Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Initialize client with user's JWT to get their ID
-    const userClient = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      }
-    );
-    
-    // Get the user's session to extract their ID
-    const { data: { session }, error: sessionError } = await userClient.auth.getSession();
-    
-    if (sessionError || !session) {
-      console.error('Session validation failed:', sessionError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired session' }),
-        {
-          status: 401,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    
-    const userId = session.user.id;
-    const userEmail = session.user.email;
-    console.log(`Fetching data for user: ${userId} (${userEmail})`);
-    
-    // Parse request to determine what data to fetch
+    // Get the request type from the query parameters
     const url = new URL(req.url);
-    const dataType = url.searchParams.get('type') || 'profile';
+    const type = url.searchParams.get('type');
     
-    if (dataType === 'profile') {
-      // Fetch user profile data using service role to bypass RLS
-      const { data: userData, error: userError } = await retryDatabaseOperation(async () => {
-        return await supabase
+    // Get booking filter (upcoming or past) if applicable
+    const filter = url.searchParams.get('filter');
+    
+    // Get specific booking ID if applicable
+    const id = url.searchParams.get('id');
+    
+    // Handle different data types
+    let data;
+    let error;
+    
+    switch (type) {
+      case 'profile':
+        // Get user profile data
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
           .eq('id', userId)
           .single();
-      });
-      
-      if (userError) {
-        const classifiedError = classifyError(userError);
-        console.error('Error fetching user data:', userError);
-        return new Response(
-          JSON.stringify({ error: classifiedError.message }),
-          {
-            status: classifiedError.type === 'auth' ? 401 : 500,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ data: userData }),
-        {
-          status: 200,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-        }
-      );
-    } 
-    else if (dataType === 'bookings') {
-      // Get filter parameters
-      const filter = url.searchParams.get('filter') || 'upcoming';
-      const now = new Date().toISOString();
-      
-      if (!userEmail) {
-        return new Response(
-          JSON.stringify({ error: 'User email not available' }),
-          {
-            status: 400,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      // Fetch user's bookings using service role to bypass RLS
-      let query = supabase
-        .from('trips')
-        .select('*');
-      
-      // Apply filters
-      if (filter === 'upcoming') {
-        query = query.gte('datetime', now);
-      } else if (filter === 'past') {
-        query = query.lt('datetime', now);
-      }
-      
-      // Get both user_id-linked AND email-matched bookings
-      query = query.or(`user_id.eq.${userId},customer_email.eq.${userEmail}`);
-      
-      // Order by date
-      query = query.order('datetime', { ascending: filter === 'upcoming' });
-      
-      const { data: bookings, error: bookingsError } = await retryDatabaseOperation(async () => {
-        return await query;
-      });
-      
-      if (bookingsError) {
-        const classifiedError = classifyError(bookingsError);
-        console.error('Error fetching bookings:', bookingsError);
-        return new Response(
-          JSON.stringify({ error: classifiedError.message }),
-          {
-            status: classifiedError.type === 'auth' ? 401 : 500,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      console.log(`Found ${bookings?.length || 0} bookings for user ${userId}`);
-      
-      return new Response(
-        JSON.stringify({ data: bookings || [] }),
-        {
-          status: 200,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    else if (dataType === 'booking-details') {
-      // Get booking ID
-      const bookingId = url.searchParams.get('id');
-      if (!bookingId) {
-        return new Response(
-          JSON.stringify({ error: 'Booking ID is required' }),
-          {
-            status: 400,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      // Fetch booking details using service role to bypass RLS
-      const { data: booking, error: bookingError } = await retryDatabaseOperation(async () => {
-        return await supabase
+          
+        data = userData;
+        error = userError;
+        break;
+        
+      case 'bookings':
+        // Get user's bookings
+        const isUpcoming = !filter || filter === 'upcoming';
+        const now = new Date().toISOString();
+        
+        const { data: bookings, error: bookingsError } = await supabase
           .from('trips')
           .select('*')
-          .eq('id', bookingId)
-          .single();
-      });
-      
-      if (bookingError) {
-        const classifiedError = classifyError(bookingError);
-        console.error('Error fetching booking details:', bookingError);
-        return new Response(
-          JSON.stringify({ error: classifiedError.message }),
-          {
-            status: classifiedError.type === 'auth' ? 401 : 500,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      // Verify the booking belongs to this user
-      if (booking.user_id !== userId && booking.customer_email !== userEmail) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized to access this booking' }),
-          {
-            status: 403,
-            headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ data: booking }),
-        {
-          status: 200,
-          headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
+          .or(`user_id.eq.${userId},customer_email.eq.(select email from users where id = '${userId}')`)
+          .filter(isUpcoming ? 'datetime', 'gte', now : 'datetime', 'lt', now)
+          .order('datetime', { ascending: isUpcoming });
+          
+        data = bookings;
+        error = bookingsError;
+        break;
+        
+      case 'booking-details':
+        // Get specific booking details
+        if (!id) {
+          return new Response(JSON.stringify({ error: 'Missing booking ID' }), {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          });
         }
-      );
+        
+        const { data: bookingData, error: bookingError } = await supabase
+          .from('trips')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        // Verify that the user has access to this booking
+        if (bookingData && bookingData.user_id !== userId) {
+          // Check if the booking email matches the user's email
+          const { data: userData } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', userId)
+            .single();
+            
+          if (!userData || userData.email !== bookingData.customer_email) {
+            return new Response(JSON.stringify({ error: 'You do not have permission to access this booking' }), {
+              status: 403,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json'
+              }
+            });
+          }
+        }
+          
+        data = bookingData;
+        error = bookingError;
+        break;
+        
+      default:
+        return new Response(JSON.stringify({ error: 'Invalid data type requested' }), {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        });
     }
     
-    // Invalid data type
-    return new Response(
-      JSON.stringify({ error: 'Invalid data type requested' }),
-      {
-        status: 400,
-        headers: { ...headersWithOrigin, 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    const classifiedError = classifyError(error);
-    console.error('Error in get-user-data Edge Function:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: classifiedError.message,
-        details: classifiedError.type === 'server' ? 'Please try again later' : undefined
-      }),
-      {
-        status: classifiedError.type === 'auth' ? 401 : 500,
-        headers: { 
-          ...headersWithOrigin,
+    // Check for database errors
+    if (error) {
+      console.error('Database error:', error);
+      
+      const status = error.code === 'PGRST116' ? 404 : 500;
+      
+      return new Response(JSON.stringify({ error: error.message }), {
+        status,
+        headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json'
         }
+      });
+    }
+    
+    // Return the data
+    return new Response(JSON.stringify({ data }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       }
-    );
+    });
+  } catch (error) {
+    console.error('Error:', error.message);
+    
+    // Determine the appropriate status code
+    let status = 500;
+    if (error.message === 'Invalid or expired session') {
+      status = 401;
+    }
+    
+    return new Response(JSON.stringify({ error: error.message }), {
+      status,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
   }
 });

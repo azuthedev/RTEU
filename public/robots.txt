@@ -17,7 +17,7 @@ Disallow: /bookings
 Disallow: /payment-info
 
 # Sitemap
-Sitemap: https://royaltransfer.eu/sitemap.xml
+Sitemap: https://royaltransfereu.com/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 10

@@ -283,7 +283,19 @@ Deno.serve(async (req) => {
           console.log("=== PARTNER INVITE EMAIL SENDING ATTEMPT ===");
           console.log('To:', email);
           console.log('Name:', name);
-          console.log('Invite Link:', invite_link);
+          // Make sure the invite link uses the production domain
+          let finalInviteLink = invite_link;
+          if (isDev) {
+            // If in dev but the link contains localhost, replace with production URL
+            if (invite_link.includes('localhost')) {
+              finalInviteLink = invite_link.replace(
+                /(https?:\/\/)([^\/]+)(\/.*)/,
+                'https://royaltransfereu.com$3'
+              );
+              console.log('Updated invite link for production:', finalInviteLink);
+            }
+          }
+          console.log('Final Invite Link:', finalInviteLink);
           
           // For development/testing in WebContainer, just return success
           if (isDev) {
@@ -312,7 +324,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               name: name,
               email: email,
-              invite_link: invite_link,
+              invite_link: finalInviteLink,
               email_type: 'PARTNER_INVITE'
             })
           });
