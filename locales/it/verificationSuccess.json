@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "title": "E-mail verificata con successo | Royal Transfer EU",
+    "description": "La tua e-mail è stata verificata con successo. Ora puoi accedere al tuo account e prenotare i nostri servizi."
+  },
+  "title": "E-mail verificata!",
+  "message": "Grazie per aver verificato il tuo indirizzo e-mail. Il tuo account è ora attivo.",
+  "autoRedirect": "Verrai reindirizzato alla pagina di accesso tra pochi secondi...",
+  "button": {
+    "continue": "Continua"
+  }
+}

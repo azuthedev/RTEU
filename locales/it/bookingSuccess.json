@@ -1,1 +1,81 @@
-{}
+{
+  "meta": {
+    "title": "Prenotazione Confermata | Royal Transfer EU",
+    "description": "La tua prenotazione del trasferimento è stata confermata. Grazie per aver scelto Royal Transfer EU."
+  },
+  "title": "Prenotazione Confermata!",
+  "description": "Grazie per aver prenotato con Royal Transfer EU. Il tuo trasferimento è stato confermato con successo.",
+  "loading": "Caricamento dei dettagli della prenotazione...",
+  "error": {
+    "title": "Errore",
+    "contactSupport": "Impossibile trovare la tua prenotazione. Si prega di contattare l'assistenza.",
+    "loadFailed": "Impossibile caricare i dettagli della prenotazione",
+    "noReference": "Nessun riferimento di prenotazione trovato",
+    "noData": "Nessun dato di prenotazione trovato",
+    "fetchFailed": "Impossibile recuperare i dettagli della prenotazione"
+  },
+  "toast": {
+    "linkSuccess": {
+      "title": "Prenotazione Collegata",
+      "description": "La tua prenotazione è stata collegata al tuo account."
+    },
+    "linkFailed": {
+      "title": "Collegamento Prenotazione Fallito",
+      "description": "Puoi collegarla manualmente nella tua pagina delle prenotazioni."
+    }
+  },
+  "reference": {
+    "label": "Riferimento Prenotazione",
+    "note": "Conserva questo riferimento per i tuoi registri"
+  },
+  "details": {
+    "title": "Dettagli Prenotazione",
+    "from": "Da:",
+    "to": "A:",
+    "transferDate": "Data Trasferimento:",
+    "returnDate": "Data Ritorno:",
+    "vehicle": "Veicolo:",
+    "passengers": "Passeggeri:",
+    "luggage": "Bagagli:",
+    "items": "articoli",
+    "extras": "Extra:",
+    "price": "Prezzo:",
+    "paymentMethod": "Metodo di Pagamento:",
+    "status": "Stato:",
+    "confirmed": "Confermato",
+    "notes": "Note:",
+    "noData": "Nessuna informazione dettagliata sulla prenotazione disponibile."
+  },
+  "confirmation": {
+    "email": "Un'email di conferma è stata inviata al tuo indirizzo email con tutti i dettagli della tua prenotazione.",
+    "contact": "Se hai domande o hai bisogno di modificare la tua prenotazione, contatta il nostro team di assistenza clienti."
+  },
+  "buttons": {
+    "viewBookings": "Visualizza le Mie Prenotazioni",
+    "checkingAccount": "Controllo Account...",
+    "signIn": "Accedi Per Gestire la Prenotazione",
+    "createAccount": "Crea Account per Gestire la Prenotazione",
+    "home": "Torna alla Home"
+  },
+  "whatsNext": {
+    "title": "Cosa Succede Ora?",
+    "confirmation": {
+      "title": "Email di Conferma",
+      "description": "Controlla la tua casella di posta per informazioni dettagliate sulla prenotazione"
+    },
+    "assignment": {
+      "title": "Assegnazione Autista",
+      "description": "Riceverai i dettagli dell'autista 24 ore prima del ritiro"
+    },
+    "ready": {
+      "title": "Pronti a Partire",
+      "description": "Il tuo autista ti aspetterà nel luogo specificato"
+    }
+  },
+  "links": {
+    "contactHelp": "Hai bisogno di aiuto? Contatta l'assistenza"
+  },
+  "date": {
+    "invalid": "Data non valida"
+  }
+}

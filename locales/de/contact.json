@@ -1,1 +1,86 @@
-{}
+{
+  "meta": {
+    "title": "Kontakt | Royal Transfer EU",
+    "description": "Nehmen Sie Kontakt mit Royal Transfer EU auf für Buchungsunterstützung, Support oder Partnerschaftsanfragen. Wir stehen Ihnen rund um die Uhr zur Verfügung, um Ihnen bei Ihren Reisebedürfnissen zu helfen."
+  },
+  "hero": {
+    "title": "Wir freuen uns, von Ihnen zu hören!",
+    "description": "Ob Sie Fragen zu unseren Dienstleistungen haben, Hilfe bei einer Buchung benötigen oder Partnerschaftsmöglichkeiten erkunden möchten, wir sind für Sie da."
+  },
+  "contactInfo": {
+    "title": "Nehmen Sie Kontakt auf",
+    "phone": {
+      "label": "Telefon",
+      "number": "+39 351 748 22 44",
+      "availability": "Rund um die Uhr verfügbar"
+    },
+    "email": {
+      "label": "E-Mail",
+      "address": "contact@royaltransfereu.com",
+      "response": "Schnelle Antwort garantiert"
+    },
+    "address": {
+      "label": "Adresse",
+      "line1": "123 Transfer Straße",
+      "line2": "EU 12345"
+    },
+    "business": {
+      "label": "Geschäftszeiten",
+      "hours": "24/7 Support verfügbar",
+      "office": "Büro: Mo-Fr 9:00-18:00"
+    },
+    "leadership": {
+      "label": "Geschäftsleitung",
+      "business": "Für Geschäftsanfragen:",
+      "email": "partnerships@royaltransfereu.com"
+    }
+  },
+  "chatButton": "Jetzt mit uns chatten",
+  "immediateHelp": {
+    "title": "Brauchen Sie sofortige Hilfe?",
+    "description": "Unser 24/7 Kundensupport-Team ist bereit, Ihnen bei dringenden Angelegenheiten zu helfen.",
+    "callButton": "Jetzt anrufen: +39 351 748 22 44"
+  },
+  "form": {
+    "title": "Senden Sie uns eine Nachricht",
+    "fields": {
+      "name": {
+        "label": "Vollständiger Name",
+        "placeholder": "Geben Sie Ihren Namen ein"
+      },
+      "email": {
+        "label": "E-Mail-Adresse",
+        "placeholder": "Geben Sie Ihre E-Mail ein"
+      },
+      "phone": {
+        "label": "Telefonnummer",
+        "placeholder": "Geben Sie Ihre Telefonnummer ein",
+        "help": "Optional, aber empfohlen für schnellere Antwort"
+      },
+      "subject": {
+        "label": "Betreff",
+        "placeholder": "Wählen Sie einen Betreff",
+        "options": {
+          "booking": "Buchungsanfrage",
+          "support": "Kundensupport",
+          "partnership": "Geschäftspartnerschaft",
+          "feedback": "Feedback",
+          "other": "Andere"
+        }
+      },
+      "message": {
+        "label": "Nachricht",
+        "placeholder": "Geben Sie Ihre Nachricht ein"
+      },
+      "submit": "Nachricht senden"
+    },
+    "sending": "Wird gesendet...",
+    "success": "Vielen Dank für Ihre Nachricht! Wir werden uns in Kürze bei Ihnen melden.",
+    "error": "Es gab ein Problem beim Senden Ihrer Nachricht. Bitte versuchen Sie es erneut.",
+    "privacy": "Durch das Absenden dieses Formulars stimmen Sie unserer Datenschutzrichtlinie zu"
+  },
+  "faq": {
+    "title": "Suchen Sie nach schnellen Antworten?",
+    "link": "Prüfen Sie unsere häufig gestellten Fragen"
+  }
+}

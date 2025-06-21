@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Partneranmeldung | Royal Transfer EU",
+    "description": "Schließen Sie Ihre Partnerregistrierung bei Royal Transfer EU ab und beginnen Sie noch heute mit dem Ausbau Ihres Geschäfts."
+  },
+  "navigation": {
+    "backToHome": "Zurück zur Startseite"
+  },
+  "invalidInvite": {
+    "title": "Ungültiger Einladungscode",
+    "defaultMessage": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+    "contactMessage": "Wenn Sie glauben, dass dies ein Fehler ist, kontaktieren Sie bitte unser Support-Team oder bewerben Sie sich über unser Partnerprogramm.",
+    "applyButton": "Als Partner bewerben",
+    "contactButton": "Support kontaktieren"
+  },
+  "success": {
+    "title": "Konto erstellt!",
+    "message": "Ihr Partnerkonto wurde erfolgreich erstellt. Sie werden in Kürze zu Ihrem Dashboard weitergeleitet."
+  },
+  "form": {
+    "title": "Partnerregistrierung",
+    "subtitle": "Schließen Sie Ihre Registrierung ab, um Partner von Royal Transfer EU zu werden.",
+    "prefillInfo": "Wir haben einige Informationen aus Ihrer Partnerbewerbung vorausgefüllt. Bitte erstellen Sie ein Passwort, um Ihre Registrierung abzuschließen.",
+    "hidePassword": "Passwort verbergen",
+    "showPassword": "Passwort anzeigen",
+    "submittingButton": "Konto wird erstellt...",
+    "submitButton": "Registrierung abschließen",
+    "termsText": "Mit dem Abschluss der Registrierung stimmen Sie unseren",
+    "termsLink": "Nutzungsbedingungen",
+    "andText": "und",
+    "privacyLink": "Datenschutzbestimmungen",
+    "fields": {
+      "name": {
+        "label": "Vollständiger Name"
+      },
+      "email": {
+        "label": "E-Mail-Adresse",
+        "help": "Diese E-Mail wurde bereits verifiziert"
+      },
+      "phone": {
+        "label": "Telefonnummer"
+      },
+      "company": {
+        "label": "Firmenname"
+      },
+      "password": {
+        "label": "Passwort erstellen"
+      },
+      "confirmPassword": {
+        "label": "Passwort bestätigen"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "Passwort ist erforderlich",
+      "length": "Das Passwort muss mindestens 6 Zeichen lang sein"
+    },
+    "confirmPassword": {
+      "required": "Bitte bestätigen Sie Ihr Passwort",
+      "match": "Passwörter stimmen nicht überein"
+    }
+  },
+  "errors": {
+    "noInviteCode": "Kein Einladungscode angegeben",
+    "invalidInvite": "Ungültiger oder abgelaufener Einladungscode",
+    "validationError": "Einladungscode konnte nicht validiert werden. Bitte versuchen Sie es später erneut.",
+    "accountCreationFailed": "Kontoerstellung fehlgeschlagen",
+    "unexpectedError": "Während der Anmeldung ist ein unerwarteter Fehler aufgetreten"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Ungültiger Einladungscode",
+      "description": "Dieser Einladungslink ist ungültig oder abgelaufen."
+    },
+    "validationError": {
+      "title": "Validierungsfehler",
+      "description": "Ihr Einladungscode konnte nicht validiert werden. Bitte versuchen Sie es später erneut."
+    },
+    "accountCreated": {
+      "title": "Konto erstellt",
+      "description": "Ihr Partnerkonto wurde erfolgreich erstellt!"
+    },
+    "signupFailed": {
+      "title": "Anmeldung fehlgeschlagen",
+      "description": "Bei der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+    }
+  }
+}

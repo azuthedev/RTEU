@@ -1,1 +1,121 @@
-{}
+{
+  "seo": {
+    "title": "Royal Transfer EU | Premium Flughafentransfers in Italien",
+    "description": "Professionelle Flughafentransfers in ganz Italien mit über 15 Jahren Erfahrung. Sichere, zuverlässige und komfortable Reisen mit englischsprachigen Fahrern."
+  },
+  "structuredData": {
+    "name": "Royal Transfer EU",
+    "description": "Premium Flughafentransfers und private Transferdienste in ganz Italien",
+    "provider": "Royal Transfer EU",
+    "serviceType": "Flughafentransfer",
+    "areaServed": "Italien"
+  },
+  "schema": {
+    "name": "Royal Transfer EU",
+    "languages": "Englisch, Italienisch"
+  },
+  "hero": {
+    "headline": "Die Straße ist Teil",
+    "headline1": "des Abenteuers",
+    "subhead": "Genießen Sie die Fahrt — wir kümmern uns um den Rest",
+    "image": {
+      "alt": "Luxuriöser Limousinen-Transferservice von Royal Transfer EU - professioneller Fahrer wartet an einem eleganten schwarzen Auto auf einer malerischen europäischen Straße"
+    }
+  },
+  "benefits": {
+    "title": "Warum uns wählen",
+    "subtitle": "Erleben Sie erstklassige Transportdienste, die auf Ihre Bedürfnisse zugeschnitten sind",
+    "items": {
+      "fixedPrices": {
+        "title": "Festpreise",
+        "description": "Keine Überraschungen, keine versteckten Gebühren. Wissen Sie genau, was Sie im Voraus zahlen werden."
+      },
+      "flightTracking": {
+        "title": "Flugverfolgung",
+        "description": "Wir überwachen Ihren Flug und passen die Abholzeit an die tatsächliche Ankunft an."
+      },
+      "professionalDrivers": {
+        "title": "Professionelle Fahrer",
+        "description": "Erfahrene, pünktliche Fahrer, die die lokalen Routen kennen und Englisch sprechen."
+      },
+      "comfortableVehicles": {
+        "title": "Komfortable Fahrzeuge",
+        "description": "Reisen Sie stilvoll mit unserer Flotte von erstklassigen, gut gewarteten Fahrzeugen."
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Unser Team steht Ihnen jederzeit zur Verfügung, um bei Fragen oder Änderungen zu helfen."
+      },
+      "noWaiting": {
+        "title": "Kein Warten",
+        "description": "Ihr Fahrer wird auf Sie warten, auch wenn Ihr Flug verspätet ist."
+      }
+    }
+  },
+  "services": {
+    "title": "Unsere Dienstleistungen",
+    "subtitle": "Premium-Transportlösungen für alle Ihre Reisebedürfnisse",
+    "learnMore": "Mehr erfahren",
+    "airport": {
+      "title": "Flughafentransfers",
+      "description": "Tür-zu-Tür-Service zwischen Flughäfen und Ihrem Ziel mit Flugverfolgung und kostenloser Wartezeit."
+    },
+    "intercity": {
+      "title": "Transfers zwischen Städten",
+      "description": "Komfortable Transfers zwischen Städten mit erfahrenen Fahrern, die die besten Routen kennen."
+    },
+    "group": {
+      "title": "Gruppentransfers",
+      "description": "Geräumige Fahrzeuge für Gruppen aller Größen, damit alle gemeinsam komfortabel reisen können."
+    }
+  },
+  "bookingProcess": {
+    "title": "So funktioniert es",
+    "subtitle": "Buchen Sie Ihren Premium-Transfer in nur wenigen einfachen Schritten",
+    "steps": {
+      "step1": {
+        "title": "Online buchen",
+        "description": "Geben Sie Ihre Reisedaten ein und wählen Sie ein Fahrzeug, das Ihren Bedürfnissen entspricht."
+      },
+      "step2": {
+        "title": "Sofortige Bestätigung",
+        "description": "Erhalten Sie sofortige Bestätigung mit allen Transferdetails."
+      },
+      "step3": {
+        "title": "Treffen Sie Ihren Fahrer",
+        "description": "Ihr professioneller Fahrer wird am vereinbarten Abholort warten."
+      },
+      "step4": {
+        "title": "Genießen Sie Ihre Fahrt",
+        "description": "Entspannen Sie sich im Komfort, während wir Sie sicher zu Ihrem Ziel bringen."
+      }
+    }
+  },
+  "testimonials": {
+  "title": "Was unsere Kunden sagen",
+  "subtitle": "Hören Sie von Reisenden, die unseren Premium-Service erlebt haben",
+  "quote1": "Hervorragender Service, höfliche Fahrer und perfektes Timing! Unsere Transfers waren reibungslos und stressfrei. Sehr zu empfehlen!",
+  "author1": "Sarah P.",
+  "location1": "UK",
+  "quote2": "Exzellente Erfahrung von Anfang bis Ende. Der Fahrer war professionell und das Fahrzeug makellos. Werde definitiv wieder buchen!",
+  "author2": "Marco R.",
+  "location2": "Italien",
+  "quote3": "Zuverlässiger und pünktlicher Service. Der Buchungsprozess war einfach und der Fahrer war sehr hilfsbereit mit unserem Gepäck.",
+  "author3": "John D.",
+  "location3": "USA"
+  },
+  "featuredDestinations": {
+    "title": "Beliebte Reiseziele",
+    "subtitle": "Entdecken Sie unsere am häufigsten angefragten Routen und Ziele",
+    "viewAll": "Alle Reiseziele anzeigen"
+  },
+  "cta": {
+    "title": "Bereit, Ihren Transfer zu buchen?",
+    "subtitle": "Sichern Sie sich jetzt Ihren Premium-Transfer und reisen Sie mit Zuversicht",
+    "button": "Jetzt buchen"
+  },
+  "trustBadges": {
+    "title": "Vertraut von Tausenden",
+    "subtitle": "Ihre Sicherheit und Zufriedenheit haben für uns höchste Priorität"
+  }
+}

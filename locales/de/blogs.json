@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Reiseblog | Royal Transfer EU",
+    "description": "Entdecken Sie Reiseführer für Italien, Transporttipps und Reisezieleinblicke, um Ihre perfekte Reise zu planen."
+  },
+  "hero": {
+    "title": "Reiseführer & Einblicke",
+    "subtitle": "Entdecken Sie unsere Sammlung von Reisetipps, Reisezielen und Transportratschlägen für Ihr italienisches Abenteuer"
+  },
+  "featured": {
+    "title": "Ausgewählte Artikel"
+  },
+  "latest": {
+    "title": "Neueste Artikel"
+  },
+  "categories": {
+    "title": "Nach Kategorie durchsuchen",
+    "items": [
+      {
+        "name": "Reiseführer",
+        "description": "Umfassende Guides zu beliebten Reisezielen",
+        "slug": "reiseführer"
+      },
+      {
+        "name": "Transport",
+        "description": "Tipps zur Navigation in italienischen Städten",
+        "slug": "transport"
+      },
+      {
+        "name": "Kulturelle Erlebnisse",
+        "description": "Kunst, Geschichte und lokale Traditionen",
+        "slug": "kulturelle-erlebnisse"
+      },
+      {
+        "name": "Essen & Trinken",
+        "description": "Kulinarische Abenteuer in ganz Italien",
+        "slug": "essen-trinken"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Abonnieren Sie unseren Reise-Newsletter",
+    "description": "Erhalten Sie die neuesten Reisetipps, Reisezielführer und exklusive Angebote direkt in Ihren Posteingang.",
+    "emailPlaceholder": "Ihre E-Mail-Adresse",
+    "button": "Abonnieren",
+    "privacyNote": "Mit dem Abonnieren stimmen Sie unserer Datenschutzerklärung zu. Sie können sich jederzeit abmelden."
+  },
+  "blog": {
+    "readMore": "Weiterlesen",
+    "minuteRead": "Min Lesezeit",
+    "loading": "Blogbeiträge werden geladen..."
+  }
+}

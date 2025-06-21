@@ -1,1 +1,69 @@
-{}
+{
+  "meta": {
+    "title": "Accedi | Royal Transfer EU",
+    "description": "Accedi al tuo account Royal Transfer EU per gestire le tue prenotazioni, visualizzare il tuo profilo e altro ancora."
+  },
+  "tabs": {
+    "customer": "Cliente",
+    "driver": "Autista"
+  },
+  "devMode": {
+    "title": "Modalità Sviluppo Attiva",
+    "description": "Gli errori di autenticazione saranno ignorati per i test."
+  },
+  "booking": {
+    "reference": "Il tuo riferimento di prenotazione: {{reference}}",
+    "message": "Accedi per gestire la tua prenotazione."
+  },
+  "verification": {
+    "title": "Verifica Email Richiesta",
+    "description": "Il tuo account deve essere verificato prima di poter accedere. Controlla la tua email per un link di verifica o richiedine uno nuovo.",
+    "sending": "Invio email di verifica...",
+    "resend": "Rinvia Email di Verifica"
+  },
+  "driver": {
+    "title": "Portale Autisti",
+    "message": "Accedi tramite il nostro portale partner per accedere al pannello di controllo dell'autista.",
+    "becomePartner": "Diventa Partner",
+    "goToPortal": "Vai al Portale Partner"
+  },
+  "form": {
+    "or": "oppure",
+    "email": "Email",
+    "password": "Password",
+    "linkingBooking": "Collegamento Prenotazione...",
+    "signingIn": "Accesso in corso...",
+    "signInAndLink": "Accedi e Collega Prenotazione",
+    "signIn": "Accedi",
+    "forgotPassword": "Password dimenticata?"
+  },
+  "errors": {
+    "missingCredentials": "Inserisci sia email che password",
+    "emailVerification": "Il tuo indirizzo email deve essere verificato prima di poter continuare.",
+    "emailRequired": "Inserisci il tuo indirizzo email",
+    "noAccount": "Nessun account trovato con questo indirizzo email. Registrati prima.",
+    "alreadyVerified": "Questa email è già verificata. Prova ad accedere di nuovo.",
+    "recentVerification": "Un'email di verifica è stata inviata di recente. Controlla la tua casella di posta o attendi {{time}} minuto(i) prima di richiederne un'altra.",
+    "sendVerificationFailed": "Impossibile inviare il codice di verifica",
+    "verificationFailed": "Impossibile inviare l'email di verifica",
+    "emailNotVerified": "Il tuo indirizzo email deve essere verificato prima di poter continuare.",
+    "emailNeedsVerification": "Il tuo indirizzo email deve essere verificato. Controlla la tua casella di posta o richiedi una nuova email di verifica.",
+    "loginFailed": "Accesso fallito. Controlla le tue credenziali."
+  },
+  "success": {
+    "emailVerified": "Email verificata con successo! Ora puoi accedere."
+  },
+  "toast": {
+    "bookingLinked": {
+      "title": "Successo",
+      "message": "La prenotazione è stata collegata al tuo account."
+    },
+    "bookingLinkFailed": {
+      "title": "Collegamento Prenotazione Fallito",
+      "message": "Puoi collegarla manualmente nella tua pagina delle prenotazioni."
+    }
+  },
+  "backToHome": "Torna alla Home",
+  "signUp": "Registrati",
+  "needHelp": "Hai bisogno di aiuto? Contatta l'assistenza"
+}

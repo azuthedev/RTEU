@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Le Tue Prenotazioni | Royal Transfer EU",
+    "description": "Visualizza e gestisci le tue prenotazioni Royal Transfer EU."
+  },
+  "header": {
+    "title": "Le Tue Prenotazioni",
+    "refreshButton": "Aggiorna"
+  },
+  "error": {
+    "retry": "Riprova",
+    "networkError": "Connessione di rete fallita. Controlla la tua connessione internet e riprova.",
+    "configError": "Problema di configurazione del database. Prova ad aggiornare la pagina o contatta il supporto se il problema persiste.",
+    "sessionExpired": "La tua sessione è scaduta. Effettua nuovamente l'accesso.",
+    "permissionError": "Accesso negato. Non hai i permessi per visualizzare queste prenotazioni.",
+    "serverError": "Si è verificato un errore del server. Riprova tra qualche istante.",
+    "noSession": "Nessuna sessione attiva - effettua nuovamente l'accesso",
+    "emailLookupFailed": "Impossibile determinare l'email dell'utente per la ricerca della prenotazione",
+    "edgeFunctionFailed": "Edge Function fallita",
+    "reloginMessage": "Effettua nuovamente l'accesso per accedere alle tue prenotazioni."
+  },
+  "loading": {
+    "auth": "Caricamento autenticazione...",
+    "bookings": "Caricamento delle tue prenotazioni..."
+  },
+  "toast": {
+    "noUpcoming": "Nessuna prenotazione futura",
+    "noUpcomingDesc": "Non hai prenotazioni future.",
+    "noPast": "Nessuna prenotazione passata",
+    "noPastDesc": "Non hai prenotazioni passate.",
+    "error": "Errore nel caricamento delle prenotazioni",
+    "detailsError": "Errore nel caricamento dei dettagli",
+    "detailsErrorDesc": "Impossibile caricare i dettagli della prenotazione. Riprova.",
+    "linkSuccess": "Prenotazione collegata",
+    "linkSuccessDesc": "Questa prenotazione è stata collegata al tuo account.",
+    "linkError": "Errore",
+    "linkErrorDesc": "Impossibile collegare la prenotazione al tuo account.",
+    "referenceCopied": "Riferimento prenotazione copiato",
+    "referenceCopiedDesc": "Il riferimento è stato copiato negli appunti"
+  },
+  "tabs": {
+    "upcoming": "Future",
+    "past": "Passate"
+  },
+  "emptyState": {
+    "upcoming": "Nessuna prenotazione futura",
+    "past": "Nessuna prenotazione passata",
+    "bookButton": "Prenota un Trasferimento"
+  },
+  "bookingItem": {
+    "from": "Da",
+    "to": "A",
+    "link": "Collega",
+    "linkTooltip": "Collega al mio account"
+  },
+  "dateTime": {
+    "na": "N/D",
+    "invalid": "Data non valida"
+  },
+  "currency": {
+    "na": "N/D"
+  },
+  "contact": {
+    "notProvided": "Non fornito"
+  },
+  "vehicle": {
+    "standard": "Standard"
+  },
+  "payment": {
+    "card": "Carta"
+  },
+  "status": {
+    "completed": "Completato",
+    "cancelled": "Annullato",
+    "in_progress": "In Corso",
+    "accepted": "Accettato",
+    "pending": "In Attesa"
+  },
+  "bookingDetails": {
+    "title": "Dettagli Prenotazione",
+    "copyReference": "Clicca per copiare il riferimento della prenotazione",
+    "trip": {
+      "title": "Informazioni sul Viaggio",
+      "pickup": "Ritiro",
+      "dropoff": "Destinazione",
+      "vehicle": "Veicolo",
+      "passengers": "Passeggeri",
+      "luggage": "Bagagli",
+      "items": "articoli",
+      "tripType": "Tipo di Viaggio",
+      "oneWay": "Solo Andata",
+      "roundTrip": "Andata e Ritorno"
+    },
+    "price": {
+      "title": "Prezzo",
+      "payment": "Metodo di Pagamento"
+    },
+    "flightInfo": {
+      "title": "Informazioni sul Volo",
+      "flightNumber": "Numero di Volo"
+    },
+    "contact": {
+      "title": "Informazioni di Contatto",
+      "name": "Nome Cliente",
+      "email": "Email",
+      "phone": "Telefono"
+    },
+    "extras": {
+      "title": "Servizi Aggiuntivi"
+    },
+    "stops": {
+      "title": "Fermate Extra"
+    },
+    "notes": {
+      "title": "Note"
+    },
+    "linkBooking": {
+      "title": "Collega Questa Prenotazione",
+      "description": "Questa prenotazione corrisponde alla tua email ma non è ancora collegata al tuo account.",
+      "button": "Collega al Mio Account",
+      "linking": "Collegamento in corso..."
+    },
+    "buttons": {
+      "close": "Chiudi",
+      "closeLabel": "Chiudi dettagli",
+      "support": "Supporto",
+      "manage": "Gestisci"
+    }
+  }
+}

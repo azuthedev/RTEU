@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Partner werden | Royal Transfer EU",
+    "description": "Treten Sie dem Royal Transfer EU Partnernetzwerk bei und lassen Sie Ihr Geschäft wachsen. Bewerben Sie sich jetzt, um offizieller Partner zu werden."
+  },
+  "hero": {
+    "title": "Werden Sie Partner von Royal Transfer EU",
+    "subtitle": "Schließen Sie sich unserem Netzwerk professioneller Fahrer an und steigern Sie Ihr Geschäft",
+    "cta": "Jetzt bewerben"
+  },
+  "benefits": {
+    "title": "Warum mit uns kooperieren",
+    "description": "Treten Sie einem wachsenden Netzwerk professioneller Fahrer und Unternehmen bei, um Ihre Geschäftsmöglichkeiten zu erweitern und Premium-Dienstleistungen für Reisende in ganz Europa anzubieten.",
+    "items": {
+      "bookings": {
+        "title": "Kontinuierliche Buchungen",
+        "description": "Erhalten Sie einen stetigen Strom vorausbezahlter Buchungen über unsere Plattform, reduzieren Sie Leerfahrten und Leerlaufzeiten."
+      },
+      "clientele": {
+        "title": "Premium-Kundschaft",
+        "description": "Bedienen Sie hochwertige Kunden, die professionellen Service schätzen und bereit sind, für überlegene Erfahrungen zu bezahlen."
+      },
+      "schedule": {
+        "title": "Flexibler Zeitplan",
+        "description": "Wählen Sie, wann Sie arbeiten und welche Buchungen Sie annehmen, behalten Sie die volle Kontrolle über Ihren Zeitplan."
+      },
+      "support": {
+        "title": "Professioneller Support",
+        "description": "Greifen Sie auf unser spezialisiertes Partner-Support-Team für Hilfe bei Buchungen, Kundenkommunikation und technischen Problemen zu."
+      },
+      "technology": {
+        "title": "Technologie-Plattform",
+        "description": "Nutzen Sie unsere Fahrer-App, um Buchungen, Navigation und Kundenkommunikation an einem Ort zu verwalten."
+      },
+      "growth": {
+        "title": "Wachstumschancen",
+        "description": "Erweitern Sie Ihr Geschäft mit Zugang zu internationalen Reisenden und Firmenkunden."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Partneranforderungen",
+    "description": "Wir halten hohe Standards aufrecht, um einen außergewöhnlichen Service für all unsere Kunden zu gewährleisten.",
+    "list": [
+      "Gültiger Berufsführerschein und alle erforderlichen Genehmigungen",
+      "Sauberes, gut gewartetes Fahrzeug unter 5 Jahren",
+      "Gewerbliche Versicherung mit angemessenem Schutz",
+      "Ausgezeichnete Kenntnis lokaler Straßen und Attraktionen",
+      "Professionelles Erscheinungsbild und starke Kundenservicefähigkeiten",
+      "Fließende Englischkenntnisse",
+      "Smartphone mit zuverlässiger Internetverbindung",
+      "Flexible Verfügbarkeit einschließlich Wochenenden und Feiertagen",
+      "Hintergrundüberprüfung und einwandfreie Fahrerbilanz"
+    ]
+  },
+  "form": {
+    "title": "Bewerben Sie sich als Partner",
+    "description": "Füllen Sie das untenstehende Formular aus, um Ihren Bewerbungsprozess zu starten. Unser Team wird Ihre Bewerbung prüfen und Sie innerhalb von 2-3 Werktagen kontaktieren.",
+    "fields": {
+      "name": {
+        "label": "Vollständiger Name",
+        "placeholder": "Geben Sie Ihren vollständigen Namen ein"
+      },
+      "email": {
+        "label": "E-Mail-Adresse",
+        "placeholder": "Geben Sie Ihre E-Mail ein"
+      },
+      "phone": {
+        "label": "Telefonnummer",
+        "placeholder": "Geben Sie Ihre Telefonnummer ein",
+        "help": "Inkl. Ländervorwahl, z.B. +39"
+      },
+      "company": {
+        "label": "Firmenname",
+        "placeholder": "Geben Sie Ihren Firmennamen ein"
+      },
+      "vat": {
+        "label": "Umsatzsteuer-ID",
+        "placeholder": "Geben Sie Ihre USt-IdNr. ein",
+        "help": "Steueridentifikationsnummer für Ihr Unternehmen"
+      },
+      "vehicle": {
+        "label": "Fahrzeugtyp (Optional)",
+        "placeholder": "Wählen Sie einen Fahrzeugtyp",
+        "options": {
+          "sedan": "Limousine",
+          "minivan": "Minivan",
+          "sprinter": "Sprinter",
+          "bus": "Bus"
+        }
+      },
+      "message": {
+        "label": "Zusätzliche Informationen",
+        "placeholder": "Erzählen Sie uns von Ihrer Erfahrung, Fahrzeugdetails und Verfügbarkeit"
+      }
+    },
+    "validation": {
+      "name": "Bitte geben Sie Ihren Namen ein",
+      "email": "E-Mail ist erforderlich",
+      "emailFormat": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "phone": "Telefonnummer ist erforderlich",
+      "phoneFormat": "Bitte geben Sie eine gültige Telefonnummer ein",
+      "company": "Firmenname ist erforderlich",
+      "vat": "Umsatzsteuer-ID ist erforderlich",
+      "message": "Zusätzliche Informationen sind erforderlich"
+    },
+    "buttons": {
+      "submit": "Bewerbung absenden",
+      "submitting": "Wird gesendet..."
+    },
+    "success": {
+      "title": "Bewerbung eingereicht!",
+      "message": "Vielen Dank für Ihr Interesse an einer Partnerschaft mit Royal Transfer EU. Wir haben Ihre Bewerbung erhalten und unser Team wird sie in Kürze prüfen. Wir werden Sie innerhalb von 2-3 Werktagen mit den nächsten Schritten kontaktieren.",
+      "button": {
+        "another": "Weitere Bewerbung einreichen",
+        "home": "Zurück zur Startseite"
+      }
+    },
+    "verification": {
+      "title": "E-Mail erfolgreich verifiziert",
+      "message": "Vielen Dank für die Verifizierung Ihrer E-Mail! Wir haben Ihnen einen Einladungslink geschickt, um Ihre Registrierung als Partner abzuschließen. Bitte überprüfen Sie Ihren E-Mail-Posteingang.",
+      "emailSent": "Einladungslink gesendet an:",
+      "checkSpam": "Wenn Sie die E-Mail in Ihrem Posteingang nicht sehen können, überprüfen Sie bitte Ihren Spam- oder Junk-Ordner."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Formularvalidierungsfehler",
+        "description": "Bitte überprüfen Sie das Formular und beheben Sie die Fehler."
+      },
+      "success": {
+        "title": "Bewerbung eingereicht",
+        "description": "Ihre Partnerbewerbung wurde erhalten. Wir werden Sie bald kontaktieren!"
+      },
+      "error": {
+        "title": "Formularübermittlung fehlgeschlagen",
+        "description": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut."
+      },
+      "verifyEmail": {
+        "title": "E-Mail verifizieren",
+        "description": "Bitte überprüfen Sie Ihre E-Mail auf einen Verifizierungscode."
+      },
+      "verificationSuccess": {
+        "title": "E-Mail erfolgreich verifiziert",
+        "description": "Ihre Partnerbewerbung wurde erhalten und Ihre E-Mail ist verifiziert. Bitte überprüfen Sie Ihre E-Mail auf einen Einladungslink zur Vervollständigung Ihrer Registrierung."
+      }
+    },
+    "errors": {
+      "default": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut."
+    }
+  },
+  "faq": {
+    "title": "Häufig gestellte Fragen",
+    "description": "Alles, was Sie über eine Partnerschaft mit Royal Transfer EU wissen müssen",
+    "items": {
+      "start": {
+        "question": "Wie schnell kann ich nach der Bewerbung starten?",
+        "answer": "Nach Genehmigung Ihrer Bewerbung führen wir Sie durch das Onboarding, das typischerweise 3-7 Tage dauert, abhängig von der Dokumentenverifizierung und dem Abschluss der Schulung."
+      },
+      "payment": {
+        "question": "Wie werde ich für abgeschlossene Fahrten bezahlt?",
+        "answer": "Zahlungen werden wöchentlich verarbeitet. Sie erhalten direkte Einzahlungen auf Ihr registriertes Bankkonto für alle abgeschlossenen Fahrten, abzüglich der Plattformgebühr."
+      },
+      "areas": {
+        "question": "In welchen Gebieten kann ich Dienste anbieten?",
+        "answer": "Sie können Ihre bevorzugten Servicegebiete während der Registrierung auswählen. Sie können in allen Gebieten Dienste anbieten, in denen Sie gesetzlich als Fahrer tätig sein dürfen."
+      },
+      "vehicle": {
+        "question": "Muss ich mein eigenes Fahrzeug bereitstellen?",
+        "answer": "Ja, Partner müssen ihre eigenen Fahrzeuge haben, die unseren Qualitätsstandards entsprechen. Ihr Fahrzeug muss sauber, gut gewartet und weniger als 5 Jahre alt sein."
+      },
+      "commission": {
+        "question": "Wie ist die Provisionsstruktur?",
+        "answer": "Unsere Provision variiert je nach Dienstleistungstyp und Standort, typischerweise zwischen 15-25%. Vollständige Details werden während des Onboarding-Prozesses bereitgestellt."
+      },
+      "exclusivity": {
+        "question": "Kann ich gleichzeitig für andere Transferunternehmen arbeiten?",
+        "answer": "Ja, unsere Partnerschaft ist nicht exklusiv. Sie können gerne mit anderen Unternehmen zusammenarbeiten oder Ihr unabhängiges Geschäft neben der Partnerschaft mit uns aufrechterhalten."
+      }
+    }
+  }
+}

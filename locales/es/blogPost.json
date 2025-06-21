@@ -1,1 +1,15 @@
-{}
+{
+  "seo": {
+    "titleSuffix": "Blog de Royal Transfer EU"
+  },
+  "blog": {
+    "backToBlogs": "Volver a todos los artículos",
+    "minuteRead": "min de lectura",
+    "country": "Italia",
+    "relatedArticles": "Artículos relacionados",
+    "readMore": "Leer más",
+    "ctaTitle": "¿Listo para explorar Italia?",
+    "ctaText": "Reserve su traslado premium desde el aeropuerto y disfrute de un comienzo cómodo y sin estrés para su aventura italiana.",
+    "ctaButton": "Reserve su traslado"
+  }
+}

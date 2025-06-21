@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Crear Cuenta | Royal Transfer EU",
+    "description": "Regístrese para obtener una cuenta de Royal Transfer EU para gestionar sus reservas y obtener ofertas exclusivas",
+    "titlePartner": "Registro de Socio | Royal Transfer EU",
+    "descriptionPartner": "Complete su registro de socio con Royal Transfer EU"
+  },
+  "backToHome": "Volver al Inicio",
+  "loading": {
+    "validatingInvite": "Validando su código de invitación..."
+  },
+  "inviteError": {
+    "title": "Código de Invitación Inválido",
+    "message": "Si cree que esto es un error, por favor contacte con nuestro equipo de soporte.",
+    "signUp": "Registrarse Sin Invitación",
+    "contact": "Contactar Soporte"
+  },
+  "success": {
+    "title": "¡Cuenta Creada!",
+    "message": "Su cuenta ha sido creada con éxito. Ahora puede iniciar sesión para gestionar sus reservas y perfil.",
+    "messagePartner": "Su cuenta de socio ha sido creada con éxito. Será redirigido a su perfil en breve."
+  },
+  "partnerMessage": "Gracias por solicitar ser socio de Royal Transfer EU. Por favor, complete su registro para comenzar.",
+  "bookingMessage": "Crear una cuenta vinculará su reserva {{reference}} a su perfil.",
+  "form": {
+    "titlePartner": "Completar Registro de Socio",
+    "title": "Crear una Cuenta",
+    "name": "Nombre Completo",
+    "email": "Dirección de Email",
+    "phone": "Teléfono (Opcional)",
+    "phoneHelp": "Para notificaciones de reservas",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "creating": "Creando Cuenta...",
+    "create": "Crear Cuenta",
+    "terms": "Al crear una cuenta, acepta nuestros",
+    "termsLink": "Términos de Servicio",
+    "and": "y",
+    "privacyLink": "Política de Privacidad",
+    "haveAccount": "¿Ya tiene una cuenta?",
+    "signIn": "Iniciar sesión"
+  },
+  "errors": {
+    "invalidInvite": "Código de invitación inválido o caducado",
+    "validateInvite": "Error al validar la invitación. Por favor, inténtelo de nuevo más tarde.",
+    "userCreationFailed": "Falló la creación del usuario",
+    "invalidEmail": "Por favor, introduzca una dirección de email válida",
+    "verificationFailed": "Error al enviar el email de verificación",
+    "sendVerificationFailed": "Error al enviar el email de verificación",
+    "unexpectedError": "Ocurrió un error inesperado"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Invitación Inválida",
+      "message": "Este enlace de invitación es inválido o ha caducado."
+    },
+    "validationError": {
+      "title": "Error de Validación",
+      "message": "Error al validar su código de invitación. Por favor, inténtelo de nuevo más tarde."
+    },
+    "accountCreated": {
+      "title": "Cuenta Creada",
+      "message": "¡Su cuenta ha sido creada con éxito!"
+    },
+    "signupFailed": {
+      "title": "Registro Fallido",
+      "message": "Ocurrió un error durante el registro."
+    }
+  },
+  "validation": {
+    "nameRequired": "El nombre es obligatorio",
+    "passwordRequired": "La contraseña es obligatoria",
+    "passwordLength": "La contraseña debe tener al menos 6 caracteres",
+    "confirmRequired": "Por favor, confirme su contraseña",
+    "passwordsMatch": "Las contraseñas no coinciden"
+  }
+}

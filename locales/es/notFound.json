@@ -1,1 +1,12 @@
-{}
+{
+  "meta": {
+    "title": "404 - Página no encontrada | Royal Transfer EU",
+    "description": "La página que estás buscando no existe. Encuentra tu camino de regreso a nuestro sitio web."
+  },
+  "title": "Página no encontrada",
+  "message": "¡Ups! La página que estás buscando no existe o ha sido movida.",
+  "searchPlaceholder": "Buscar en nuestro sitio web...",
+  "backToHome": "Volver a la página de inicio",
+  "contactSupport": "Contactar con soporte",
+  "popularPages": "Páginas populares:"
+}

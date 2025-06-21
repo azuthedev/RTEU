@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Sus Reservas | Royal Transfer EU",
+    "description": "Vea y gestione sus reservas de Royal Transfer EU."
+  },
+  "header": {
+    "title": "Sus Reservas",
+    "refreshButton": "Actualizar"
+  },
+  "error": {
+    "retry": "Reintentar",
+    "networkError": "Falló la conexión de red. Por favor, compruebe su conexión a internet e inténtelo de nuevo.",
+    "configError": "Problema de configuración de la base de datos. Por favor, actualice la página o contacte con soporte si el problema persiste.",
+    "sessionExpired": "Su sesión ha caducado. Por favor, inicie sesión de nuevo.",
+    "permissionError": "Acceso denegado. No tiene permiso para ver estas reservas.",
+    "serverError": "Se produjo un error del servidor. Por favor, inténtelo de nuevo en unos momentos.",
+    "noSession": "No hay sesión activa - por favor, inicie sesión de nuevo",
+    "emailLookupFailed": "No se pudo determinar el email del usuario para la búsqueda de reservas",
+    "edgeFunctionFailed": "Falló la Edge Function",
+    "reloginMessage": "Por favor, inicie sesión de nuevo para acceder a sus reservas."
+  },
+  "loading": {
+    "auth": "Cargando autenticación...",
+    "bookings": "Cargando sus reservas..."
+  },
+  "toast": {
+    "noUpcoming": "No hay reservas próximas",
+    "noUpcomingDesc": "No tiene ninguna reserva próxima.",
+    "noPast": "No hay reservas pasadas",
+    "noPastDesc": "No tiene ninguna reserva pasada.",
+    "error": "Error al Cargar las Reservas",
+    "detailsError": "Error al Cargar Detalles",
+    "detailsErrorDesc": "No se pudieron cargar los detalles de la reserva. Por favor, inténtelo de nuevo.",
+    "linkSuccess": "Reserva Vinculada",
+    "linkSuccessDesc": "Esta reserva ha sido vinculada a su cuenta.",
+    "linkError": "Error",
+    "linkErrorDesc": "No se pudo vincular la reserva a su cuenta.",
+    "referenceCopied": "Referencia de Reserva Copiada",
+    "referenceCopiedDesc": "La referencia ha sido copiada al portapapeles"
+  },
+  "tabs": {
+    "upcoming": "Próximas",
+    "past": "Pasadas"
+  },
+  "emptyState": {
+    "upcoming": "No hay reservas próximas",
+    "past": "No hay reservas pasadas",
+    "bookButton": "Reservar un Traslado"
+  },
+  "bookingItem": {
+    "from": "Desde",
+    "to": "Hasta",
+    "link": "Vincular",
+    "linkTooltip": "Vincular a mi cuenta"
+  },
+  "dateTime": {
+    "na": "N/D",
+    "invalid": "Fecha inválida"
+  },
+  "currency": {
+    "na": "N/D"
+  },
+  "contact": {
+    "notProvided": "No proporcionado"
+  },
+  "vehicle": {
+    "standard": "Estándar"
+  },
+  "payment": {
+    "card": "Tarjeta"
+  },
+  "status": {
+    "completed": "Completado",
+    "cancelled": "Cancelado",
+    "in_progress": "En Progreso",
+    "accepted": "Aceptado",
+    "pending": "Pendiente"
+  },
+  "bookingDetails": {
+    "title": "Detalles de la Reserva",
+    "copyReference": "Haga clic para copiar la referencia de reserva",
+    "trip": {
+      "title": "Información del Viaje",
+      "pickup": "Recogida",
+      "dropoff": "Destino",
+      "vehicle": "Vehículo",
+      "passengers": "Pasajeros",
+      "luggage": "Equipaje",
+      "items": "artículos",
+      "tripType": "Tipo de Viaje",
+      "oneWay": "Solo Ida",
+      "roundTrip": "Ida y Vuelta"
+    },
+    "price": {
+      "title": "Precio",
+      "payment": "Método de Pago"
+    },
+    "flightInfo": {
+      "title": "Información del Vuelo",
+      "flightNumber": "Número de Vuelo"
+    },
+    "contact": {
+      "title": "Información de Contacto",
+      "name": "Nombre del Cliente",
+      "email": "Email",
+      "phone": "Teléfono"
+    },
+    "extras": {
+      "title": "Servicios Adicionales"
+    },
+    "stops": {
+      "title": "Paradas Adicionales"
+    },
+    "notes": {
+      "title": "Notas"
+    },
+    "linkBooking": {
+      "title": "Vincular Esta Reserva",
+      "description": "Esta reserva coincide con su email pero aún no está vinculada a su cuenta.",
+      "button": "Vincular a Mi Cuenta",
+      "linking": "Vinculando..."
+    },
+    "buttons": {
+      "close": "Cerrar",
+      "closeLabel": "Cerrar detalles",
+      "support": "Soporte",
+      "manage": "Gestionar"
+    }
+  }
+}

@@ -1,1 +1,86 @@
-{}
+{
+  "meta": {
+    "title": "Contacto | Royal Transfer EU",
+    "description": "Ponte en contacto con Royal Transfer EU para asistencia con reservas, soporte o consultas sobre colaboraciones. Estamos disponibles 24/7 para ayudar con tus necesidades de viaje."
+  },
+  "hero": {
+    "title": "¡Nos Encantaría Saber de Ti!",
+    "description": "Ya sea que tengas preguntas sobre nuestros servicios, necesites ayuda con una reserva o quieras explorar oportunidades de colaboración, estamos aquí para ayudarte."
+  },
+  "contactInfo": {
+    "title": "Ponte en Contacto",
+    "phone": {
+      "label": "Teléfono",
+      "number": "+39 351 748 22 44",
+      "availability": "Disponible 24/7"
+    },
+    "email": {
+      "label": "Email",
+      "address": "contact@royaltransfereu.com",
+      "response": "Respuesta rápida garantizada"
+    },
+    "address": {
+      "label": "Dirección",
+      "line1": "123 Calle Transfer",
+      "line2": "EU 12345"
+    },
+    "business": {
+      "label": "Horario Comercial",
+      "hours": "Soporte 24/7 Disponible",
+      "office": "Oficina: Lun-Vie 9:00-18:00"
+    },
+    "leadership": {
+      "label": "Dirección",
+      "business": "Para Consultas Comerciales:",
+      "email": "partnerships@royaltransfereu.com"
+    }
+  },
+  "chatButton": "Chatea con Nosotros Ahora",
+  "immediateHelp": {
+    "title": "¿Necesitas Ayuda Inmediata?",
+    "description": "Nuestro equipo de soporte al cliente 24/7 está listo para asistirte con cualquier asunto urgente.",
+    "callButton": "Llama Ahora: +39 351 748 22 44"
+  },
+  "form": {
+    "title": "Envíanos un Mensaje",
+    "fields": {
+      "name": {
+        "label": "Nombre Completo",
+        "placeholder": "Ingresa tu nombre"
+      },
+      "email": {
+        "label": "Dirección de Email",
+        "placeholder": "Ingresa tu email"
+      },
+      "phone": {
+        "label": "Número de Teléfono",
+        "placeholder": "Ingresa tu número de teléfono",
+        "help": "Opcional, pero recomendado para una respuesta más rápida"
+      },
+      "subject": {
+        "label": "Asunto",
+        "placeholder": "Selecciona un asunto",
+        "options": {
+          "booking": "Consulta de Reserva",
+          "support": "Soporte al Cliente",
+          "partnership": "Colaboración Comercial",
+          "feedback": "Comentarios",
+          "other": "Otros"
+        }
+      },
+      "message": {
+        "label": "Mensaje",
+        "placeholder": "Ingresa tu mensaje"
+      },
+      "submit": "Enviar Mensaje"
+    },
+    "sending": "Enviando...",
+    "success": "¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto.",
+    "error": "Hubo un problema al enviar tu mensaje. Por favor, inténtalo de nuevo.",
+    "privacy": "Al enviar este formulario, aceptas nuestra Política de Privacidad"
+  },
+  "faq": {
+    "title": "¿Buscas Respuestas Rápidas?",
+    "link": "Consulta nuestras Preguntas Frecuentes"
+  }
+}

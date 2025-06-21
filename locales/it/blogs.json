@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Blog di Viaggio | Royal Transfer EU",
+    "description": "Esplora guide di viaggio dell'Italia, consigli sui trasporti e informazioni sulle destinazioni per aiutarti a pianificare il tuo viaggio perfetto."
+  },
+  "hero": {
+    "title": "Guide di Viaggio e Approfondimenti",
+    "subtitle": "Esplora la nostra collezione di consigli di viaggio, guide delle destinazioni e consigli sui trasporti per la tua avventura italiana"
+  },
+  "featured": {
+    "title": "Articoli in Evidenza"
+  },
+  "latest": {
+    "title": "Ultimi Articoli"
+  },
+  "categories": {
+    "title": "Sfoglia per Categoria",
+    "items": [
+      {
+        "name": "Guide di Viaggio",
+        "description": "Guide complete per destinazioni popolari",
+        "slug": "guide-viaggio"
+      },
+      {
+        "name": "Trasporti",
+        "description": "Consigli per navigare nelle città italiane",
+        "slug": "trasporti"
+      },
+      {
+        "name": "Esperienze Culturali",
+        "description": "Arte, storia e tradizioni locali",
+        "slug": "esperienze-culturali"
+      },
+      {
+        "name": "Cibo e Ristoranti",
+        "description": "Avventure culinarie in tutta Italia",
+        "slug": "cibo-ristoranti"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Iscriviti alla Nostra Newsletter di Viaggio",
+    "description": "Ricevi gli ultimi consigli di viaggio, guide delle destinazioni e offerte esclusive direttamente nella tua casella di posta.",
+    "emailPlaceholder": "Il tuo indirizzo email",
+    "button": "Iscriviti",
+    "privacyNote": "Iscrivendoti, accetti la nostra Informativa sulla Privacy. Puoi annullare l'iscrizione in qualsiasi momento."
+  },
+  "blog": {
+    "readMore": "Leggi di Più",
+    "minuteRead": "min di lettura",
+    "loading": "Caricamento degli articoli del blog..."
+  }
+}

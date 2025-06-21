@@ -1,5 +1,121 @@
 {
-  "hero.headline": "La strada è parte",
-  "hero.headline1": "dell'avventura",
-  "hero.subhead": "Goditi il viaggio – noi ci occupiamo del resto"
+  "seo": {
+    "title": "Royal Transfer EU | Trasferimenti Aeroportuali Premium in Italia",
+    "description": "Servizi professionali di trasferimento aeroportuale in tutta Italia con oltre 15 anni di esperienza. Viaggi sicuri, affidabili e confortevoli con autisti che parlano inglese."
+  },
+  "structuredData": {
+    "name": "Royal Transfer EU",
+    "description": "Trasferimenti aeroportuali premium e servizi di trasporto privato in Italia",
+    "provider": "Royal Transfer EU",
+    "serviceType": "Trasferimento Aeroportuale",
+    "areaServed": "Italia"
+  },
+  "schema": {
+    "name": "Royal Transfer EU",
+    "languages": "Inglese, Italiano"
+  },
+  "hero": {
+    "headline": "La strada è parte",
+    "headline1": "dell'avventura",
+    "subhead": "Goditi il viaggio — noi ci occupiamo del resto",
+    "image": {
+      "alt": "Servizio di trasferimento in berlina di lusso di Royal Transfer EU - autista professionale in attesa accanto a un'elegante auto nera su una pittoresca strada europea"
+    }
+  },
+  "benefits": {
+    "title": "Perché sceglierci",
+    "subtitle": "Scopri servizi di trasporto premium su misura per le tue esigenze",
+    "items": {
+      "fixedPrices": {
+        "title": "Prezzi fissi",
+        "description": "Nessuna sorpresa, nessun costo nascosto. Saprai esattamente quanto pagherai in anticipo."
+      },
+      "flightTracking": {
+        "title": "Monitoraggio voli",
+        "description": "Monitoriamo il tuo volo e adattiamo l'orario di prelievo in base all'arrivo effettivo."
+      },
+      "professionalDrivers": {
+        "title": "Autisti professionali",
+        "description": "Autisti esperti e puntuali che conoscono le strade locali e parlano inglese."
+      },
+      "comfortableVehicles": {
+        "title": "Veicoli confortevoli",
+        "description": "Viaggia con stile con la nostra flotta di veicoli premium ben mantenuti."
+      },
+      "support": {
+        "title": "Supporto 24/7",
+        "description": "Il nostro team è sempre disponibile per assisterti con qualsiasi domanda o modifica."
+      },
+      "noWaiting": {
+        "title": "Nessuna attesa",
+        "description": "Il tuo autista ti aspetterà, anche se il tuo volo è in ritardo."
+      }
+    }
+  },
+  "services": {
+    "title": "I Nostri Servizi",
+    "subtitle": "Soluzioni di trasporto premium per tutte le tue esigenze di viaggio",
+    "learnMore": "Scopri di più",
+    "airport": {
+      "title": "Trasferimenti Aeroportuali",
+      "description": "Servizio porta a porta tra aeroporti e la tua destinazione con monitoraggio dei voli e tempo di attesa gratuito."
+    },
+    "intercity": {
+      "title": "Trasferimenti tra Città",
+      "description": "Trasferimenti confortevoli tra città con autisti esperti che conoscono i percorsi migliori."
+    },
+    "group": {
+      "title": "Trasferimenti di Gruppo",
+      "description": "Veicoli spaziosi per gruppi di tutte le dimensioni, garantendo che tutti viaggino insieme comodamente."
+    }
+  },
+  "bookingProcess": {
+    "title": "Come funziona",
+    "subtitle": "Prenota il tuo trasferimento premium in pochi semplici passaggi",
+    "steps": {
+      "step1": {
+        "title": "Prenota online",
+        "description": "Inserisci i dettagli del tuo viaggio e seleziona un veicolo adatto alle tue esigenze."
+      },
+      "step2": {
+        "title": "Conferma istantanea",
+        "description": "Ricevi una conferma immediata con tutti i dettagli del tuo trasferimento."
+      },
+      "step3": {
+        "title": "Incontra il tuo autista",
+        "description": "Il tuo autista professionale ti aspetterà nel luogo di prelievo concordato."
+      },
+      "step4": {
+        "title": "Goditi il tuo viaggio",
+        "description": "Rilassati comodamente mentre ti portiamo in sicurezza a destinazione."
+      }
+    }
+  },
+  "testimonials": {
+  "title": "Cosa dicono i nostri clienti",
+  "subtitle": "Ascolta i viaggiatori che hanno sperimentato il nostro servizio premium",
+  "quote1": "Servizio eccezionale, autisti educati e tempismo perfetto! I nostri trasferimenti sono stati agevoli e senza stress. Consiglio vivamente Royal Transfer!",
+  "author1": "Sarah P.",
+  "location1": "Regno Unito",
+  "quote2": "Esperienza eccellente dall'inizio alla fine. L'autista era professionale e il veicolo era impeccabile. Sicuramente userò di nuovo!",
+  "author2": "Marco R.",
+  "location2": "Italia",
+  "quote3": "Servizio affidabile e puntuale. Il processo di prenotazione è stato semplice e l'autista è stato molto disponibile con i nostri bagagli.",
+  "author3": "John D.",
+  "location3": "USA"
+  },
+  "featuredDestinations": {
+    "title": "Destinazioni popolari",
+    "subtitle": "Scopri i nostri itinerari e le destinazioni più richieste",
+    "viewAll": "Visualizza tutte le destinazioni"
+  },
+  "cta": {
+    "title": "Pronto a prenotare il tuo trasferimento?",
+    "subtitle": "Assicurati il tuo trasferimento premium ora e viaggia con fiducia",
+    "button": "Prenota ora"
+  },
+  "trustBadges": {
+    "title": "Di fiducia per migliaia",
+    "subtitle": "La tua sicurezza e soddisfazione sono le nostre priorità principali"
+  }
 }

@@ -1,1 +1,50 @@
-{}
+{
+  "meta": {
+    "title": "Política de Cookies | Royal Transfer EU",
+    "description": "Aprenda sobre cómo Royal Transfer EU utiliza cookies y cómo gestionar sus preferencias de cookies."
+  },
+  "title": "Política de Cookies",
+  "intro": {
+    "title": "Qué Son las Cookies",
+    "description": "Las cookies son pequeños archivos de texto que se colocan en su ordenador o dispositivo móvil por los sitios web que visita. Se utilizan ampliamente para hacer que los sitios web funcionen de manera más eficiente y proporcionar información a los propietarios del sitio. Las cookies nos ayudan a mejorar su experiencia en el sitio web de varias maneras, incluyendo recordar sus preferencias, analizar cómo se utiliza nuestro sitio web y personalizar su experiencia."
+  },
+  "usage": {
+    "title": "Cómo Utilizamos las Cookies",
+    "description": "Royal Transfer EU utiliza cookies para diversos propósitos, incluyendo:",
+    "list": [
+      "Asegurar que el sitio web funciona correctamente",
+      "Entender cómo utiliza nuestro sitio web para mejorar su experiencia",
+      "Recordar sus preferencias y configuraciones",
+      "Medir la efectividad de nuestras campañas de marketing"
+    ]
+  },
+  "types": {
+    "title": "Tipos de Cookies que Utilizamos",
+    "necessary": {
+      "title": "Cookies Necesarias",
+      "description": "Estas cookies son esenciales para el funcionamiento de nuestro sitio web y no pueden desactivarse en nuestros sistemas. Generalmente solo se establecen en respuesta a acciones realizadas por usted, como establecer sus preferencias de privacidad, iniciar sesión o completar formularios. Puede configurar su navegador para bloquear estas cookies, pero algunas partes del sitio web pueden no funcionar como se espera."
+    },
+    "analytics": {
+      "title": "Cookies Analíticas",
+      "description": "Estas cookies nos permiten contar visitas y fuentes de tráfico, para que podamos medir y mejorar el rendimiento de nuestro sitio web. Nos ayudan a entender qué páginas son las más y menos populares, y ver cómo los visitantes se mueven por el sitio. Si deshabilita estas cookies, no sabremos cuándo ha visitado nuestro sitio."
+    },
+    "marketing": {
+      "title": "Cookies de Marketing",
+      "description": "Estas cookies pueden establecerse a través de nuestro sitio por nuestros socios publicitarios. Pueden ser utilizadas por esas empresas para crear un perfil de sus intereses y mostrarle anuncios relevantes en otros sitios. No almacenan directamente información personal, sino que se basan en la identificación única de su navegador y dispositivo de internet."
+    },
+    "preferences": {
+      "title": "Cookies de Preferencias",
+      "description": "Estas cookies permiten que el sitio web recuerde sus preferencias, elecciones y configuraciones para proporcionar características mejoradas y personalizadas. Pueden ser establecidas por nosotros o por proveedores externos cuyos servicios hemos añadido a nuestras páginas."
+    }
+  },
+  "managing": {
+    "title": "Gestión de sus Preferencias de Cookies",
+    "description": "Puede gestionar sus preferencias de cookies en cualquier momento haciendo clic en el enlace \"Configuración de Cookies\" en el pie de página de nuestro sitio web. Además, la mayoría de los navegadores web permiten controlar las cookies a través de sus configuraciones. Tenga en cuenta que si elige bloquear ciertas cookies, puede afectar a su experiencia en nuestro sitio web.",
+    "more": "Para obtener más información sobre cookies, incluyendo cómo ver qué cookies se han establecido y cómo gestionarlas y eliminarlas, visite www.allaboutcookies.org."
+  },
+  "changes": {
+    "title": "Cambios en esta Política de Cookies",
+    "description": "Podemos actualizar nuestra Política de Cookies de vez en cuando para reflejar cambios en la tecnología, regulación o nuestras prácticas comerciales. Cualquier cambio será publicado en esta página, y si los cambios son significativos, proporcionaremos un aviso más prominente.",
+    "updated": "Esta Política de Cookies fue actualizada por última vez el 25 de abril de 2025."
+  }
+}

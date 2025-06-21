@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Conviértase en Socio | Royal Transfer EU",
+    "description": "Únase a la red de socios de Royal Transfer EU y haga crecer su negocio. Solicite ahora para convertirse en socio oficial."
+  },
+  "hero": {
+    "title": "Asóciese con Royal Transfer EU",
+    "subtitle": "Únase a nuestra red de conductores profesionales y haga crecer su negocio",
+    "cta": "Solicitar Ahora"
+  },
+  "benefits": {
+    "title": "Por qué Asociarse con Nosotros",
+    "description": "Únase a una red creciente de conductores profesionales y empresas para expandir sus oportunidades de negocio y proporcionar servicios premium a viajeros por toda Europa.",
+    "items": {
+      "bookings": {
+        "title": "Reservas Consistentes",
+        "description": "Reciba un flujo constante de reservas pre-pagadas a través de nuestra plataforma, reduciendo retornos vacíos y tiempo inactivo."
+      },
+      "clientele": {
+        "title": "Clientela Premium",
+        "description": "Atienda a clientes de alta calidad que valoran el servicio profesional y están dispuestos a pagar por experiencias superiores."
+      },
+      "schedule": {
+        "title": "Horario Flexible",
+        "description": "Elija cuándo trabajar y qué reservas aceptar, manteniendo el control total de su horario."
+      },
+      "support": {
+        "title": "Soporte Profesional",
+        "description": "Acceda a nuestro equipo de soporte dedicado para asistencia con reservas, comunicación con clientes y problemas técnicos."
+      },
+      "technology": {
+        "title": "Plataforma Tecnológica",
+        "description": "Use nuestra aplicación para conductores para gestionar reservas, navegación y comunicación con clientes todo en un solo lugar."
+      },
+      "growth": {
+        "title": "Oportunidades de Crecimiento",
+        "description": "Expanda su negocio con acceso a viajeros internacionales y clientes corporativos."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Requisitos para Socios",
+    "description": "Mantenemos altos estándares para asegurar un servicio excepcional para todos nuestros clientes.",
+    "list": [
+      "Licencia de conducir profesional válida y todos los permisos requeridos",
+      "Vehículo limpio y bien mantenido de menos de 5 años de antigüedad",
+      "Seguro comercial con cobertura apropiada",
+      "Excelente conocimiento de carreteras locales y atracciones",
+      "Apariencia profesional y fuertes habilidades de servicio al cliente",
+      "Habilidades de comunicación en inglés fluidas",
+      "Smartphone con conexión a internet confiable",
+      "Disponibilidad flexible incluyendo fines de semana y días festivos",
+      "Verificación de antecedentes e historial de conducción limpio"
+    ]
+  },
+  "form": {
+    "title": "Solicitar ser Socio",
+    "description": "Complete el formulario a continuación para iniciar su proceso de solicitud. Nuestro equipo revisará su solicitud y lo contactará dentro de 2-3 días hábiles.",
+    "fields": {
+      "name": {
+        "label": "Nombre Completo",
+        "placeholder": "Ingrese su nombre completo"
+      },
+      "email": {
+        "label": "Dirección de Email",
+        "placeholder": "Ingrese su email"
+      },
+      "phone": {
+        "label": "Número de Teléfono",
+        "placeholder": "Ingrese su número de teléfono",
+        "help": "Incluya código de país, ej. +39"
+      },
+      "company": {
+        "label": "Nombre de la Empresa",
+        "placeholder": "Ingrese el nombre de su empresa"
+      },
+      "vat": {
+        "label": "Número de IVA",
+        "placeholder": "Ingrese su número de IVA/impuestos",
+        "help": "Número de identificación fiscal para su negocio"
+      },
+      "vehicle": {
+        "label": "Tipo de Vehículo (Opcional)",
+        "placeholder": "Seleccione un tipo de vehículo",
+        "options": {
+          "sedan": "Sedán",
+          "minivan": "Minivan",
+          "sprinter": "Sprinter",
+          "bus": "Autobús"
+        }
+      },
+      "message": {
+        "label": "Información Adicional",
+        "placeholder": "Cuéntenos sobre su experiencia, detalles del vehículo y disponibilidad"
+      }
+    },
+    "validation": {
+      "name": "Por favor ingrese su nombre",
+      "email": "El email es requerido",
+      "emailFormat": "Por favor ingrese una dirección de email válida",
+      "phone": "El número de teléfono es requerido",
+      "phoneFormat": "Por favor ingrese un número de teléfono válido",
+      "company": "El nombre de la empresa es requerido",
+      "vat": "El número de IVA es requerido",
+      "message": "La información adicional es requerida"
+    },
+    "buttons": {
+      "submit": "Enviar Solicitud",
+      "submitting": "Enviando..."
+    },
+    "success": {
+      "title": "¡Solicitud Enviada!",
+      "message": "Gracias por su interés en asociarse con Royal Transfer EU. Hemos recibido su solicitud y nuestro equipo la revisará en breve. Nos pondremos en contacto con usted dentro de 2-3 días hábiles con los siguientes pasos.",
+      "button": {
+        "another": "Enviar Otra Solicitud",
+        "home": "Volver al Inicio"
+      }
+    },
+    "verification": {
+      "title": "Email Verificado con Éxito",
+      "message": "¡Gracias por verificar su email! Le hemos enviado un enlace de invitación para completar su registro como socio. Por favor revise su bandeja de entrada de email.",
+      "emailSent": "Enlace de invitación enviado a:",
+      "checkSpam": "Si no ve el email en su bandeja de entrada, revise su carpeta de spam o correo no deseado."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Error de Validación del Formulario",
+        "description": "Por favor revise el formulario y corrija los errores."
+      },
+      "success": {
+        "title": "Solicitud Enviada",
+        "description": "Su solicitud de socio ha sido recibida. ¡Nos pondremos en contacto con usted pronto!"
+      },
+      "error": {
+        "title": "Fallo en el Envío del Formulario",
+        "description": "Algo salió mal. Por favor, inténtelo de nuevo más tarde."
+      },
+      "verifyEmail": {
+        "title": "Verifique Su Email",
+        "description": "Por favor revise su email para obtener un código de verificación."
+      },
+      "verificationSuccess": {
+        "title": "Email Verificado con Éxito",
+        "description": "Su solicitud de socio ha sido recibida y su email ha sido verificado. Por favor revise su email para obtener un enlace de invitación para completar su registro."
+      }
+    },
+    "errors": {
+      "default": "Algo salió mal. Por favor, inténtelo de nuevo más tarde."
+    }
+  },
+  "faq": {
+    "title": "Preguntas Frecuentes",
+    "description": "Todo lo que necesita saber sobre convertirse en socio con Royal Transfer EU",
+    "items": {
+      "start": {
+        "question": "¿Qué tan pronto puedo comenzar después de aplicar?",
+        "answer": "Después de que su solicitud sea aprobada, lo guiaremos a través del proceso de incorporación que típicamente toma 3-7 días dependiendo de la verificación de documentos y la finalización del entrenamiento."
+      },
+      "payment": {
+        "question": "¿Cómo recibo el pago por los viajes completados?",
+        "answer": "Los pagos se procesan semanalmente. Recibirá depósitos directos en su cuenta bancaria registrada por todos los viajes completados, menos la tarifa de la plataforma."
+      },
+      "areas": {
+        "question": "¿En qué áreas puedo proporcionar servicio?",
+        "answer": "Puede elegir sus áreas de servicio preferidas durante el registro. Puede servir en cualquier área donde esté legalmente permitido operar como conductor."
+      },
+      "vehicle": {
+        "question": "¿Necesito proporcionar mi propio vehículo?",
+        "answer": "Sí, los socios deben tener sus propios vehículos que cumplan con nuestros estándares de calidad. Su vehículo debe estar limpio, bien mantenido y tener menos de 5 años."
+      },
+      "commission": {
+        "question": "¿Cuál es la estructura de comisiones?",
+        "answer": "Nuestra comisión varía según el tipo de servicio y la ubicación, típicamente oscilando entre 15-25%. Los detalles completos se proporcionarán durante el proceso de incorporación."
+      },
+      "exclusivity": {
+        "question": "¿Puedo trabajar para otras compañías de transporte simultáneamente?",
+        "answer": "Sí, nuestra asociación no es exclusiva. Puede trabajar con otras compañías o mantener su negocio independiente junto con la asociación con nosotros."
+      }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Registro de Socio | Royal Transfer EU",
+    "description": "Completa tu registro como socio en Royal Transfer EU y comienza a hacer crecer tu negocio hoy mismo."
+  },
+  "navigation": {
+    "backToHome": "Volver al inicio"
+  },
+  "invalidInvite": {
+    "title": "Código de invitación no válido",
+    "defaultMessage": "Este enlace de invitación no es válido o ha caducado.",
+    "contactMessage": "Si crees que esto es un error, contacta con nuestro equipo de soporte o solicita ser socio a través de nuestro programa de socios.",
+    "applyButton": "Solicitar como socio",
+    "contactButton": "Contactar soporte"
+  },
+  "success": {
+    "title": "¡Cuenta creada!",
+    "message": "Tu cuenta de socio se ha creado correctamente. Serás redirigido a tu panel en breve."
+  },
+  "form": {
+    "title": "Registro de Socio",
+    "subtitle": "Completa tu registro para unirte a Royal Transfer EU como socio.",
+    "prefillInfo": "Hemos rellenado algunos datos de tu solicitud de socio. Por favor, crea una contraseña para completar tu registro.",
+    "hidePassword": "Ocultar contraseña",
+    "showPassword": "Mostrar contraseña",
+    "submittingButton": "Creando cuenta...",
+    "submitButton": "Completar registro",
+    "termsText": "Al completar el registro, aceptas nuestros",
+    "termsLink": "Términos de servicio",
+    "andText": "y",
+    "privacyLink": "Política de privacidad",
+    "fields": {
+      "name": {
+        "label": "Nombre completo"
+      },
+      "email": {
+        "label": "Correo electrónico",
+        "help": "Este correo ya ha sido verificado"
+      },
+      "phone": {
+        "label": "Número de teléfono"
+      },
+      "company": {
+        "label": "Nombre de la empresa"
+      },
+      "password": {
+        "label": "Crear contraseña"
+      },
+      "confirmPassword": {
+        "label": "Confirmar contraseña"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "Se requiere contraseña",
+      "length": "La contraseña debe tener al menos 6 caracteres"
+    },
+    "confirmPassword": {
+      "required": "Por favor, confirma tu contraseña",
+      "match": "Las contraseñas no coinciden"
+    }
+  },
+  "errors": {
+    "noInviteCode": "No se proporcionó código de invitación",
+    "invalidInvite": "Código de invitación no válido o caducado",
+    "validationError": "No se pudo validar el código de invitación. Por favor, inténtalo de nuevo más tarde.",
+    "accountCreationFailed": "La creación de la cuenta falló",
+    "unexpectedError": "Ocurrió un error inesperado durante el registro"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Código de invitación no válido",
+      "description": "Este enlace de invitación no es válido o ha caducado."
+    },
+    "validationError": {
+      "title": "Error de validación",
+      "description": "No se pudo validar tu código de invitación. Por favor, inténtalo de nuevo más tarde."
+    },
+    "accountCreated": {
+      "title": "Cuenta creada",
+      "description": "¡Tu cuenta de socio se ha creado correctamente!"
+    },
+    "signupFailed": {
+      "title": "Registro fallido",
+      "description": "Ocurrió un error durante el registro. Por favor, inténtalo de nuevo."
+    }
+  }
+}

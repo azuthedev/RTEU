@@ -1,1 +1,69 @@
-{}
+{
+  "meta": {
+    "title": "Iniciar Sesión | Royal Transfer EU",
+    "description": "Inicie sesión en su cuenta de Royal Transfer EU para gestionar sus reservas, ver su perfil y más."
+  },
+  "tabs": {
+    "customer": "Cliente",
+    "driver": "Conductor"
+  },
+  "devMode": {
+    "title": "Modo de Desarrollo Activo",
+    "description": "Los errores de autenticación serán omitidos para pruebas."
+  },
+  "booking": {
+    "reference": "Su referencia de reserva: {{reference}}",
+    "message": "Inicie sesión para gestionar su reserva."
+  },
+  "verification": {
+    "title": "Se Requiere Verificación de Email",
+    "description": "Su cuenta necesita ser verificada antes de que pueda iniciar sesión. Por favor, revise su email para encontrar un enlace de verificación o solicite uno nuevo.",
+    "sending": "Enviando email de verificación...",
+    "resend": "Reenviar Email de Verificación"
+  },
+  "driver": {
+    "title": "Portal de Conductores",
+    "message": "Por favor, inicie sesión a través de nuestro portal de socios para acceder al panel de conductores.",
+    "becomePartner": "Convertirse en Socio",
+    "goToPortal": "Ir al Portal de Socios"
+  },
+  "form": {
+    "or": "o",
+    "email": "Email",
+    "password": "Contraseña",
+    "linkingBooking": "Vinculando Reserva...",
+    "signingIn": "Iniciando sesión...",
+    "signInAndLink": "Iniciar Sesión y Vincular Reserva",
+    "signIn": "Iniciar Sesión",
+    "forgotPassword": "¿Olvidó su contraseña?"
+  },
+  "errors": {
+    "missingCredentials": "Por favor, introduzca tanto el email como la contraseña",
+    "emailVerification": "Su dirección de email debe ser verificada antes de que pueda continuar.",
+    "emailRequired": "Por favor, introduzca su dirección de email",
+    "noAccount": "No se encontró ninguna cuenta con esta dirección de email. Por favor, regístrese primero.",
+    "alreadyVerified": "Este email ya está verificado. Por favor, intente iniciar sesión de nuevo.",
+    "recentVerification": "Se ha enviado recientemente un email de verificación. Por favor, revise su bandeja de entrada o espere {{time}} minuto(s) antes de solicitar otro.",
+    "sendVerificationFailed": "No se pudo enviar el código de verificación",
+    "verificationFailed": "No se pudo enviar el email de verificación",
+    "emailNotVerified": "Su dirección de email debe ser verificada antes de que pueda continuar.",
+    "emailNeedsVerification": "Su dirección de email necesita ser verificada. Por favor, revise su bandeja de entrada o solicite un nuevo email de verificación.",
+    "loginFailed": "Error al iniciar sesión. Por favor, verifique sus credenciales."
+  },
+  "success": {
+    "emailVerified": "¡Email verificado con éxito! Ahora puede iniciar sesión."
+  },
+  "toast": {
+    "bookingLinked": {
+      "title": "Éxito",
+      "message": "La reserva ha sido vinculada a su cuenta."
+    },
+    "bookingLinkFailed": {
+      "title": "Falló la Vinculación de Reserva",
+      "message": "Puede vincularla manualmente en su página de reservas."
+    }
+  },
+  "backToHome": "Volver al Inicio",
+  "signUp": "Registrarse",
+  "needHelp": "¿Necesita Ayuda? Contactar con Soporte"
+}

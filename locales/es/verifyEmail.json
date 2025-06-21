@@ -1,1 +1,31 @@
-{}
+{
+  "meta": {
+    "title": "E-Mail verifizieren | Royal Transfer EU",
+    "description": "Bestätigen Sie Ihre E-Mail-Adresse, um die Einrichtung Ihres Royal Transfer EU-Kontos abzuschließen."
+  },
+  "states": {
+    "loading": {
+      "title": "E-Mail wird verifiziert",
+      "message": "Bitte warten Sie, während wir Ihre E-Mail-Adresse überprüfen..."
+    },
+    "success": {
+      "title": "E-Mail verifiziert!",
+      "message": "Vielen Dank, dass Sie Ihre E-Mail-Adresse verifiziert haben. Ihr Konto ist jetzt aktiv.",
+      "autoRedirect": "Sie werden in wenigen Sekunden zur Anmeldeseite weitergeleitet..."
+    },
+    "error": {
+      "title": "Verifizierung fehlgeschlagen",
+      "defaultMessage": "Beim Verifizieren Ihrer E-Mail ist ein Problem aufgetreten. Der Verifizierungslink ist möglicherweise abgelaufen oder wurde bereits verwendet."
+    }
+  },
+  "errors": {
+    "missingToken": "Verifizierungstoken fehlt",
+    "invalidToken": "Ungültiges oder abgelaufenes Verifizierungstoken",
+    "expiredToken": "Dieser Verifizierungslink ist abgelaufen. Bitte fordern Sie einen neuen an.",
+    "generic": "E-Mail konnte nicht verifiziert werden. Der Link ist möglicherweise abgelaufen."
+  },
+  "buttons": {
+    "continue": "Weiter",
+    "tryAgain": "Erneut versuchen"
+  }
+}

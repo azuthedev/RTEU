@@ -1,1 +1,86 @@
-{}
+{
+  "meta": {
+    "title": "Contatti | Royal Transfer EU",
+    "description": "Contatta Royal Transfer EU per assistenza con le prenotazioni, supporto o richieste di partnership. Siamo disponibili 24/7 per aiutarti con le tue esigenze di viaggio."
+  },
+  "hero": {
+    "title": "Ci Piacerebbe Sentire da Te!",
+    "description": "Che tu abbia domande sui nostri servizi, necessiti di assistenza con una prenotazione o voglia esplorare opportunità di partnership, siamo qui per aiutarti."
+  },
+  "contactInfo": {
+    "title": "Contattaci",
+    "phone": {
+      "label": "Telefono",
+      "number": "+39 351 748 22 44",
+      "availability": "Disponibile 24/7"
+    },
+    "email": {
+      "label": "Email",
+      "address": "contact@royaltransfereu.com",
+      "response": "Risposta rapida garantita"
+    },
+    "address": {
+      "label": "Indirizzo",
+      "line1": "123 Via Transfer",
+      "line2": "EU 12345"
+    },
+    "business": {
+      "label": "Orari di Lavoro",
+      "hours": "Supporto 24/7 Disponibile",
+      "office": "Ufficio: Lun-Ven 9:00-18:00"
+    },
+    "leadership": {
+      "label": "Direzione",
+      "business": "Per Richieste Commerciali:",
+      "email": "partnerships@royaltransfereu.com"
+    }
+  },
+  "chatButton": "Chatta con Noi Ora",
+  "immediateHelp": {
+    "title": "Hai Bisogno di Aiuto Immediato?",
+    "description": "Il nostro team di supporto clienti 24/7 è pronto ad assisterti con qualsiasi questione urgente.",
+    "callButton": "Chiama Ora: +39 351 748 22 44"
+  },
+  "form": {
+    "title": "Inviaci un Messaggio",
+    "fields": {
+      "name": {
+        "label": "Nome Completo",
+        "placeholder": "Inserisci il tuo nome"
+      },
+      "email": {
+        "label": "Indirizzo Email",
+        "placeholder": "Inserisci la tua email"
+      },
+      "phone": {
+        "label": "Numero di Telefono",
+        "placeholder": "Inserisci il tuo numero di telefono",
+        "help": "Opzionale, ma consigliato per una risposta più rapida"
+      },
+      "subject": {
+        "label": "Oggetto",
+        "placeholder": "Seleziona un oggetto",
+        "options": {
+          "booking": "Richiesta di Prenotazione",
+          "support": "Supporto Cliente",
+          "partnership": "Partnership Commerciale",
+          "feedback": "Feedback",
+          "other": "Altro"
+        }
+      },
+      "message": {
+        "label": "Messaggio",
+        "placeholder": "Inserisci il tuo messaggio"
+      },
+      "submit": "Invia Messaggio"
+    },
+    "sending": "Invio in corso...",
+    "success": "Grazie per il tuo messaggio! Ti risponderemo al più presto.",
+    "error": "C'è stato un problema nell'invio del tuo messaggio. Per favore, riprova.",
+    "privacy": "Inviando questo modulo, accetti la nostra Informativa sulla Privacy"
+  },
+  "faq": {
+    "title": "Cerchi Risposte Rapide?",
+    "link": "Controlla le nostre Domande Frequenti"
+  }
+}

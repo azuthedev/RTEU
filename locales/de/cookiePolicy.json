@@ -1,1 +1,50 @@
-{}
+{
+  "meta": {
+    "title": "Cookie-Richtlinie | Royal Transfer EU",
+    "description": "Erfahren Sie, wie Royal Transfer EU Cookies verwendet und wie Sie Ihre Cookie-Einstellungen verwalten können."
+  },
+  "title": "Cookie-Richtlinie",
+  "intro": {
+    "title": "Was sind Cookies",
+    "description": "Cookies sind kleine Textdateien, die von Websites, die Sie besuchen, auf Ihrem Computer oder Mobilgerät platziert werden. Sie werden weithin verwendet, um Websites effizienter arbeiten zu lassen und den Eigentümern der Website Informationen zu liefern. Cookies helfen uns, Ihre Website-Erfahrung auf verschiedene Weise zu verbessern, einschließlich des Speicherns Ihrer Präferenzen, der Analyse der Nutzung unserer Website und der Personalisierung Ihrer Erfahrung."
+  },
+  "usage": {
+    "title": "Wie wir Cookies verwenden",
+    "description": "Royal Transfer EU verwendet Cookies für verschiedene Zwecke, darunter:",
+    "list": [
+      "Sicherstellen, dass die Website korrekt funktioniert",
+      "Verstehen, wie Sie unsere Website nutzen, um Ihre Erfahrung zu verbessern",
+      "Speichern Ihrer Präferenzen und Einstellungen",
+      "Messen der Effektivität unserer Marketingkampagnen"
+    ]
+  },
+  "types": {
+    "title": "Arten von Cookies, die wir verwenden",
+    "necessary": {
+      "title": "Notwendige Cookies",
+      "description": "Diese Cookies sind für den Betrieb unserer Website unerlässlich und können in unseren Systemen nicht ausgeschaltet werden. Sie werden in der Regel nur als Reaktion auf von Ihnen durchgeführte Aktionen gesetzt, wie z.B. das Festlegen Ihrer Datenschutzeinstellungen, das Einloggen oder das Ausfüllen von Formularen. Sie können Ihren Browser so einstellen, dass er diese Cookies blockiert, aber einige Teile der Website funktionieren dann möglicherweise nicht wie erwartet."
+    },
+    "analytics": {
+      "title": "Analyse-Cookies",
+      "description": "Diese Cookies ermöglichen es uns, Besuche und Verkehrsquellen zu zählen, damit wir die Leistung unserer Website messen und verbessern können. Sie helfen uns zu verstehen, welche Seiten am beliebtesten und am wenigsten beliebt sind, und zu sehen, wie Besucher sich auf der Website bewegen. Wenn Sie diese Cookies deaktivieren, wissen wir nicht, wann Sie unsere Website besucht haben."
+    },
+    "marketing": {
+      "title": "Marketing-Cookies",
+      "description": "Diese Cookies können über unsere Website von unseren Werbepartnern gesetzt werden. Sie können von diesen Unternehmen verwendet werden, um ein Profil Ihrer Interessen zu erstellen und Ihnen relevante Anzeigen auf anderen Websites zu zeigen. Sie speichern keine direkten persönlichen Informationen, sondern basieren auf der Identifizierung Ihres Browsers und Geräts."
+    },
+    "preferences": {
+      "title": "Präferenz-Cookies",
+      "description": "Diese Cookies ermöglichen es der Website, sich an Ihre Präferenzen, Entscheidungen und Einstellungen zu erinnern, um verbesserte, personalisierte Funktionen bereitzustellen. Sie können von uns oder von Drittanbieter-Diensten gesetzt werden, deren Dienste wir zu unseren Seiten hinzugefügt haben."
+    }
+  },
+  "managing": {
+    "title": "Verwaltung Ihrer Cookie-Einstellungen",
+    "description": "Sie können Ihre Cookie-Einstellungen jederzeit verwalten, indem Sie auf den Link \"Cookie-Einstellungen\" im Footer unserer Website klicken. Darüber hinaus ermöglichen die meisten Webbrowser die Kontrolle von Cookies über ihre Einstellungen. Bitte beachten Sie, dass das Blockieren bestimmter Cookies Ihre Erfahrung auf unserer Website beeinträchtigen kann.",
+    "more": "Um mehr über Cookies zu erfahren, einschließlich wie Sie sehen können, welche Cookies gesetzt wurden und wie Sie diese verwalten und löschen können, besuchen Sie www.allaboutcookies.org."
+  },
+  "changes": {
+    "title": "Änderungen an dieser Cookie-Richtlinie",
+    "description": "Wir können unsere Cookie-Richtlinie von Zeit zu Zeit aktualisieren, um Änderungen in der Technologie, Regulierung oder unseren Geschäftspraktiken widerzuspiegeln. Alle Änderungen werden auf dieser Seite veröffentlicht, und wenn die Änderungen signifikant sind, werden wir einen deutlicheren Hinweis bereitstellen.",
+    "updated": "Diese Cookie-Richtlinie wurde zuletzt am 25. April 2025 aktualisiert."
+  }
+}

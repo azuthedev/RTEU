@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Ihre Buchungen | Royal Transfer EU",
+    "description": "Sehen und verwalten Sie Ihre Royal Transfer EU Buchungen."
+  },
+  "header": {
+    "title": "Ihre Buchungen",
+    "refreshButton": "Aktualisieren"
+  },
+  "error": {
+    "retry": "Wiederholen",
+    "networkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    "configError": "Problem mit der Datenbankkonfiguration. Bitte aktualisieren Sie die Seite oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht.",
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "permissionError": "Zugriff verweigert. Sie haben keine Berechtigung, diese Buchungen anzusehen.",
+    "serverError": "Serverfehler aufgetreten. Bitte versuchen Sie es in einigen Augenblicken erneut.",
+    "noSession": "Keine aktive Sitzung - bitte melden Sie sich erneut an",
+    "emailLookupFailed": "Benutzer-E-Mail für die Buchungssuche konnte nicht ermittelt werden",
+    "edgeFunctionFailed": "Edge Function fehlgeschlagen",
+    "reloginMessage": "Bitte melden Sie sich erneut an, um auf Ihre Buchungen zuzugreifen."
+  },
+  "loading": {
+    "auth": "Authentifizierung wird geladen...",
+    "bookings": "Ihre Buchungen werden geladen..."
+  },
+  "toast": {
+    "noUpcoming": "Keine anstehenden Buchungen",
+    "noUpcomingDesc": "Sie haben keine anstehenden Buchungen.",
+    "noPast": "Keine vergangenen Buchungen",
+    "noPastDesc": "Sie haben keine vergangenen Buchungen.",
+    "error": "Fehler beim Laden der Buchungen",
+    "detailsError": "Fehler beim Laden der Details",
+    "detailsErrorDesc": "Buchungsdetails konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "linkSuccess": "Buchung verknüpft",
+    "linkSuccessDesc": "Diese Buchung wurde mit Ihrem Konto verknüpft.",
+    "linkError": "Fehler",
+    "linkErrorDesc": "Buchung konnte nicht mit Ihrem Konto verknüpft werden.",
+    "referenceCopied": "Buchungsreferenz kopiert",
+    "referenceCopiedDesc": "Referenz wurde in die Zwischenablage kopiert"
+  },
+  "tabs": {
+    "upcoming": "Anstehend",
+    "past": "Vergangen"
+  },
+  "emptyState": {
+    "upcoming": "Keine anstehenden Buchungen",
+    "past": "Keine vergangenen Buchungen",
+    "bookButton": "Transfer buchen"
+  },
+  "bookingItem": {
+    "from": "Von",
+    "to": "Nach",
+    "link": "Verknüpfen",
+    "linkTooltip": "Mit meinem Konto verknüpfen"
+  },
+  "dateTime": {
+    "na": "N/V",
+    "invalid": "Ungültiges Datum"
+  },
+  "currency": {
+    "na": "N/V"
+  },
+  "contact": {
+    "notProvided": "Nicht angegeben"
+  },
+  "vehicle": {
+    "standard": "Standard"
+  },
+  "payment": {
+    "card": "Karte"
+  },
+  "status": {
+    "completed": "Abgeschlossen",
+    "cancelled": "Storniert",
+    "in_progress": "In Bearbeitung",
+    "accepted": "Akzeptiert",
+    "pending": "Ausstehend"
+  },
+  "bookingDetails": {
+    "title": "Buchungsdetails",
+    "copyReference": "Klicken zum Kopieren der Buchungsreferenz",
+    "trip": {
+      "title": "Reiseinformationen",
+      "pickup": "Abholung",
+      "dropoff": "Ankunft",
+      "vehicle": "Fahrzeug",
+      "passengers": "Passagiere",
+      "luggage": "Gepäck",
+      "items": "Stücke",
+      "tripType": "Reisetyp",
+      "oneWay": "Einfache Fahrt",
+      "roundTrip": "Hin- und Rückfahrt"
+    },
+    "price": {
+      "title": "Preis",
+      "payment": "Zahlungsmethode"
+    },
+    "flightInfo": {
+      "title": "Fluginformationen",
+      "flightNumber": "Flugnummer"
+    },
+    "contact": {
+      "title": "Kontaktinformationen",
+      "name": "Kundenname",
+      "email": "E-Mail",
+      "phone": "Telefon"
+    },
+    "extras": {
+      "title": "Zusätzliche Dienste"
+    },
+    "stops": {
+      "title": "Zusätzliche Stopps"
+    },
+    "notes": {
+      "title": "Anmerkungen"
+    },
+    "linkBooking": {
+      "title": "Diese Buchung verknüpfen",
+      "description": "Diese Buchung passt zu Ihrer E-Mail, ist aber noch nicht mit Ihrem Konto verknüpft.",
+      "button": "Mit meinem Konto verknüpfen",
+      "linking": "Verknüpfung läuft..."
+    },
+    "buttons": {
+      "close": "Schließen",
+      "closeLabel": "Details schließen",
+      "support": "Support",
+      "manage": "Verwalten"
+    }
+  }
+}

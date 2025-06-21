@@ -1,1 +1,43 @@
-{}
+{
+  "meta": {
+    "title": "Ihr Profil | Royal Transfer EU",
+    "description": "Verwalten Sie Ihre Kontoinformationen und Einstellungen."
+  },
+  "header": {
+    "title": "Ihr Profil",
+    "description": "Verwalten Sie Ihre Kontoinformationen und Einstellungen"
+  },
+  "personalInfo": {
+    "title": "Persönliche Informationen",
+    "fields": {
+      "name": "Vollständiger Name",
+      "email": "E-Mail-Adresse",
+      "emailHelp": "E-Mail kann nicht geändert werden",
+      "phone": "Telefonnummer",
+      "phoneHelp": "Für Buchungsbenachrichtigungen (optional)"
+    }
+  },
+  "security": {
+    "title": "Kontosicherheit",
+    "passwordReset": "Passwort zurücksetzen",
+    "signOut": "Abmelden"
+  },
+  "helpBox": {
+    "title": "Brauchen Sie Hilfe?",
+    "description": "Wenn Sie Probleme mit Ihrem Konto haben, steht Ihnen unser Support-Team zur Verfügung.",
+    "contactLink": "Support kontaktieren"
+  },
+  "buttons": {
+    "save": "Änderungen speichern",
+    "saving": "Speichern..."
+  },
+  "messages": {
+    "success": "Ihr Profil wurde erfolgreich aktualisiert!",
+    "error": {
+      "general": "Profilaktualisierung fehlgeschlagen",
+      "loading": "Ihre Profildaten konnten nicht geladen werden. Bitte versuchen Sie, die Seite zu aktualisieren.",
+      "nameRequired": "Name ist erforderlich"
+    }
+  },
+  "loading": "Ihr Profil wird geladen..."
+}

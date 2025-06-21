@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Konto erstellen | Royal Transfer EU",
+    "description": "Registrieren Sie sich für ein Royal Transfer EU-Konto, um Ihre Buchungen zu verwalten und exklusive Angebote zu erhalten",
+    "titlePartner": "Partner-Registrierung | Royal Transfer EU",
+    "descriptionPartner": "Vervollständigen Sie Ihre Partner-Registrierung bei Royal Transfer EU"
+  },
+  "backToHome": "Zurück zur Startseite",
+  "loading": {
+    "validatingInvite": "Einladungscode wird validiert..."
+  },
+  "inviteError": {
+    "title": "Ungültiger Einladungscode",
+    "message": "Wenn Sie glauben, dass dies ein Fehler ist, kontaktieren Sie bitte unser Support-Team.",
+    "signUp": "Ohne Einladung registrieren",
+    "contact": "Support kontaktieren"
+  },
+  "success": {
+    "title": "Konto erstellt!",
+    "message": "Ihr Konto wurde erfolgreich erstellt. Sie können sich jetzt anmelden, um Ihre Buchungen und Ihr Profil zu verwalten.",
+    "messagePartner": "Ihr Partnerkonto wurde erfolgreich erstellt. Sie werden in Kürze zu Ihrem Profil weitergeleitet."
+  },
+  "partnerMessage": "Vielen Dank für Ihre Bewerbung als Partner bei Royal Transfer EU. Bitte vervollständigen Sie Ihre Registrierung, um zu beginnen.",
+  "bookingMessage": "Die Erstellung eines Kontos verknüpft Ihre Buchung {{reference}} mit Ihrem Profil.",
+  "form": {
+    "titlePartner": "Partner-Registrierung abschließen",
+    "title": "Konto erstellen",
+    "name": "Vollständiger Name",
+    "email": "E-Mail-Adresse",
+    "phone": "Telefon (Optional)",
+    "phoneHelp": "Für Buchungsbenachrichtigungen",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "creating": "Konto wird erstellt...",
+    "create": "Konto erstellen",
+    "terms": "Durch die Erstellung eines Kontos stimmen Sie unseren",
+    "termsLink": "Nutzungsbedingungen",
+    "and": "und",
+    "privacyLink": "Datenschutzrichtlinien",
+    "haveAccount": "Haben Sie bereits ein Konto?",
+    "signIn": "Anmelden"
+  },
+  "errors": {
+    "invalidInvite": "Ungültiger oder abgelaufener Einladungscode",
+    "validateInvite": "Fehler beim Validieren der Einladung. Bitte versuchen Sie es später erneut.",
+    "userCreationFailed": "Erstellung des Benutzers fehlgeschlagen",
+    "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "verificationFailed": "Fehler beim Senden der Verifizierungs-E-Mail",
+    "sendVerificationFailed": "Fehler beim Senden der Verifizierungs-E-Mail",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Ungültige Einladung",
+      "message": "Dieser Einladungslink ist ungültig oder abgelaufen."
+    },
+    "validationError": {
+      "title": "Validierungsfehler",
+      "message": "Fehler bei der Validierung Ihres Einladungscodes. Bitte versuchen Sie es später erneut."
+    },
+    "accountCreated": {
+      "title": "Konto erstellt",
+      "message": "Ihr Konto wurde erfolgreich erstellt!"
+    },
+    "signupFailed": {
+      "title": "Registrierung fehlgeschlagen",
+      "message": "Während der Registrierung ist ein Fehler aufgetreten."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name ist erforderlich",
+    "passwordRequired": "Passwort ist erforderlich",
+    "passwordLength": "Passwort muss mindestens 6 Zeichen lang sein",
+    "confirmRequired": "Bitte bestätigen Sie Ihr Passwort",
+    "passwordsMatch": "Passwörter stimmen nicht überein"
+  }
+}

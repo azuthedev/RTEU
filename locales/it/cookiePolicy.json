@@ -1,1 +1,50 @@
-{}
+{
+  "meta": {
+    "title": "Politica dei Cookie | Royal Transfer EU",
+    "description": "Scopri come Royal Transfer EU utilizza i cookie e come gestire le tue preferenze sui cookie."
+  },
+  "title": "Politica dei Cookie",
+  "intro": {
+    "title": "Cosa Sono i Cookie",
+    "description": "I cookie sono piccoli file di testo che vengono inseriti sul tuo computer o dispositivo mobile dai siti web che visiti. Sono ampiamente utilizzati per far funzionare i siti web in modo più efficiente e fornire informazioni ai proprietari del sito. I cookie ci aiutano a migliorare la tua esperienza sul sito web in diversi modi, incluso il ricordare le tue preferenze, analizzare come viene utilizzato il nostro sito web e personalizzare la tua esperienza."
+  },
+  "usage": {
+    "title": "Come Utilizziamo i Cookie",
+    "description": "Royal Transfer EU utilizza i cookie per vari scopi, tra cui:",
+    "list": [
+      "Garantire che il sito web funzioni correttamente",
+      "Capire come utilizzi il nostro sito web per migliorare la tua esperienza",
+      "Ricordare le tue preferenze e impostazioni",
+      "Misurare l'efficacia delle nostre campagne di marketing"
+    ]
+  },
+  "types": {
+    "title": "Tipi di Cookie che Utilizziamo",
+    "necessary": {
+      "title": "Cookie Necessari",
+      "description": "Questi cookie sono essenziali per il funzionamento del nostro sito web e non possono essere disattivati nei nostri sistemi. Vengono solitamente impostati solo in risposta ad azioni da te effettuate, come l'impostazione delle tue preferenze di privacy, l'accesso o la compilazione di moduli. Puoi impostare il tuo browser per bloccare questi cookie, ma alcune parti del sito potrebbero non funzionare come previsto."
+    },
+    "analytics": {
+      "title": "Cookie Analitici",
+      "description": "Questi cookie ci permettono di contare le visite e le fonti di traffico, in modo da poter misurare e migliorare le prestazioni del nostro sito web. Ci aiutano a capire quali pagine sono le più e le meno popolari, e vedere come i visitatori si muovono sul sito. Se disabiliti questi cookie, non sapremo quando hai visitato il nostro sito."
+    },
+    "marketing": {
+      "title": "Cookie di Marketing",
+      "description": "Questi cookie possono essere impostati attraverso il nostro sito dai nostri partner pubblicitari. Possono essere utilizzati da queste aziende per costruire un profilo dei tuoi interessi e mostrarti annunci rilevanti su altri siti. Non memorizzano direttamente informazioni personali, ma sono basati sull'identificazione univoca del tuo browser e dispositivo internet."
+    },
+    "preferences": {
+      "title": "Cookie di Preferenza",
+      "description": "Questi cookie consentono al sito web di ricordare le tue preferenze, scelte e impostazioni per fornire funzionalità migliorate e personalizzate. Possono essere impostati da noi o da fornitori terzi i cui servizi abbiamo aggiunto alle nostre pagine."
+    }
+  },
+  "managing": {
+    "title": "Gestione delle Tue Preferenze sui Cookie",
+    "description": "Puoi gestire le tue preferenze sui cookie in qualsiasi momento cliccando sul link \"Impostazioni Cookie\" nel footer del nostro sito web. Inoltre, la maggior parte dei browser web ti consente di controllare i cookie attraverso le loro impostazioni. Si noti che se si sceglie di bloccare determinati cookie, ciò potrebbe influire sulla tua esperienza sul nostro sito web.",
+    "more": "Per saperne di più sui cookie, compreso come vedere quali cookie sono stati impostati e come gestirli ed eliminarli, visita www.allaboutcookies.org."
+  },
+  "changes": {
+    "title": "Modifiche a Questa Politica dei Cookie",
+    "description": "Potremmo aggiornare la nostra Politica dei Cookie di tanto in tanto per riflettere cambiamenti nella tecnologia, nella regolamentazione o nelle nostre pratiche aziendali. Qualsiasi modifica sarà pubblicata su questa pagina, e se le modifiche sono significative, forniremo un avviso più prominente.",
+    "updated": "Questa Politica dei Cookie è stata aggiornata l'ultima volta il 25 aprile 2025."
+  }
+}

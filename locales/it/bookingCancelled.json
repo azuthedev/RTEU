@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Prenotazione Annullata | Royal Transfer EU",
+    "description": "La tua prenotazione è stata annullata. Nessun pagamento è stato elaborato."
+  },
+  "title": "Prenotazione Annullata",
+  "message": "Il processo di prenotazione è stato annullato. Nessun pagamento è stato elaborato.",
+  "nextSteps": {
+    "title": "Cosa vorresti fare adesso?",
+    "description": "Puoi provare a prenotare di nuovo o contattare il nostro team di supporto se hai bisogno di assistenza."
+  },
+  "buttons": {
+    "home": "Ritorna alla Home",
+    "contact": "Contatta il Supporto"
+  }
+}

@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Buchung storniert | Royal Transfer EU",
+    "description": "Ihre Buchung wurde storniert. Es wurde keine Zahlung verarbeitet."
+  },
+  "title": "Buchung storniert",
+  "message": "Ihr Buchungsvorgang wurde abgebrochen. Es wurde keine Zahlung verarbeitet.",
+  "nextSteps": {
+    "title": "Was möchten Sie als nächstes tun?",
+    "description": "Sie können eine neue Buchung versuchen oder unseren Support kontaktieren, wenn Sie Hilfe benötigen."
+  },
+  "buttons": {
+    "home": "Zurück zur Startseite",
+    "contact": "Support kontaktieren"
+  }
+}

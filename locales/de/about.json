@@ -1,1 +1,88 @@
-{}
+{
+  "meta": {
+    "title": "Über uns | Royal Transfer EU",
+    "description": "Erfahren Sie mehr über Royal Transfer EU's 15-jährige Erfahrung in der Bereitstellung von Premium-Flughafentransfers und privaten Transportdiensten in ganz Italien."
+  },
+  "hero": {
+    "title": "Über Royal Transfer EU",
+    "subtitle": "Premium-Flughafentransfers mit persönlicher Note"
+  },
+  "history": {
+    "title": "Unsere Geschichte",
+    "paragraphs": [
+      "Royal Transfer EU wurde 2010 mit einer einfachen Mission gegründet: Reisenden zuverlässige, erstklassige Flughafentransfers in ganz Italien anzubieten.",
+      "Was als kleiner Betrieb mit nur zwei Fahrzeugen begann, hat sich zu einem der vertrauenswürdigsten privaten Transferdienste Italiens entwickelt, der in allen wichtigen Städten und Reisezielen tätig ist.",
+      "Unsere Reise wurde durch ein unerschütterliches Engagement für Pünktlichkeit, Komfort und persönlichen Service geprägt. Wir haben über 100.000 Passagiere transportiert, von Geschäftsreisenden bis hin zu Familien, und stellen sicher, dass jede Reise reibungslos und stressfrei verläuft."
+    ]
+  },
+  "mission": {
+    "title": "Unsere Mission",
+    "text": "Reisen nahtlos zu gestalten, indem wir außergewöhnliche Flughafentransfer-Erlebnisse mit Professionalität, Zuverlässigkeit und Liebe zum Detail bieten.",
+    "values": {
+      "title": "Kernwerte",
+      "punctuality": {
+        "title": "Pünktlichkeit",
+        "description": "Wir verstehen, dass Zeit besonders beim Reisen kostbar ist. Unsere Fahrer sind immer pünktlich und verfolgen Flüge, um sich an Änderungen in Ihrem Zeitplan anzupassen."
+      },
+      "comfort": {
+        "title": "Komfort",
+        "description": "Unsere gut gewarteten Premium-Fahrzeuge garantieren eine komfortable Reise, damit Sie sich nach einem langen Flug entspannen oder sich auf Ihr nächstes Ziel vorbereiten können."
+      },
+      "service": {
+        "title": "Persönlicher Service",
+        "description": "Wir erkennen an, dass jeder Reisende einzigartige Bedürfnisse hat. Unser Service ist darauf zugeschnitten, Ihre spezifischen Anforderungen und Präferenzen zu erfüllen."
+      },
+      "safety": {
+        "title": "Sicherheit",
+        "description": "Ihre Sicherheit hat für uns oberste Priorität. Unsere professionellen Fahrer sind erfahren, lizenziert und verpflichtet sich zu sicheren Fahrpraktiken."
+      }
+    }
+  },
+  "services": {
+    "title": "Unsere Dienstleistungen",
+    "subtitle": "Premium-Transportlösungen für alle Ihre Reisebedürfnisse",
+    "airport": {
+      "title": "Flughafentransfers",
+      "description": "Tür-zu-Tür-Service zwischen Flughäfen und Ihrem Ziel mit Flugverfolgung und kostenloser Wartezeit."
+    },
+    "intercity": {
+      "title": "Transfers zwischen Städten",
+      "description": "Komfortable Transfers zwischen Städten mit erfahrenen Fahrern, die die besten Routen kennen."
+    },
+    "events": {
+      "title": "Event- & Konferenztransfers",
+      "description": "Zuverlässiger Transport für Firmenveranstaltungen, Konferenzen und besondere Anlässe."
+    },
+    "group": {
+      "title": "Gruppentransfers",
+      "description": "Geräumige Fahrzeuge für Gruppen aller Größen, damit alle gemeinsam komfortabel reisen können."
+    }
+  },
+  "team": {
+    "title": "Unser Team",
+    "subtitle": "Lernen Sie die Profis kennen, die für Ihre reibungslose Reiseerfahrung sorgen",
+    "description": "Unser Team besteht aus erfahrenen Fahrern, Kundendienstmitarbeitern und Betriebsleitern, die zusammenarbeiten, um sicherzustellen, dass Ihre Reise von der Buchung bis zur Ankunft perfekt verläuft.",
+    "drivers": {
+      "title": "Professionelle Fahrer",
+      "description": "Unsere sorgfältig ausgewählten Fahrer kombinieren lokales Wissen mit professioneller Ausbildung. Sie sprechen fließend Englisch und sind bestrebt, einen außergewöhnlichen Service zu bieten."
+    },
+    "support": {
+      "title": "Kundensupport",
+      "description": "Rund um die Uhr verfügbar, um bei Buchungen, Änderungen oder Fragen zu helfen, die Sie vor, während oder nach Ihrer Reise haben könnten."
+    },
+    "operations": {
+      "title": "Betriebsteam",
+      "description": "Arbeitet im Hintergrund, um Transfers zu koordinieren, Flüge zu überwachen und sicherzustellen, dass jedes Detail perfekt verwaltet wird."
+    }
+  },
+  "coverage": {
+    "title": "Wo wir tätig sind",
+    "description": "Wir bieten Premium-Transferdienste in allen wichtigen italienischen Städten und Reisezielen an, darunter Rom, Mailand, Florenz, Venedig, Neapel und viele mehr. Ob Sie an einem großen internationalen Flughafen ankommen oder Transport zwischen Städten benötigen, wir sind für Sie da.",
+    "cities": ["Rom", "Mailand", "Florenz", "Venedig", "Neapel", "Turin", "Bologna", "Pisa", "Bari", "Catania", "Palermo"]
+  },
+  "cta": {
+    "title": "Erleben Sie Premium-Transfers",
+    "text": "Bereit, stressfreies Reisen mit Royal Transfer EU zu erleben?",
+    "button": "Buchen Sie Ihren Transfer"
+  }
+}

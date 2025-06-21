@@ -1,1 +1,69 @@
-{}
+{
+  "meta": {
+    "title": "Anmelden | Royal Transfer EU",
+    "description": "Melden Sie sich bei Ihrem Royal Transfer EU-Konto an, um Ihre Buchungen zu verwalten, Ihr Profil anzuzeigen und mehr."
+  },
+  "tabs": {
+    "customer": "Kunde",
+    "driver": "Fahrer"
+  },
+  "devMode": {
+    "title": "Entwicklungsmodus aktiv",
+    "description": "Authentifizierungsfehler werden für Testzwecke umgangen."
+  },
+  "booking": {
+    "reference": "Ihre Buchungsreferenz: {{reference}}",
+    "message": "Melden Sie sich an, um Ihre Buchung zu verwalten."
+  },
+  "verification": {
+    "title": "E-Mail-Verifizierung erforderlich",
+    "description": "Ihr Konto muss verifiziert werden, bevor Sie sich anmelden können. Bitte überprüfen Sie Ihre E-Mail auf einen Verifizierungslink oder fordern Sie einen neuen an.",
+    "sending": "Verifizierungs-E-Mail wird gesendet...",
+    "resend": "Verifizierungs-E-Mail erneut senden"
+  },
+  "driver": {
+    "title": "Fahrerportal",
+    "message": "Bitte melden Sie sich über unser Partnerportal an, um auf das Fahrer-Dashboard zuzugreifen.",
+    "becomePartner": "Partner werden",
+    "goToPortal": "Zum Partnerportal"
+  },
+  "form": {
+    "or": "oder",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "linkingBooking": "Buchung wird verknüpft...",
+    "signingIn": "Anmeldung läuft...",
+    "signInAndLink": "Anmelden & Buchung verknüpfen",
+    "signIn": "Anmelden",
+    "forgotPassword": "Passwort vergessen?"
+  },
+  "errors": {
+    "missingCredentials": "Bitte geben Sie sowohl E-Mail als auch Passwort ein",
+    "emailVerification": "Ihre E-Mail-Adresse muss verifiziert werden, bevor Sie fortfahren können.",
+    "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+    "noAccount": "Kein Konto mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst.",
+    "alreadyVerified": "Diese E-Mail ist bereits verifiziert. Bitte versuchen Sie erneut, sich anzumelden.",
+    "recentVerification": "Eine Verifizierungs-E-Mail wurde kürzlich gesendet. Bitte überprüfen Sie Ihren Posteingang oder warten Sie {{time}} Minute(n), bevor Sie eine weitere anfordern.",
+    "sendVerificationFailed": "Fehler beim Senden des Verifizierungscodes",
+    "verificationFailed": "Fehler beim Senden der Verifizierungs-E-Mail",
+    "emailNotVerified": "Ihre E-Mail-Adresse muss verifiziert werden, bevor Sie fortfahren können.",
+    "emailNeedsVerification": "Ihre E-Mail-Adresse muss verifiziert werden. Bitte überprüfen Sie Ihren Posteingang oder fordern Sie eine neue Verifizierungs-E-Mail an.",
+    "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten."
+  },
+  "success": {
+    "emailVerified": "E-Mail erfolgreich verifiziert! Sie können sich jetzt anmelden."
+  },
+  "toast": {
+    "bookingLinked": {
+      "title": "Erfolgreich",
+      "message": "Buchung wurde mit Ihrem Konto verknüpft."
+    },
+    "bookingLinkFailed": {
+      "title": "Buchungsverknüpfung fehlgeschlagen",
+      "message": "Sie können dies manuell in Ihrer Buchungsseite verknüpfen."
+    }
+  },
+  "backToHome": "Zurück zur Startseite",
+  "signUp": "Registrieren",
+  "needHelp": "Benötigen Sie Hilfe? Kontaktieren Sie den Support"
+}

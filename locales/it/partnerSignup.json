@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Registrazione Partner | Royal Transfer EU",
+    "description": "Completa la registrazione come partner di Royal Transfer EU e inizia a far crescere la tua attività oggi stesso."
+  },
+  "navigation": {
+    "backToHome": "Torna alla home"
+  },
+  "invalidInvite": {
+    "title": "Codice invito non valido",
+    "defaultMessage": "Questo link di invito non è valido o è scaduto.",
+    "contactMessage": "Se ritieni che si tratti di un errore, contatta il nostro supporto o candidati tramite il nostro programma partner.",
+    "applyButton": "Candidati come partner",
+    "contactButton": "Contatta il supporto"
+  },
+  "success": {
+    "title": "Account creato!",
+    "message": "Il tuo account partner è stato creato con successo. Verrai reindirizzato alla dashboard a breve."
+  },
+  "form": {
+    "title": "Registrazione Partner",
+    "subtitle": "Completa la registrazione per entrare a far parte di Royal Transfer EU come partner.",
+    "prefillInfo": "Abbiamo precompilato alcune informazioni dalla tua richiesta partner. Crea una password per completare la registrazione.",
+    "hidePassword": "Nascondi password",
+    "showPassword": "Mostra password",
+    "submittingButton": "Creazione account...",
+    "submitButton": "Completa registrazione",
+    "termsText": "Completando la registrazione accetti i nostri",
+    "termsLink": "Termini di servizio",
+    "andText": "e",
+    "privacyLink": "Informativa sulla privacy",
+    "fields": {
+      "name": {
+        "label": "Nome completo"
+      },
+      "email": {
+        "label": "Indirizzo email",
+        "help": "Questa email è già stata verificata"
+      },
+      "phone": {
+        "label": "Numero di telefono"
+      },
+      "company": {
+        "label": "Nome azienda"
+      },
+      "password": {
+        "label": "Crea password"
+      },
+      "confirmPassword": {
+        "label": "Conferma password"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "La password è obbligatoria",
+      "length": "La password deve contenere almeno 6 caratteri"
+    },
+    "confirmPassword": {
+      "required": "Conferma la tua password",
+      "match": "Le password non corrispondono"
+    }
+  },
+  "errors": {
+    "noInviteCode": "Nessun codice invito fornito",
+    "invalidInvite": "Codice invito non valido o scaduto",
+    "validationError": "Impossibile convalidare il codice invito. Riprova più tardi.",
+    "accountCreationFailed": "Creazione account non riuscita",
+    "unexpectedError": "Si è verificato un errore imprevisto durante la registrazione"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Codice invito non valido",
+      "description": "Questo link di invito non è valido o è scaduto."
+    },
+    "validationError": {
+      "title": "Errore di validazione",
+      "description": "Impossibile convalidare il tuo codice invito. Riprova più tardi."
+    },
+    "accountCreated": {
+      "title": "Account creato",
+      "description": "Il tuo account partner è stato creato con successo!"
+    },
+    "signupFailed": {
+      "title": "Registrazione fallita",
+      "description": "Si è verificato un errore durante la registrazione. Riprova."
+    }
+  }
+}

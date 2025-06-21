@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Blog de Viajes | Royal Transfer EU",
+    "description": "Explore guías de viaje de Italia, consejos de transporte e información sobre destinos para ayudarle a planificar su viaje perfecto."
+  },
+  "hero": {
+    "title": "Guías de Viaje y Perspectivas",
+    "subtitle": "Explore nuestra colección de consejos de viaje, guías de destinos y asesoramiento de transporte para su aventura italiana"
+  },
+  "featured": {
+    "title": "Artículos Destacados"
+  },
+  "latest": {
+    "title": "Últimos Artículos"
+  },
+  "categories": {
+    "title": "Navegar por Categoría",
+    "items": [
+      {
+        "name": "Guías de Viaje",
+        "description": "Guías completas para destinos populares",
+        "slug": "guias-viaje"
+      },
+      {
+        "name": "Transporte",
+        "description": "Consejos para navegar por ciudades italianas",
+        "slug": "transporte"
+      },
+      {
+        "name": "Experiencias Culturales",
+        "description": "Arte, historia y tradiciones locales",
+        "slug": "experiencias-culturales"
+      },
+      {
+        "name": "Comida y Restaurantes",
+        "description": "Aventuras culinarias por toda Italia",
+        "slug": "comida-restaurantes"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Suscríbase a Nuestro Boletín de Viajes",
+    "description": "Reciba los últimos consejos de viaje, guías de destinos y ofertas exclusivas directamente en su bandeja de entrada.",
+    "emailPlaceholder": "Su dirección de correo electrónico",
+    "button": "Suscribirse",
+    "privacyNote": "Al suscribirse, acepta nuestra Política de Privacidad. Puede darse de baja en cualquier momento."
+  },
+  "blog": {
+    "readMore": "Leer Más",
+    "minuteRead": "min de lectura",
+    "loading": "Cargando artículos del blog..."
+  }
+}

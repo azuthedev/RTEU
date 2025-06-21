@@ -1,6 +1,125 @@
 {
+  "seo": {
+    "title": "Royal Transfer EU | Premium Flughafentransfers in Italien",
+    "description": "Professionelle Flughafentransfers in ganz Italien mit über 15 Jahren Erfahrung. Sichere, zuverlässige und komfortable Reisen mit englischsprachigen Fahrern."
+  },
+  "structuredData": {
+    "name": "Royal Transfer EU",
+    "description": "Premium Flughafentransfers und private Transferdienste in ganz Italien",
+    "provider": "Royal Transfer EU",
+    "serviceType": "Flughafentransfer",
+    "areaServed": "Italien"
+  },
+  "schema": {
+    "name": "Royal Transfer EU",
+    "languages": "Englisch, Italienisch"
+  },
+  "hero": {
+    "headline": "Die Straße ist Teil",
+    "headline1": "des Abenteuers",
+    "subhead": "Genießen Sie die Fahrt — wir kümmern uns um den Rest",
+    "image": {
+      "alt": "Luxuriöser Limousinen-Transferservice von Royal Transfer EU - professioneller Fahrer wartet an einem eleganten schwarzen Auto auf einer malerischen europäischen Straße"
+    }
+  },
+  "benefits": {
+    "title": "Warum uns wählen",
+    "subtitle": "Erleben Sie erstklassige Transportdienste, die auf Ihre Bedürfnisse zugeschnitten sind",
+    "items": {
+      "fixedPrices": {
+        "title": "Festpreise",
+        "description": "Keine Überraschungen, keine versteckten Gebühren. Wissen Sie genau, was Sie im Voraus zahlen werden."
+      },
+      "flightTracking": {
+        "title": "Flugverfolgung",
+        "description": "Wir überwachen Ihren Flug und passen die Abholzeit an die tatsächliche Ankunft an."
+      },
+      "professionalDrivers": {
+        "title": "Professionelle Fahrer",
+        "description": "Erfahrene, pünktliche Fahrer, die die lokalen Routen kennen und Englisch sprechen."
+      },
+      "comfortableVehicles": {
+        "title": "Komfortable Fahrzeuge",
+        "description": "Reisen Sie stilvoll mit unserer Flotte von erstklassigen, gut gewarteten Fahrzeugen."
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Unser Team steht Ihnen jederzeit zur Verfügung, um bei Fragen oder Änderungen zu helfen."
+      },
+      "noWaiting": {
+        "title": "Kein Warten",
+        "description": "Ihr Fahrer wird auf Sie warten, auch wenn Ihr Flug verspätet ist."
+      }
+    }
+  },
+  "services": {
+    "title": "Unsere Dienstleistungen",
+    "subtitle": "Premium-Transportlösungen für alle Ihre Reisebedürfnisse",
+    "learnMore": "Mehr erfahren",
+    "airport": {
+      "title": "Flughafentransfers",
+      "description": "Tür-zu-Tür-Service zwischen Flughäfen und Ihrem Ziel mit Flugverfolgung und kostenloser Wartezeit."
+    },
+    "intercity": {
+      "title": "Transfers zwischen Städten",
+      "description": "Komfortable Transfers zwischen Städten mit erfahrenen Fahrern, die die besten Routen kennen."
+    },
+    "group": {
+      "title": "Gruppentransfers",
+      "description": "Geräumige Fahrzeuge für Gruppen aller Größen, damit alle gemeinsam komfortabel reisen können."
+    }
+  },
+  "bookingProcess": {
+    "title": "So funktioniert es",
+    "subtitle": "Buchen Sie Ihren Premium-Transfer in nur wenigen einfachen Schritten",
+    "steps": {
+      "step1": {
+        "title": "Online buchen",
+        "description": "Geben Sie Ihre Reisedaten ein und wählen Sie ein Fahrzeug, das Ihren Bedürfnissen entspricht."
+      },
+      "step2": {
+        "title": "Sofortige Bestätigung",
+        "description": "Erhalten Sie sofortige Bestätigung mit allen Transferdetails."
+      },
+      "step3": {
+        "title": "Treffen Sie Ihren Fahrer",
+        "description": "Ihr professioneller Fahrer wird am vereinbarten Abholort warten."
+      },
+      "step4": {
+        "title": "Genießen Sie Ihre Fahrt",
+        "description": "Entspannen Sie sich im Komfort, während wir Sie sicher zu Ihrem Ziel bringen."
+      }
+    }
+  },
+  "testimonials": {
+  "title": "Was unsere Kunden sagen",
+  "subtitle": "Hören Sie von Reisenden, die unseren Premium-Service erlebt haben",
+  "quote1": "Hervorragender Service, höfliche Fahrer und perfektes Timing! Unsere Transfers waren reibungslos und stressfrei. Sehr zu empfehlen!",
+  "author1": "Sarah P.",
+  "location1": "UK",
+  "quote2": "Exzellente Erfahrung von Anfang bis Ende. Der Fahrer war professionell und das Fahrzeug makellos. Werde definitiv wieder buchen!",
+  "author2": "Marco R.",
+  "location2": "Italien",
+  "quote3": "Zuverlässiger und pünktlicher Service. Der Buchungsprozess war einfach und der Fahrer war sehr hilfsbereit mit unserem Gepäck.",
+  "author3": "John D.",
+  "location3": "USA"
+  },
+  "featuredDestinations": {
+    "title": "Beliebte Reiseziele",
+    "subtitle": "Entdecken Sie unsere am häufigsten angefragten Routen und Ziele",
+    "viewAll": "Alle Reiseziele anzeigen"
+  },
+  "cta": {
+    "title": "Bereit, Ihren Transfer zu buchen?",
+    "subtitle": "Sichern Sie sich jetzt Ihren Premium-Transfer und reisen Sie mit Zuversicht",
+    "button": "Jetzt buchen"
+  },
+  "trustBadges": {
+    "title": "Vertraut von Tausenden",
+    "subtitle": "Ihre Sicherheit und Zufriedenheit haben für uns höchste Priorität"
+  },
   "benefits.headline": "Warum Royal Transfer EU wählen?",
-  "benefits.trusted.head": "Vertraut von Tausenden",
+  "benefits.trusted.head": "Tausenden vertraut",
   "benefits.trusted.sub": "Zufriedene Kunden weltweit.",
   "benefits.experience.head": "Über 15 Jahre Erfahrung",
   "benefits.experience.sub": "Branchenveteranen.",
@@ -10,72 +129,46 @@
   "benefits.support.sub": "Immer für Sie da.",
   
   "destinations.head": "Beliebte Reiseziele",
-  "destinations.sub": "Gehen Sie über den normalen Service hinaus, wenn Sie mit Royal Transfer EU reisen",
+  "destinations.sub": "Gehen Sie über den regulären Service hinaus, wenn Sie mit Royal Transfer EU reisen",
   
-  "trustbadges.head": "Vertraut von Reisenden weltweit",
+  "trustbadges.head": "Weltweit von Reisenden vertraut",
   "trustbadges.payments.head": "Sichere Zahlungen",
-  "trustbadges.payments.sub": "Alle gängigen Karten akzeptiert",
+  "trustbadges.payments.sub": "Alle gängigen Karten werden akzeptiert",
   "trustbadges.tripadvisor.head": "Tripadvisor Bewertung",
   "trustbadges.tripadvisor.sub": "Basierend auf über 1000 Bewertungen",
-  "trustbadges.ssl.head": "SSL Verschlüsselt",
+  "trustbadges.ssl.head": "SSL-verschlüsselt",
   "trustbadges.ssl.sub": "Ihre Daten sind geschützt",
   "trustbadges.methods": "Akzeptierte Zahlungsmethoden",
   "trustbadges.cash": "Barzahlung möglich",
   
   "services.head": "Unsere Dienstleistungen",
   "services.airport.head": "Flughafentransfers",
-  "services.airport.sub": "Zuverlässige, pünktliche Abholungen und Abgaben an allen großen Flughäfen in Italien.",
+  "services.airport.sub": "Zuverlässige, pünktliche Abholungen und Bringdienste an allen großen Flughäfen in Italien.",
   "services.private.head": "Private Transfers",
   "services.private.sub": "Professionelle, vorgebuchte Transfers mit qualifizierten Fahrern und Premium-Fahrzeugen.",
   "services.minivan.head": "Minivan-Vermietung",
-  "services.minivan.sub": "Komfortable Minivans für Gruppen, Familienreisen oder geschäftliche Bedürfnisse.",
+  "services.minivan.sub": "Komfortable Minivans für Gruppen, Familienausflüge oder geschäftliche Anforderungen.",
   
   "about.head": "Ihre Reise, neu definiert.",
-  "about.sub": "Seit über 15 Jahren bietet Royal Transfer EU sichere, pünktliche und komfortable Flughafentransfers und Taxiservices in ganz Italien. Dank jahrelanger Erfahrung und Hingabe sind wir der bevorzugte Reisepartner für Tausende von Menschen weltweit.",
-  "about.cta": "Mehr erfahren",
+  "about.sub": "Seit über 15 Jahren bietet Royal Transfer EU sichere, pünktliche und komfortable Flughafentransfers in ganz Italien. Durch jahrelange Erfahrung und Engagement sind wir der bevorzugte Reisepartner für Tausende weltweit.",
+  "about.cta": "Mehr lesen",
   
   "faq.head": "Häufig gestellte Fragen",
   "faq.cta": "Mehr lesen",
   "faq.how.head": "Wie buche ich eine Fahrt?",
-  "faq.how.sub": "Buchen Sie online, telefonisch oder über unsere App – sofortige Bestätigung garantiert.",
-  "faq.delay.head": "Was passiert, wenn mein Flug Verspätung hat?",
-  "faq.delay.sub": "Keine Sorge! Wir verfolgen Flüge und passen Abholzeiten ohne zusätzliche Kosten an.",
+  "faq.how.sub": "Online, telefonisch oder über unsere App buchen – sofortige Bestätigung garantiert.",
   "faq.prices.head": "Sind Ihre Preise fest oder nach Taxameter?",
-  "faq.prices.sub": "Wählen Sie zwischen Festpreisen für Transparenz oder Taxameterfahrten für Flexibilität.",
-  "faq.where.head": "Wo trifft mich mein Fahrer am Flughafen?",
-  "faq.where.sub": "Ihr Fahrer wird im Ankunftsbereich mit einem Schild mit Ihrem Namen auf Sie warten.",
-  "faq.group.head": "Bieten Sie Fahrzeuge für Gruppen oder Familien an?",
+  "faq.prices.sub": "Wählen Sie zwischen Festpreisen für Transparenz oder flexibler Preisgestaltung basierend auf der Entfernung.",
+  "faq.where.head": "Wo wird mich mein Fahrer am Flughafen treffen?",
+  "faq.where.sub": "Ihr Fahrer wird im Ankunftsbereich mit einem Schild mit Ihrem Namen warten.",
+  "faq.group.head": "Bieten Sie gruppen- oder familienfreundliche Fahrzeuge an?",
   "faq.group.sub": "Ja! Unsere geräumigen Minivans sind perfekt für Gruppen, Familien und Geschäftsreisen.",
   
   "booking.head": "Buchungsprozess erklärt",
-  "booking.book.head": "Buchen Sie eine Fahrt",
-  "booking.book.sub": "Erhalten Sie sofortige Bestätigung. Kostenlose Anpassungen, flexible Bedingungen – immer stressfrei.",
+  "booking.book.head": "Eine Fahrt buchen",
+  "booking.book.sub": "Sofortige Bestätigung erhalten. Kostenlose Anpassungen, flexible Bedingungen – immer stressfrei.",
   "booking.driver.head": "Treffen Sie Ihren Fahrer",
-  "booking.driver.sub": "Bei Ankunft werden Sie persönlich begrüßt und zu Ihrem Fahrzeug begleitet. Fahrer überwachen Ihren Flug, um sich an Änderungen und Verzögerungen anzupassen und sorgen für absolute Sicherheit.",
+  "booking.driver.sub": "Bei der Ankunft werden Sie persönlich begrüßt und zu Ihrem Fahrzeug begleitet. Die Fahrer überwachen Ihren Flug, um Änderungen und Verspätungen zu berücksichtigen, was Ihnen absolute Sorgenfreiheit bietet.",
   "booking.comfort.head": "Genießen Sie den Komfort",
-  "booking.comfort.sub": "Entspannen Sie sich, während Ihr professioneller Fahrer Sie zu Ihrem gewählten Ziel bringt und Ihr Abenteuer richtig beginnt.",
-  
-  "testimonials.head": "Hören Sie von unseren zufriedenen Reisenden",
-  
-  "cta.head": "Bereit, Ihre Reise zu beginnen?",
-  "cta.button": "Buchen Sie Ihre Fahrt jetzt",
-  
-  "sitemap.quicklinks.head": "Schnelllinks",
-  "sitemap.quicklinks.home": "Startseite",
-  "sitemap.quicklinks.faqs": "FAQ",
-  "sitemap.quicklinks.about": "Über Uns",
-  "sitemap.quicklinks.partners": "Partner",
-  "sitemap.quicklinks.destinations": "Reiseziele",
-  "sitemap.quicklinks.rentacar": "Auto mieten",
-  "sitemap.quicklinks.services": "Dienstleistungen",
-  "sitemap.quicklinks.contact": "Kontakt",
-  
-  "sitemap.gethelp.head": "Hilfe bekommen",
-  "sitemap.gethelp.bookingsupport": "Buchungsunterstützung",
-  "sitemap.gethelp.payment": "Zahlungsinformationen",
-  "sitemap.gethelp.terms": "Allgemeine Geschäftsbedingungen",
-  "sitemap.gethelp.privacy": "Datenschutzrichtlinie",
-  "sitemap.gethelp.cookies": "Cookie-Einstellungen",
-  
-  "sitemap.contact.head": "Kontaktinformationen"
+  "booking.comfort.sub": "Entspannen Sie sich, während Ihr professioneller Fahrer Sie zu Ihrem gewünschten Ort bringt und Ihr Abenteuer richtig beginnt."
 }

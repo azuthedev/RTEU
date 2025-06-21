@@ -1,1 +1,81 @@
-{}
+{
+  "meta": {
+    "title": "Buchung bestätigt | Royal Transfer EU",
+    "description": "Ihre Transferbuchung wurde bestätigt. Vielen Dank, dass Sie sich für Royal Transfer EU entschieden haben."
+  },
+  "title": "Buchung bestätigt!",
+  "description": "Vielen Dank für Ihre Buchung bei Royal Transfer EU. Ihr Transfer wurde erfolgreich bestätigt.",
+  "loading": "Buchungsdetails werden geladen...",
+  "error": {
+    "title": "Fehler",
+    "contactSupport": "Ihre Buchung konnte nicht gefunden werden. Bitte kontaktieren Sie den Support.",
+    "loadFailed": "Buchungsdetails konnten nicht geladen werden",
+    "noReference": "Keine Buchungsreferenz gefunden",
+    "noData": "Keine Buchungsdaten gefunden",
+    "fetchFailed": "Buchungsdetails konnten nicht abgerufen werden"
+  },
+  "toast": {
+    "linkSuccess": {
+      "title": "Buchung verknüpft",
+      "description": "Ihre Buchung wurde mit Ihrem Konto verknüpft."
+    },
+    "linkFailed": {
+      "title": "Buchungsverknüpfung fehlgeschlagen",
+      "description": "Sie können dies manuell auf Ihrer Buchungsseite verknüpfen."
+    }
+  },
+  "reference": {
+    "label": "Buchungsreferenz",
+    "note": "Bitte bewahren Sie diese Referenz für Ihre Unterlagen auf"
+  },
+  "details": {
+    "title": "Buchungsdetails",
+    "from": "Von:",
+    "to": "Nach:",
+    "transferDate": "Transferdatum:",
+    "returnDate": "Rückfahrtdatum:",
+    "vehicle": "Fahrzeug:",
+    "passengers": "Passagiere:",
+    "luggage": "Gepäck:",
+    "items": "Stücke",
+    "extras": "Extras:",
+    "price": "Preis:",
+    "paymentMethod": "Zahlungsmethode:",
+    "status": "Status:",
+    "confirmed": "Bestätigt",
+    "notes": "Anmerkungen:",
+    "noData": "Keine detaillierten Buchungsinformationen verfügbar."
+  },
+  "confirmation": {
+    "email": "Eine Bestätigungs-E-Mail wurde an Ihre E-Mail-Adresse mit allen Details Ihrer Buchung gesendet.",
+    "contact": "Bei Fragen oder wenn Sie Ihre Buchung ändern möchten, kontaktieren Sie bitte unseren Kundensupport."
+  },
+  "buttons": {
+    "viewBookings": "Meine Buchungen anzeigen",
+    "checkingAccount": "Konto wird geprüft...",
+    "signIn": "Anmelden, um Buchung zu verwalten",
+    "createAccount": "Konto erstellen, um Buchung zu verwalten",
+    "home": "Zurück zur Startseite"
+  },
+  "whatsNext": {
+    "title": "Was kommt als Nächstes?",
+    "confirmation": {
+      "title": "Bestätigungs-E-Mail",
+      "description": "Überprüfen Sie Ihren Posteingang für detaillierte Buchungsinformationen"
+    },
+    "assignment": {
+      "title": "Fahrerzuweisung",
+      "description": "Sie erhalten die Fahrerdetails 24 Stunden vor der Abholung"
+    },
+    "ready": {
+      "title": "Bereit zu gehen",
+      "description": "Ihr Fahrer wird Sie am angegebenen Ort treffen"
+    }
+  },
+  "links": {
+    "contactHelp": "Brauchen Sie Hilfe? Support kontaktieren"
+  },
+  "date": {
+    "invalid": "Ungültiges Datum"
+  }
+}

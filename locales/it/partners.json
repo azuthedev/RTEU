@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Diventa Partner | Royal Transfer EU",
+    "description": "Unisciti alla rete di partner di Royal Transfer EU e fai crescere la tua attività. Candidati ora per diventare un partner ufficiale."
+  },
+  "hero": {
+    "title": "Diventa Partner di Royal Transfer EU",
+    "subtitle": "Unisciti alla nostra rete di autisti professionisti e fai crescere la tua attività",
+    "cta": "Candidati Ora"
+  },
+  "benefits": {
+    "title": "Perché Diventare Partner",
+    "description": "Unisciti a una crescente rete di autisti professionisti e aziende per espandere le tue opportunità di business e fornire servizi premium ai viaggiatori in tutta Europa.",
+    "items": {
+      "bookings": {
+        "title": "Prenotazioni Costanti",
+        "description": "Ricevi un flusso costante di prenotazioni prepagate attraverso la nostra piattaforma, riducendo i ritorni a vuoto e i tempi di inattività."
+      },
+      "clientele": {
+        "title": "Clientela Premium",
+        "description": "Servi clienti di alta qualità che apprezzano il servizio professionale e sono disposti a pagare per esperienze superiori."
+      },
+      "schedule": {
+        "title": "Orario Flessibile",
+        "description": "Scegli quando lavorare e quali prenotazioni accettare, mantenendo il pieno controllo del tuo programma."
+      },
+      "support": {
+        "title": "Supporto Professionale",
+        "description": "Accedi al nostro team di supporto partner dedicato per assistenza con prenotazioni, comunicazione con i clienti e problemi tecnici."
+      },
+      "technology": {
+        "title": "Piattaforma Tecnologica",
+        "description": "Utilizza la nostra app per autisti per gestire prenotazioni, navigazione e comunicazione con i clienti, tutto in un unico posto."
+      },
+      "growth": {
+        "title": "Opportunità di Crescita",
+        "description": "Espandi la tua attività con accesso a viaggiatori internazionali e clienti aziendali."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Requisiti per i Partner",
+    "description": "Manteniamo standard elevati per garantire un servizio eccezionale per tutti i nostri clienti.",
+    "list": [
+      "Patente di guida professionale valida e tutti i permessi richiesti",
+      "Veicolo pulito e ben mantenuto con meno di 5 anni",
+      "Assicurazione commerciale con copertura adeguata",
+      "Eccellente conoscenza delle strade locali e delle attrazioni",
+      "Aspetto professionale e forti capacità di servizio clienti",
+      "Competenze di comunicazione in inglese fluente",
+      "Smartphone con connessione internet affidabile",
+      "Disponibilità flessibile inclusi fine settimana e festivi",
+      "Controllo dei precedenti e record di guida pulito"
+    ]
+  },
+  "form": {
+    "title": "Candidati per Diventare Partner",
+    "description": "Compila il modulo sottostante per iniziare il tuo processo di candidatura. Il nostro team esaminerà la tua domanda e ti contatterà entro 2-3 giorni lavorativi.",
+    "fields": {
+      "name": {
+        "label": "Nome Completo",
+        "placeholder": "Inserisci il tuo nome completo"
+      },
+      "email": {
+        "label": "Indirizzo Email",
+        "placeholder": "Inserisci la tua email"
+      },
+      "phone": {
+        "label": "Numero di Telefono",
+        "placeholder": "Inserisci il tuo numero di telefono",
+        "help": "Includi il prefisso internazionale, es. +39"
+      },
+      "company": {
+        "label": "Nome Azienda",
+        "placeholder": "Inserisci il nome della tua azienda"
+      },
+      "vat": {
+        "label": "Numero di Partita IVA",
+        "placeholder": "Inserisci il tuo numero di Partita IVA",
+        "help": "Numero di identificazione fiscale per la tua attività"
+      },
+      "vehicle": {
+        "label": "Tipo di Veicolo (Opzionale)",
+        "placeholder": "Seleziona un tipo di veicolo",
+        "options": {
+          "sedan": "Berlina",
+          "minivan": "Minivan",
+          "sprinter": "Sprinter",
+          "bus": "Autobus"
+        }
+      },
+      "message": {
+        "label": "Informazioni Aggiuntive",
+        "placeholder": "Raccontaci della tua esperienza, dettagli del veicolo e disponibilità"
+      }
+    },
+    "validation": {
+      "name": "Per favore inserisci il tuo nome",
+      "email": "L'email è obbligatoria",
+      "emailFormat": "Per favore inserisci un indirizzo email valido",
+      "phone": "Il numero di telefono è obbligatorio",
+      "phoneFormat": "Per favore inserisci un numero di telefono valido",
+      "company": "Il nome dell'azienda è obbligatorio",
+      "vat": "Il numero di Partita IVA è obbligatorio",
+      "message": "Le informazioni aggiuntive sono obbligatorie"
+    },
+    "buttons": {
+      "submit": "Invia Candidatura",
+      "submitting": "Invio in corso..."
+    },
+    "success": {
+      "title": "Candidatura Inviata!",
+      "message": "Grazie per il tuo interesse a diventare partner di Royal Transfer EU. Abbiamo ricevuto la tua candidatura e il nostro team la esaminerà a breve. Ti contatteremo entro 2-3 giorni lavorativi con i prossimi passi.",
+      "button": {
+        "another": "Invia Un'Altra Candidatura",
+        "home": "Torna alla Home"
+      }
+    },
+    "verification": {
+      "title": "Email Verificata con Successo",
+      "message": "Grazie per aver verificato la tua email! Ti abbiamo inviato un link di invito per completare la tua registrazione come partner. Per favore controlla la tua casella di posta.",
+      "emailSent": "Link di invito inviato a:",
+      "checkSpam": "Se non vedi l'email nella tua casella di posta, controlla la cartella spam o posta indesiderata."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Errore di Validazione del Modulo",
+        "description": "Per favore controlla il modulo e correggi gli errori."
+      },
+      "success": {
+        "title": "Candidatura Inviata",
+        "description": "La tua candidatura come partner è stata ricevuta. Ti contatteremo presto!"
+      },
+      "error": {
+        "title": "Invio del Modulo Fallito",
+        "description": "Qualcosa è andato storto. Per favore riprova più tardi."
+      },
+      "verifyEmail": {
+        "title": "Verifica la Tua Email",
+        "description": "Per favore controlla la tua email per un codice di verifica."
+      },
+      "verificationSuccess": {
+        "title": "Email Verificata con Successo",
+        "description": "La tua candidatura come partner è stata ricevuta e la tua email è verificata. Per favore controlla la tua email per un link di invito per completare la tua registrazione."
+      }
+    },
+    "errors": {
+      "default": "Qualcosa è andato storto. Per favore riprova più tardi."
+    }
+  },
+  "faq": {
+    "title":  "Domande Frequenti",
+    "description": "Tutto ciò che devi sapere sul diventare partner con Royal Transfer EU",
+    "items": {
+      "start": {
+        "question": "Quanto presto posso iniziare dopo aver fatto domanda?",
+        "answer": "Dopo che la tua candidatura è stata approvata, ti guideremo attraverso l'onboarding che tipicamente richiede 3-7 giorni a seconda della verifica dei documenti e del completamento della formazione."
+      },
+      "payment": {
+        "question": "Come vengo pagato per i viaggi completati?",
+        "answer": "I pagamenti vengono elaborati su base settimanale. Riceverai depositi diretti sul tuo conto bancario registrato per tutti i viaggi completati, meno la commissione della piattaforma."
+      },
+      "areas": {
+        "question": "In quali aree posso fornire servizio?",
+        "answer": "Puoi scegliere le tue aree di servizio preferite durante la registrazione. Puoi servire qualsiasi area dove sei legalmente autorizzato a operare come autista."
+      },
+      "vehicle": {
+        "question": "Devo fornire il mio veicolo?",
+        "answer": "Sì, i partner devono avere i propri veicoli che soddisfano i nostri standard di qualità. Il tuo veicolo deve essere pulito, ben mantenuto e avere meno di 5 anni."
+      },
+      "commission": {
+        "question": "Qual è la struttura delle commissioni?",
+        "answer": "La nostra commissione varia in base al tipo di servizio e alla posizione, tipicamente tra il 15-25%. I dettagli completi saranno forniti durante il processo di onboarding."
+      },
+      "exclusivity": {
+        "question": "Posso lavorare per altre società di trasferimento contemporaneamente?",
+        "answer": "Sì, la nostra partnership non è esclusiva. Sei libero di lavorare con altre aziende o mantenere la tua attività indipendente insieme alla partnership con noi."
+      }
+    }
+  }
+}

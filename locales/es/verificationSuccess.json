@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "title": "Correo verificado correctamente | Royal Transfer EU",
+    "description": "Tu correo ha sido verificado correctamente. Ahora puedes acceder a tu cuenta y reservar nuestros servicios."
+  },
+  "title": "¡Correo verificado!",
+  "message": "Gracias por verificar tu dirección de correo electrónico. Tu cuenta ya está activa.",
+  "autoRedirect": "Serás redirigido a la página de inicio de sesión en unos segundos...",
+  "button": {
+    "continue": "Continuar"
+  }
+}

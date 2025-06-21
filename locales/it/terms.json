@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "title": "Termini e Condizioni | Royal Transfer EU",
+    "description": "Termini e condizioni per i servizi transfer premium Royal Transfer EU. Leggi i nostri termini di servizio prima di prenotare."
+  },
+  "structuredData": {
+    "name": "Termini e Condizioni",
+    "description": "Termini e condizioni per i servizi transfer premium Royal Transfer EU"
+  },
+  "title": "Termini e Condizioni",
+  "sections": {
+    "introduction": {
+      "title": "1. Introduzione",
+      "paragraph1": "Benvenuto su Royal Transfer EU. Questi Termini e Condizioni regolano l'utilizzo del nostro sito web e dei nostri servizi. Accedendo al nostro sito o utilizzando i nostri servizi di trasporto, accetti questi termini. Ti invitiamo a leggerli attentamente.",
+      "paragraph2": "In questi Termini, \"Royal Transfer EU\", \"noi\" e \"nostro\" si riferiscono a Royal Transfer EU e \"tu\" e \"tuo\" si riferiscono al cliente, visitatore, utente del sito o utilizzatore dei nostri servizi."
+    },
+    "booking": {
+      "title": "2. Prenotazioni",
+      "point1": "2.1. Tutte le prenotazioni effettuate tramite il nostro sito, telefono o e-mail costituiscono accettazione di questi Termini e Condizioni.",
+      "point2": "2.2. Al completamento della prenotazione riceverai un'e-mail di conferma con il numero di riferimento. Verifica che i dati siano corretti e contattaci subito se sono necessarie modifiche.",
+      "point3": "2.3. Per tutte le prenotazioni, il passeggero principale è responsabile della correttezza e completezza delle informazioni fornite.",
+      "point4": "2.4. Ci riserviamo il diritto di rifiutare una prenotazione senza obbligo di motivazione."
+    },
+    "pricing": {
+      "title": "3. Prezzi e Pagamento",
+      "point1": "3.1. Tutti i prezzi indicati sul nostro sito sono in euro (€) e includono le tasse applicabili salvo diversa indicazione.",
+      "point2": "3.2. Il pagamento può essere effettuato con carta di credito/debito al momento della prenotazione tramite il nostro sistema sicuro o in contanti all'autista al termine del servizio.",
+      "point3": "3.3. In caso di pagamento in contanti, il saldo deve essere effettuato in euro (€).",
+      "point4": "3.4. Per alcuni servizi possono essere applicati costi aggiuntivi come:",
+      "additionalCharges": [
+        "Tempo di attesa oltre il periodo gratuito",
+        "Fermate aggiuntive non previste nella prenotazione iniziale",
+        "Modifiche di percorso richieste durante il viaggio",
+        "Richieste di attrezzature speciali all'inizio del servizio"
+      ],
+      "point5": "3.5. I nostri prezzi sono garantiti al momento della prenotazione. Eventuali modifiche possono comportare variazioni di prezzo."
+    },
+    "cancellations": {
+      "title": "4. Cancellazioni e Modifiche",
+      "point1": "4.1. Le cancellazioni devono essere comunicate per iscritto via e-mail a support@royaltransfereu.com o tramite il nostro portale clienti.",
+      "point2": "4.2. La nostra politica di cancellazione è la seguente:",
+      "policy": [
+        "Cancellazioni oltre 24 ore prima del ritiro: rimborso totale.",
+        "Cancellazioni tra 12 e 24 ore prima del ritiro: addebito del 50%.",
+        "Cancellazioni entro 12 ore o mancata presentazione: addebito del 100%."
+      ],
+      "point3": "4.3. Le modifiche possono essere effettuate fino a 4 ore prima del ritiro, salvo disponibilità. Cambiamenti con meno di 4 ore possono essere considerati come cancellazione e nuova prenotazione."
+    },
+    "airport": {
+      "title": "5. Prelievi in aeroporto e ritardi",
+      "point1": "5.1. Per i prelievi in aeroporto monitoriamo i voli e adeguiamo l'orario di ritiro in caso di ritardo senza costi aggiuntivi.",
+      "point2": "5.2. Offriamo un tempo di attesa gratuito di:",
+      "waitingTime": [
+        "45 minuti dopo l'orario di atterraggio previsto per voli internazionali",
+        "30 minuti dopo l'atterraggio per voli nazionali",
+        "15 minuti per altri punti di prelievo"
+      ],
+      "point3": "5.3. Ulteriore tempo di attesa sarà addebitato secondo le nostre tariffe orarie standard."
+    },
+    "service": {
+      "title": "6. Standard e limitazioni del servizio",
+      "point1": "6.1. Ci impegniamo a fornire servizi di trasporto di alta qualità con autisti professionali e veicoli ben mantenuti.",
+      "point2": "6.2. Facciamo il possibile per essere puntuali, ma non siamo responsabili per ritardi dovuti a cause di forza maggiore come traffico, meteo o altri eventi fuori dal nostro controllo.",
+      "point3": "6.3. Il numero massimo di passeggeri e bagagli per veicolo è limitato dal tipo di veicolo e deve essere rispettato per motivi di sicurezza e comfort.",
+      "point4": "6.4. Royal Transfer EU si riserva il diritto di rifiutare il trasporto a chiunque sia sotto l'effetto di alcol o droghe, o abbia comportamenti pericolosi o offensivi."
+    },
+    "liability": {
+      "title": "7. Responsabilità",
+      "point1": "7.1. Royal Transfer EU dispone di assicurazione di responsabilità civile e passeggeri come previsto dalla legge.",
+      "point2": "7.2. Non siamo responsabili per perdite, danni o disagi causati da circostanze fuori dal nostro controllo.",
+      "point3": "7.3. Royal Transfer EU non è responsabile per danni indiretti o consequenziali, inclusi ma non limitati a voli persi, coincidenze, perdita di reddito o opportunità commerciali.",
+      "point4": "7.4. La nostra responsabilità massima nei tuoi confronti è limitata al valore totale della prenotazione."
+    },
+    "belongings": {
+      "title": "8. Oggetti personali",
+      "point1": "8.1. I passeggeri sono responsabili dei propri effetti personali. Royal Transfer EU e gli autisti non sono responsabili per oggetti dimenticati nel veicolo.",
+      "point2": "8.2. Gli oggetti ritrovati saranno restituiti ove possibile, ma senza garanzia di recupero o stato."
+    },
+    "dataProtection": {
+      "title": "9. Protezione dei dati e privacy",
+      "point1": "9.1. Royal Transfer EU si impegna a proteggere la tua privacy. La nostra Informativa sulla Privacy, disponibile sul nostro sito, spiega come raccogliamo, utilizziamo e proteggiamo i tuoi dati.",
+      "point2": "9.2. Prenotando, acconsenti alla raccolta, trattamento e trasferimento dei tuoi dati secondo la nostra Informativa sulla Privacy."
+    },
+    "intellectualProperty": {
+      "title": "10. Proprietà intellettuale",
+      "point1": "10.1. Tutti i contenuti del sito Royal Transfer EU, inclusi testi, grafiche, loghi, immagini e software, sono di proprietà di Royal Transfer EU o dei suoi fornitori e sono protetti dalle leggi internazionali sul copyright.",
+      "point2": "10.2. Non puoi riprodurre, distribuire o utilizzare alcun contenuto senza il nostro esplicito consenso scritto."
+    },
+    "governingLaw": {
+      "title": "11. Legge applicabile",
+      "point1": "11.1. Questi termini sono regolati dalla legge italiana.",
+      "point2": "11.2. Ogni controversia sarà soggetta alla giurisdizione esclusiva dei tribunali italiani."
+    },
+    "modifications": {
+      "title": "12. Modifiche ai termini",
+      "point1": "12.1. Royal Transfer EU si riserva il diritto di modificare questi termini in qualsiasi momento. Le modifiche saranno pubblicate sul nostro sito e avranno effetto immediato.",
+      "point2": "12.2. È tua responsabilità consultare regolarmente questi termini. L'uso continuato dei nostri servizi implica l'accettazione delle modifiche."
+    },
+    "contact": {
+      "title": "13. Contatti",
+      "point1": "13.1. Per domande su questi termini, contattaci a:",
+      "companyName": "Royal Transfer EU",
+      "email": "E-mail:",
+      "phone": "Telefono:",
+      "lastUpdated": "Ultimo aggiornamento: 15 giugno 2025"
+    }
+  }
+}

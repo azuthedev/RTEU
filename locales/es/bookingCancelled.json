@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Reserva Cancelada | Royal Transfer EU",
+    "description": "Su reserva ha sido cancelada. No se ha procesado ningún pago."
+  },
+  "title": "Reserva Cancelada",
+  "message": "Su proceso de reserva ha sido cancelado. No se ha procesado ningún pago.",
+  "nextSteps": {
+    "title": "¿Qué le gustaría hacer a continuación?",
+    "description": "Puede intentar reservar de nuevo o contactar a nuestro equipo de soporte si necesita ayuda."
+  },
+  "buttons": {
+    "home": "Volver al Inicio",
+    "contact": "Contactar Soporte"
+  }
+}

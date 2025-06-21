@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "I Nostri Servizi | Royal Transfer EU",
+    "description": "Scopri la nostra gamma di servizi transfer: trasferimenti aeroportuali, transfer privati e noleggio minivan per gruppi e famiglie."
+  },
+  "hero": {
+    "title": "Le nostre soluzioni professionali di transfer e noleggio",
+    "subtitle": "Viaggia in modo semplice, sicuro e senza stress.",
+    "imageAlt": "Servizi Royal Transfer EU",
+    "scrollButton": "Scorri per vedere i nostri servizi"
+  },
+  "overview": {
+    "title": "Viaggiare non deve essere complicato.",
+    "subtitle": "In Royal Transfer EU abbiamo pianificato servizi su misura per ogni tua esigenza."
+  },
+  "airport": {
+    "title": "Transfer Aeroportuali",
+    "description": "Rendi il tuo viaggio facile dall'inizio alla fine. I nostri autisti cordiali e professionali ti aspettano puntuali in aeroporto e ti portano direttamente a destinazione. Niente attese, niente stress, solo viaggi rilassanti per lavoro o vacanza.",
+    "feature1": "Servizio porta a porta",
+    "feature2": "Autisti cordiali che monitorano i tuoi voli",
+    "feature3": "Sempre puntuali e pronti quando atterri",
+    "cta": "Prenota un transfer aeroportuale"
+  },
+  "private": {
+    "title": "Transfer Privati On-Demand",
+    "description": "Devi andare da A a B con comfort e affidabilità? Il nostro servizio transfer privato è pensato per chi cerca puntualità, tranquillità e veicoli di qualità. Prenota in anticipo e pensiamo a tutto noi.",
+    "feature1": "Transfer privati punto-punto",
+    "feature2": "Autisti qualificati e professionali",
+    "feature3": "Prenotazione anticipata richiesta — minimo 4 ore",
+    "feature4": "Solo veicoli puliti e premium",
+    "cta": "Prenota il tuo transfer privato"
+  },
+  "minivan": {
+    "title": "Noleggio Minivan Confortevoli",
+    "description": "Viaggi con la famiglia o un gruppo numeroso? I nostri minivan spaziosi e puliti trasportano comodamente tutti. Noleggia per un giorno, una settimana o più — sempre facile e flessibile.",
+    "feature1": "Van spaziosi per gruppi o famiglie",
+    "feature2": "Veicoli puliti e affidabili",
+    "feature3": "Opzione con conducente o guida autonoma",
+    "cta": "Noleggia un minivan oggi"
+  },
+  "whyLove": {
+    "title": "Perché i viaggiatori amano Royal Transfer EU"
+  },
+  "bookingProcess": {
+    "title": "Prenota in 3 semplici passi",
+    "step1": {
+      "title": "Scegli la tua corsa",
+      "description": "Seleziona il servizio: transfer aeroporto, taxi o noleggio minivan."
+    },
+    "step2": {
+      "title": "Conferma immediata",
+      "description": "Riceverai subito i dettagli e la conferma della prenotazione."
+    },
+    "step3": {
+      "title": "Goditi il viaggio",
+      "description": "Rilassati e lascia che i nostri autisti si occupino di tutto."
+    },
+    "cta": "Inizia la prenotazione"
+  },
+  "testimonials": {
+    "cta": "Unisciti ai nostri clienti soddisfatti"
+  },
+  "faq": {
+    "title": "Domande?",
+    "q1": "Come prenotare?",
+    "a1": "Prenota facilmente online, tramite app o telefono. Riceverai conferma immediata.",
+    "q2": "Opzioni di pagamento?",
+    "a2": "Accettiamo tutte le principali carte di credito, pagamenti online e contanti.",
+    "q3": "Cosa succede se il volo è in ritardo?",
+    "a3": "Nessun problema! Monitoriamo il tuo volo e adeguiamo automaticamente l'orario di ritiro senza costi aggiuntivi.",
+    "cta": "Vedi tutte le FAQ"
+  },
+  "bottomCta": {
+    "title": "Pronto a viaggiare sicuro e comodo?",
+    "buttonText": "Prenota ora"
+  }
+}

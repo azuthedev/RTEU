@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Verifizierung fehlgeschlagen | Royal Transfer EU",
+    "description": "E-Mail-Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut oder fordern Sie einen neuen Verifizierungslink an."
+  },
+  "title": "Verifizierung fehlgeschlagen",
+  "errors": {
+    "generic": "Beim Verifizieren Ihrer E-Mail ist ein Problem aufgetreten.",
+    "expired": "Der Verifizierungslink ist abgelaufen. Bitte fordern Sie eine neue Verifizierungs-E-Mail an.",
+    "invalid": "Der Verifizierungslink ist ungültig oder wurde bereits verwendet."
+  },
+  "buttons": {
+    "tryAgain": "Erneut versuchen",
+    "goHome": "Zur Startseite"
+  }
+}

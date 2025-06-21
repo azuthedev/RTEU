@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Verificación fallida | Royal Transfer EU",
+    "description": "La verificación del correo electrónico ha fallado. Por favor, inténtalo de nuevo o solicita un nuevo enlace de verificación."
+  },
+  "title": "Verificación fallida",
+  "errors": {
+    "generic": "Hubo un problema al verificar tu correo electrónico.",
+    "expired": "El enlace de verificación ha expirado. Solicita un nuevo correo de verificación.",
+    "invalid": "El enlace de verificación no es válido o ya ha sido utilizado."
+  },
+  "buttons": {
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir al inicio"
+  }
+}

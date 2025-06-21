@@ -1,1 +1,43 @@
-{}
+{
+  "meta": {
+    "title": "Il tuo Profilo | Royal Transfer EU",
+    "description": "Gestisci le informazioni e le preferenze del tuo account."
+  },
+  "header": {
+    "title": "Il tuo Profilo",
+    "description": "Gestisci le informazioni e le preferenze del tuo account"
+  },
+  "personalInfo": {
+    "title": "Informazioni Personali",
+    "fields": {
+      "name": "Nome completo",
+      "email": "Indirizzo email",
+      "emailHelp": "L'email non può essere modificata",
+      "phone": "Numero di telefono",
+      "phoneHelp": "Per notifiche di prenotazione (opzionale)"
+    }
+  },
+  "security": {
+    "title": "Sicurezza dell'Account",
+    "passwordReset": "Reimposta password",
+    "signOut": "Disconnetti"
+  },
+  "helpBox": {
+    "title": "Serve aiuto?",
+    "description": "Se hai problemi con il tuo account, il nostro team di supporto è qui per aiutarti.",
+    "contactLink": "Contatta il supporto"
+  },
+  "buttons": {
+    "save": "Salva modifiche",
+    "saving": "Salvataggio..."
+  },
+  "messages": {
+    "success": "Il tuo profilo è stato aggiornato con successo!",
+    "error": {
+      "general": "Aggiornamento profilo non riuscito",
+      "loading": "Impossibile caricare i dati del profilo. Prova ad aggiornare la pagina.",
+      "nameRequired": "Il nome è obbligatorio"
+    }
+  },
+  "loading": "Caricamento del profilo..."
+}

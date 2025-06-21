@@ -1,1 +1,103 @@
-{}
+{
+  "meta": {
+    "title": "Häufig gestellte Fragen | Royal Transfer EU",
+    "description": "Finden Sie Antworten auf häufige Fragen zu unseren Dienstleistungen, dem Buchungsprozess und unseren Richtlinien."
+  },
+  "title": "Häufig gestellte Fragen",
+  "intro": "Wir wissen, dass Ihre Reisepläne wichtig sind und Fragen aufkommen können. Bei Royal Transfer EU ist unser Ziel Ihre Seelenruhe. Nachfolgend finden Sie Antworten auf die am häufigsten gestellten Fragen. Ihre Frage nicht gefunden? Wenden Sie sich jederzeit an unser 24/7 Kundenservice-Team!",
+  "search": "FAQs durchsuchen...",
+  "needHelp": {
+    "title": "Haben Sie noch eine Frage?",
+    "description": "Unser freundliches Team steht Ihnen rund um die Uhr zur Verfügung.",
+    "contactButton": "Support jetzt kontaktieren",
+    "chatButton": "Sprechen Sie sofort mit uns!"
+  },
+  "categories": {
+    "booking": {
+      "title": "Buchung & Reservierungen",
+      "q1": "Wie buche ich einen Flughafentransfer oder ein Taxi?",
+      "a1": "Ganz einfach! Buchen Sie sofort online über unser benutzerfreundliches Buchungssystem, über unsere App oder telefonisch. Sie erhalten sofortige Bestätigung und alle Reisedetails.",
+      "q2": "Kann ich bei der Buchung einen speziellen Wunsch äußern?",
+      "a2": "Auf jeden Fall! Nach Auswahl Ihrer Reisedetails haben Sie die Möglichkeit, Notizen hinzuzufügen oder während des Buchungsvorgangs oder durch Kontaktaufnahme mit unserem Kundensupport besondere Annehmlichkeiten anzufordern.",
+      "q3": "Wie weit im Voraus sollte ich meinen Transfer buchen?",
+      "a3": "Obwohl wir sofortige und kurzfristige Buchungen akzeptieren, empfehlen wir, mindestens 24 Stunden vor Ihrer geplanten Abholung zu buchen, um die Verfügbarkeit zu garantieren, besonders während der Hauptsaison.",
+      "q4": "Kann ich mehrere Fahrten auf einmal reservieren?",
+      "a4": "Natürlich! Wählen Sie einfach 'Weitere Fahrt hinzufügen' während Ihrer Buchung oder kontaktieren Sie unseren Kundenservice, der Ihnen hilft, mehrere Fahrten mühelos zu planen."
+    },
+    "pricing": {
+      "title": "Preise & Zahlungen",
+      "q1": "Bieten Sie Festpreise oder Fahrten nach Taxameter an?",
+      "a1": "Wir bieten beide Optionen! Wählen Sie einen Festpreis im Voraus für vollständige Transparenz oder eine Taxameterfahrt, zahlbar bei Ankunft — je nachdem, was Ihren Vorlieben und Reisebedürfnissen entspricht.",
+      "q2": "Wie kann ich meine Buchung bezahlen?",
+      "a2": "Wir akzeptieren alle gängigen Kredit-/Debitkarten (Visa, MasterCard, American Express), Online-Zahlungen, Banküberweisungen und Zahlungen über sichere Online-Zahlungsgateways. Sie können im Voraus oder direkt beim Fahrer nach Abschluss der Fahrt bezahlen.",
+      "q3": "Sind Zahlungen sicher und geschützt?",
+      "a3": "Ja, Sicherheit hat höchste Priorität. Unsere Online-Zahlungsportale verwenden verschlüsselte SSL-Sicherung, die sicherstellt, dass Ihre persönlichen Informationen und Transaktionen vollständig sicher bleiben.",
+      "q4": "Gibt es noch andere versteckte Gebühren oder Kosten?",
+      "a4": "Auf keinen Fall! Transparenz ist der Schlüssel bei Royal Transfer EU. Der bestätigte Preis, den Sie erhalten, enthält alle Steuern, Servicegebühren und Kosten, es sei denn, zusätzliche optionale Dienste werden speziell angefordert."
+    },
+    "airport": {
+      "title": "Flughafentransfers & Abholverfahren",
+      "q1": "Was passiert, wenn mein Flug Verspätung hat?",
+      "a1": "Wir überwachen aktiv Ihren Flugstatus und passen Ihre Abholzeit automatisch an. Seien Sie versichert, dass keine zusätzlichen Kosten für Verspätungen anfallen.",
+      "q2": "Wo wird mich mein Fahrer am Flughafen treffen?",
+      "a2": "Ihr professioneller Fahrer erwartet Ihre Ankunft im Ankunftsbereich des Flughafens und hält ein deutlich sichtbares Schild mit Ihrem Namen oder Ihren angegebenen Unternehmensinformationen.",
+      "q3": "Wie schnell treffe ich meinen Fahrer nach der Ankunft des Fluges?",
+      "a3": "Unser Fahrer ist so geplant, dass er vor Ihrer Landung auf Sie wartet und Sie beim Verlassen der Gepäckausgabe begrüßt – kein Warten nötig."
+    },
+    "taxi": {
+      "title": "Taxi-Dienste",
+      "q1": "Kann ich mein Taxi im Voraus buchen?",
+      "a1": "Auf jeden Fall! Wir empfehlen die Vorbuchung für garantierte Verfügbarkeit, akzeptieren aber auch sofortige Fahrtanfragen, wenn Autos in der Nähe verfügbar sind.",
+      "q2": "Sind Ihre Taxifahrer vollständig qualifiziert und versichert?",
+      "a2": "Auf jeden Fall! Alle unsere Fahrer sind vollständig lizenziert und professionell versichert. Die Sicherheit und der Komfort Ihrer Reise bleiben unsere obersten Prioritäten.",
+      "q3": "Gibt es eine Begrenzung der Reiseentfernung für Taxibuchungen?",
+      "a3": "Überhaupt nicht. Wir bedienen sowohl kurze Fahrten innerhalb der Stadt als auch Langstreckentransfers in verschiedene Regionen."
+    },
+    "minivan": {
+      "title": "Minivan-Vermietung (Mit oder Ohne Fahrer)",
+      "q1": "Was ist in meinem Minivan-Mietservice enthalten?",
+      "a1": "Jedes Mietpaket beinhaltet unbegrenzte Kilometerleistung, Standard-Versicherungsschutz (mit optionalen Upgrades), GPS-Navigation (auf Anfrage), komfortable moderne Fahrzeuge und 24/7 Pannenhilfe.",
+      "q2": "Kann ich einen Minivan ohne Fahrer mieten?",
+      "a2": "Ja, selbstgefahrene Minivans sind verfügbar. Alternativ werden auch Chauffeur-gefahrene Fahrzeugoptionen für ein völlig entspanntes, freihändiges Reiseerlebnis angeboten.",
+      "q3": "Gibt es eine Mindestmietdauer?",
+      "a3": "Vermietungen beginnen bei nur einem Tag, mit ermäßigten Preisen für mehrtägige und längerfristige Vermietungen.",
+      "q4": "Gibt es spezielle Dokumentationsanforderungen für die Minivan-Vermietung?",
+      "a4": "Ja, zu den Standarddokumenten gehören ein gültiger Führerschein, Reisepass oder offizieller Ausweis und Zahlungsnachweis. Weitere Details werden während Ihres Buchungsprozesses geklärt."
+    },
+    "vehicles": {
+      "title": "Fahrzeugtypen & Verfügbarkeit",
+      "q1": "Welche Arten von Fahrzeugen umfasst Ihre Flotte?",
+      "a1": "Unsere vielfältige Flotte umfasst komfortable Limousinen, Luxus-Taxis, geräumige Minivans und luxuriöse Executive-Fahrzeuge, die für verschiedene Gruppengrößen und Reisepräferenzen geeignet sind.",
+      "q2": "Können Sie Gruppen oder große Familien unterbringen?",
+      "a2": "Auf jeden Fall! Unsere modernen Minivans und größeren Fahrzeuge bieten Familien und Gruppen mit viel Gepäckraum komfortablen Platz.",
+      "q3": "Stellen Sie Kindersitze zur Verfügung?",
+      "a3": "Ja, Kindersitze, Sitzerhöhungen und andere Annehmlichkeiten können auf Anfrage kostenlos zur Verfügung gestellt werden."
+    },
+    "luggage": {
+      "title": "Gepäck- & Kofferraumrichtlinien",
+      "q1": "Gibt es ein Gepäcklimit?",
+      "a1": "Standardmäßig ist typischerweise ein Koffer und ein Handgepäck pro Passagier erlaubt. Aber keine Sorge, wenn Sie zusätzliche Gepäckstücke oder größere Gegenstände haben, teilen Sie uns dies bitte bei der Buchung mit – spezielle Fahrzeuge können immer arrangiert werden.",
+      "q2": "Können Sie spezielle Gegenstände wie Skier, Golftaschen oder Fahrräder transportieren?",
+      "a2": "Ja, wir können Sportausrüstung und übergroßes Gepäck aufnehmen. Geben Sie einfach Ihre Anforderungen während der Buchung an, um sicherzustellen, dass das entsprechende Fahrzeug zugewiesen wird."
+    },
+    "changes": {
+      "title": "Änderungs- & Stornierungsrichtlinien",
+      "q1": "Kann ich meine Buchungsdetails nach der Bestätigung ändern?",
+      "a1": "Auf jeden Fall! Pläne ändern sich, das verstehen wir. Kontaktieren Sie unseren Kundensupport jederzeit, um Ihre Buchung anzupassen – ohne Ärger oder versteckte Gebühren.",
+      "q2": "Was ist, wenn ich meine Reservierung stornieren muss?",
+      "a2": "Stornierungen bis zu 24 Stunden vor Ihrer geplanten Reise erhalten eine vollständige, problemlose Rückerstattung. Für Stornierungen innerhalb von 24 Stunden kontaktieren Sie bitte den Support, um bei der Bewertung von Optionen zu helfen."
+    },
+    "safety": {
+      "title": "Sicherheit und Zuverlässigkeit",
+      "q1": "Welche Sicherheitsprotokolle befolgen Sie?",
+      "a1": "Ihre Sicherheit hat höchste Priorität. Unsere Fahrzeuge unterliegen strengen regelmäßigen Wartungen, Reinigungsprotokollen und Compliance-Überwachung. Unsere professionellen Fahrer werden rigoros überprüft und regelmäßig in Passagiersicherheitsverfahren geschult.",
+      "q2": "Sind Ihre Fahrzeuge versichert und werden regelmäßig inspiziert?",
+      "a2": "Ja, jedes Fahrzeug ist vollständig versichert, von den erforderlichen lokalen Behörden lizenziert und unterliegt regelmäßigen eingehenden Fahrzeuginspektionen und Wartungen."
+    },
+    "support": {
+      "title": "Kundensupport & Hilfe",
+      "q1": "Wie kann ich während meiner Reise den Support kontaktieren?",
+      "a1": "Wir sind 24/7 telefonisch, per E-Mail oder Live-Online-Chat für Sie verfügbar. Melden Sie sich in jeder Phase Ihrer Reise für sofortige Hilfe oder zur Lösung unerwarteter Probleme oder Fragen."
+    }
+  }
+}
