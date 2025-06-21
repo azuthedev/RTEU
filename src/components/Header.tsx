@@ -405,7 +405,6 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
                       { href: '/', label: t('nav.home'), onClick: handleHomeClick },
                       { href: '/about', label: t('nav.about') },
                       { href: '/services', label: t('nav.services') },
-                      { href: '/blogs/destinations', label: t('nav.destinations') },
                       { href: '/faq', label: t('nav.faqs') },
                       { href: '/partners', label: t('nav.partners') },
                       { href: '/contact', label: t('nav.contact') }
