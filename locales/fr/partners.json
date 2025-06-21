@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Devenez Partenaire | Royal Transfer EU",
+    "description": "Rejoignez le réseau de partenaires Royal Transfer EU et développez votre entreprise. Postulez maintenant pour devenir un partenaire officiel."
+  },
+  "hero": {
+    "title": "Devenez Partenaire de Royal Transfer EU",
+    "subtitle": "Rejoignez notre réseau de chauffeurs professionnels et développez votre entreprise",
+    "cta": "Postuler Maintenant"
+  },
+  "benefits": {
+    "title": "Pourquoi Devenir Partenaire",
+    "description": "Rejoignez un réseau croissant de chauffeurs professionnels et d'entreprises pour élargir vos opportunités commerciales et fournir des services premium aux voyageurs à travers l'Europe.",
+    "items": {
+      "bookings": {
+        "title": "Réservations Constantes",
+        "description": "Recevez un flux régulier de réservations prépayées via notre plateforme, réduisant les retours à vide et les temps d'inactivité."
+      },
+      "clientele": {
+        "title": "Clientèle Premium",
+        "description": "Servez des clients de qualité qui valorisent le service professionnel et sont prêts à payer pour des expériences supérieures."
+      },
+      "schedule": {
+        "title": "Horaire Flexible",
+        "description": "Choisissez quand vous travaillez et quelles réservations vous acceptez, gardant un contrôle total de votre emploi du temps."
+      },
+      "support": {
+        "title": "Support Professionnel",
+        "description": "Accédez à notre équipe de support partenaire dédiée pour de l'assistance avec les réservations, la communication client et les problèmes techniques."
+      },
+      "technology": {
+        "title": "Plateforme Technologique",
+        "description": "Utilisez notre application chauffeur pour gérer les réservations, la navigation et la communication client en un seul endroit."
+      },
+      "growth": {
+        "title": "Opportunités de Croissance",
+        "description": "Développez votre entreprise avec un accès aux voyageurs internationaux et aux clients corporate."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Exigences des Partenaires",
+    "description": "Nous maintenons des standards élevés pour assurer un service exceptionnel à tous nos clients.",
+    "list": [
+      "Permis de conduire professionnel valide et tous les permis requis",
+      "Véhicule propre et bien entretenu de moins de 5 ans",
+      "Assurance commerciale avec couverture appropriée",
+      "Excellente connaissance des routes locales et attractions",
+      "Apparence professionnelle et solides compétences en service client",
+      "Compétences en communication anglaise fluides",
+      "Smartphone avec connexion internet fiable",
+      "Disponibilité flexible y compris weekends et jours fériés",
+      "Vérification des antécédents et dossier de conduite propre"
+    ]
+  },
+  "form": {
+    "title": "Postuler pour Devenir Partenaire",
+    "description": "Remplissez le formulaire ci-dessous pour commencer votre processus de candidature. Notre équipe examinera votre demande et vous contactera dans les 2-3 jours ouvrables.",
+    "fields": {
+      "name": {
+        "label": "Nom Complet",
+        "placeholder": "Entrez votre nom complet"
+      },
+      "email": {
+        "label": "Adresse Email",
+        "placeholder": "Entrez votre email"
+      },
+      "phone": {
+        "label": "Numéro de Téléphone",
+        "placeholder": "Entrez votre numéro de téléphone",
+        "help": "Incluez l'indicatif du pays, ex. +39"
+      },
+      "company": {
+        "label": "Nom de l'Entreprise",
+        "placeholder": "Entrez le nom de votre entreprise"
+      },
+      "vat": {
+        "label": "Numéro de TVA",
+        "placeholder": "Entrez votre numéro de TVA/taxe",
+        "help": "Numéro d'identification fiscale pour votre entreprise"
+      },
+      "vehicle": {
+        "label": "Type de Véhicule (Optionnel)",
+        "placeholder": "Sélectionnez un type de véhicule",
+        "options": {
+          "sedan": "Berline",
+          "minivan": "Minivan",
+          "sprinter": "Sprinter",
+          "bus": "Bus"
+        }
+      },
+      "message": {
+        "label": "Informations Supplémentaires",
+        "placeholder": "Parlez-nous de votre expérience, des détails du véhicule et de votre disponibilité"
+      }
+    },
+    "validation": {
+      "name": "Veuillez entrer votre nom",
+      "email": "L'email est requis",
+      "emailFormat": "Veuillez entrer une adresse email valide",
+      "phone": "Le numéro de téléphone est requis",
+      "phoneFormat": "Veuillez entrer un numéro de téléphone valide",
+      "company": "Le nom de l'entreprise est requis",
+      "vat": "Le numéro de TVA est requis",
+      "message": "Des informations supplémentaires sont requises"
+    },
+    "buttons": {
+      "submit": "Soumettre la Candidature",
+      "submitting": "Soumission en cours..."
+    },
+    "success": {
+      "title": "Candidature Soumise !",
+      "message": "Merci pour votre intérêt à devenir partenaire de Royal Transfer EU. Nous avons reçu votre candidature et notre équipe l'examinera prochainement. Nous vous contacterons dans les 2-3 jours ouvrables avec les prochaines étapes.",
+      "button": {
+        "another": "Soumettre Une Autre Candidature",
+        "home": "Retour à l'Accueil"
+      }
+    },
+    "verification": {
+      "title": "Email Vérifié avec Succès",
+      "message": "Merci d'avoir vérifié votre email ! Nous vous avons envoyé un lien d'invitation pour compléter votre inscription en tant que partenaire. Veuillez vérifier votre boîte de réception email.",
+      "emailSent": "Lien d'invitation envoyé à :",
+      "checkSpam": "Si vous ne voyez pas l'email dans votre boîte de réception, veuillez vérifier votre dossier spam ou courrier indésirable."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Erreur de Validation du Formulaire",
+        "description": "Veuillez vérifier le formulaire et corriger les erreurs."
+      },
+      "success": {
+        "title": "Candidature Soumise",
+        "description": "Votre candidature de partenaire a été reçue. Nous vous contacterons bientôt !"
+      },
+      "error": {
+        "title": "Échec de Soumission du Formulaire",
+        "description": "Un problème est survenu. Veuillez réessayer plus tard."
+      },
+      "verifyEmail": {
+        "title": "Vérifiez Votre Email",
+        "description": "Veuillez vérifier votre email pour obtenir un code de vérification."
+      },
+      "verificationSuccess": {
+        "title": "Email Vérifié avec Succès",
+        "description": "Votre candidature de partenaire a été reçue et votre email est vérifié. Veuillez vérifier votre email pour obtenir un lien d'invitation afin de compléter votre inscription."
+      }
+    },
+    "errors": {
+      "default": "Un problème est survenu. Veuillez réessayer plus tard."
+    }
+  },
+  "faq": {
+    "title": "Questions Fréquemment Posées",
+    "description": "Tout ce que vous devez savoir sur le partenariat avec Royal Transfer EU",
+    "items": {
+      "start": {
+        "question": "Combien de temps après ma candidature puis-je commencer ?",
+        "answer": "Après l'approbation de votre candidature, nous vous guiderons à travers l'intégration qui prend généralement 3 à 7 jours selon la vérification des documents et la finalisation de la formation."
+      },
+      "payment": {
+        "question": "Comment suis-je payé pour les trajets terminés ?",
+        "answer": "Les paiements sont traités sur une base hebdomadaire. Vous recevrez des dépôts directs sur votre compte bancaire enregistré pour tous les trajets terminés, moins les frais de plateforme."
+      },
+      "areas": {
+        "question": "Dans quelles zones puis-je fournir des services ?",
+        "answer": "Vous pouvez choisir vos zones de service préférées lors de l'inscription. Vous pouvez desservir toutes les zones où vous êtes légalement autorisé à exercer en tant que chauffeur."
+      },
+      "vehicle": {
+        "question": "Dois-je fournir mon propre véhicule ?",
+        "answer": "Oui, les partenaires doivent avoir leurs propres véhicules qui répondent à nos standards de qualité. Votre véhicule doit être propre, bien entretenu et avoir moins de 5 ans."
+      },
+      "commission": {
+        "question": "Quelle est la structure de commission ?",
+        "answer": "Notre commission varie selon le type de service et l'emplacement, généralement entre 15-25%. Les détails complets seront fournis pendant le processus d'intégration."
+      },
+      "exclusivity": {
+        "question": "Puis-je travailler pour d'autres sociétés de transfert simultanément ?",
+        "answer": "Oui, notre partenariat n'est pas exclusif. Vous êtes libre de travailler avec d'autres entreprises ou de maintenir votre activité indépendante parallèlement au partenariat avec nous."
+      }
+    }
+  }
+}

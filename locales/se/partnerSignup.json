@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Partnerregistrering | Royal Transfer EU",
+    "description": "Slutför din partnerregistrering hos Royal Transfer EU och börja växa din verksamhet redan idag."
+  },
+  "navigation": {
+    "backToHome": "Tillbaka till startsidan"
+  },
+  "invalidInvite": {
+    "title": "Ogiltig inbjudningskod",
+    "defaultMessage": "Den här inbjudningslänken är ogiltig eller har gått ut.",
+    "contactMessage": "Om du tror att detta är ett misstag, kontakta vårt supportteam eller ansök om att bli partner via vårt partnerprogram.",
+    "applyButton": "Ansök som partner",
+    "contactButton": "Kontakta support"
+  },
+  "success": {
+    "title": "Konto skapat!",
+    "message": "Ditt partnerkonto har skapats. Du omdirigeras till din dashboard inom kort."
+  },
+  "form": {
+    "title": "Partnerregistrering",
+    "subtitle": "Slutför din registrering för att bli partner till Royal Transfer EU.",
+    "prefillInfo": "Vi har förifyllt viss information från din partneransökan. Skapa ett lösenord för att slutföra registreringen.",
+    "hidePassword": "Dölj lösenord",
+    "showPassword": "Visa lösenord",
+    "submittingButton": "Skapar konto...",
+    "submitButton": "Slutför registrering",
+    "termsText": "Genom att slutföra registreringen godkänner du våra",
+    "termsLink": "Användarvillkor",
+    "andText": "och",
+    "privacyLink": "Integritetspolicy",
+    "fields": {
+      "name": {
+        "label": "Fullständigt namn"
+      },
+      "email": {
+        "label": "E-postadress",
+        "help": "Den här e-posten har redan verifierats"
+      },
+      "phone": {
+        "label": "Telefonnummer"
+      },
+      "company": {
+        "label": "Företagsnamn"
+      },
+      "password": {
+        "label": "Skapa lösenord"
+      },
+      "confirmPassword": {
+        "label": "Bekräfta lösenord"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "Lösenord krävs",
+      "length": "Lösenordet måste vara minst 6 tecken långt"
+    },
+    "confirmPassword": {
+      "required": "Bekräfta ditt lösenord",
+      "match": "Lösenorden matchar inte"
+    }
+  },
+  "errors": {
+    "noInviteCode": "Ingen inbjudningskod angiven",
+    "invalidInvite": "Ogiltig eller utgången inbjudningskod",
+    "validationError": "Kunde inte validera inbjudningskod. Försök igen senare.",
+    "accountCreationFailed": "Konto kunde inte skapas",
+    "unexpectedError": "Ett oväntat fel uppstod vid registreringen"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Ogiltig inbjudningskod",
+      "description": "Den här inbjudningslänken är ogiltig eller har gått ut."
+    },
+    "validationError": {
+      "title": "Valideringsfel",
+      "description": "Kunde inte validera din inbjudningskod. Försök igen senare."
+    },
+    "accountCreated": {
+      "title": "Konto skapat",
+      "description": "Ditt partnerkonto har skapats!"
+    },
+    "signupFailed": {
+      "title": "Registrering misslyckades",
+      "description": "Ett fel uppstod vid registreringen. Försök igen."
+    }
+  }
+}

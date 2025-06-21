@@ -1,1 +1,31 @@
-{}
+{
+  "meta": {
+    "title": "Verifiera e-post | Royal Transfer EU",
+    "description": "Verifiera din e-postadress för att slutföra din Royal Transfer EU-kontoinställning."
+  },
+  "states": {
+    "loading": {
+      "title": "Verifierar din e-post",
+      "message": "Vänligen vänta medan vi verifierar din e-postadress..."
+    },
+    "success": {
+      "title": "E-post verifierad!",
+      "message": "Tack för att du verifierade din e-postadress. Ditt konto är nu aktivt.",
+      "autoRedirect": "Du omdirigeras till inloggningssidan om några sekunder..."
+    },
+    "error": {
+      "title": "Verifiering misslyckades",
+      "defaultMessage": "Det uppstod ett problem vid verifiering av din e-post. Länken kan ha gått ut eller redan använts."
+    }
+  },
+  "errors": {
+    "missingToken": "Verifieringstoken saknas",
+    "invalidToken": "Ogiltig eller utgången verifieringstoken",
+    "expiredToken": "Denna verifieringslänk har gått ut. Begär en ny.",
+    "generic": "Det gick inte att verifiera din e-post. Länken kan ha gått ut."
+  },
+  "buttons": {
+    "continue": "Fortsätt",
+    "tryAgain": "Försök igen"
+  }
+}

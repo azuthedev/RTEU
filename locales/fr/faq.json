@@ -1,1 +1,103 @@
-{}
+{
+  "meta": {
+    "title": "Foire Aux Questions | Royal Transfer EU",
+    "description": "Trouvez des réponses aux questions courantes sur nos services, notre processus de réservation et nos politiques."
+  },
+  "title": "Foire Aux Questions",
+  "intro": "Nous savons que vos projets de voyage sont importants et que des questions peuvent surgir. Chez Royal Transfer EU, notre objectif est votre tranquillité d'esprit. Vous trouverez ci-dessous les réponses aux questions les plus fréquemment posées. Vous ne trouvez pas votre question ? N'hésitez pas à contacter notre équipe de service client disponible 24h/24 et 7j/7 !",
+  "search": "Rechercher dans les FAQs...",
+  "needHelp": {
+    "title": "Vous avez encore une question ?",
+    "description": "Notre équipe amicale est disponible 24h/24.",
+    "contactButton": "Contacter le support maintenant",
+    "chatButton": "Parlez-nous instantanément !"
+  },
+  "categories": {
+    "booking": {
+      "title": "Réservations",
+      "q1": "Comment réserver un transfert aéroport ou un taxi ?",
+      "a1": "C'est simple ! Réservez instantanément en ligne via notre système de réservation facile à utiliser, via notre application ou par téléphone. Vous recevrez une confirmation immédiate et tous les détails du voyage.",
+      "q2": "Puis-je faire une demande spéciale lors de la réservation ?",
+      "a2": "Absolument ! Après avoir sélectionné les détails de votre voyage, vous aurez la possibilité d'ajouter des notes ou de demander des équipements spéciaux pendant le processus de réservation ou en contactant notre service client.",
+      "q3": "Combien de temps à l'avance dois-je réserver mon transfert ?",
+      "a3": "Bien que nous acceptions les réservations immédiates et à court préavis, nous recommandons de réserver au moins 24 heures avant votre heure de prise en charge prévue pour garantir la disponibilité, surtout pendant les périodes de pointe.",
+      "q4": "Puis-je réserver plusieurs trajets à la fois ?",
+      "a4": "Bien sûr ! Il suffit de sélectionner 'Ajouter un autre trajet' pendant votre réservation ou de contacter notre service client pour vous aider à planifier plusieurs trajets sans effort."
+    },
+    "pricing": {
+      "title": "Prix et Paiements",
+      "q1": "Proposez-vous des tarifs fixes ou des courses au compteur ?",
+      "a1": "Nous proposons les deux options ! Choisissez un tarif fixe à l'avance pour une transparence totale ou une course au compteur payable à l'arrivée — selon votre préférence et vos besoins de voyage.",
+      "q2": "Comment puis-je payer ma réservation ?",
+      "a2": "Nous acceptons toutes les principales cartes de crédit/débit (Visa, MasterCard, American Express), les paiements en ligne, les virements bancaires et les paiements via des passerelles de paiement en ligne sécurisées. Vous pouvez payer à l'avance ou directement au chauffeur à la fin de la course.",
+      "q3": "Les paiements sont-ils sécurisés et protégés ?",
+      "a3": "Oui, la sécurité est une priorité absolue. Nos portails de paiement en ligne utilisent une protection SSL cryptée, garantissant que vos informations personnelles et vos transactions restent entièrement sécurisées.",
+      "q4": "Y a-t-il d'autres frais cachés ou coûts ?",
+      "a4": "Absolument pas ! La transparence est essentielle chez Royal Transfer EU. Le prix confirmé que vous recevez comprend tous les taxes, frais de service et frais, sauf si des services optionnels supplémentaires sont spécifiquement demandés."
+    },
+    "airport": {
+      "title": "Transferts Aéroport et Procédures d'Accueil",
+      "q1": "Que se passe-t-il si mon vol est retardé ?",
+      "a1": "Nous surveillons activement l'état de votre vol et ajustons automatiquement votre heure de prise en charge. Soyez assuré qu'aucun frais supplémentaire ne s'applique pour les retards.",
+      "q2": "Où mon chauffeur me rencontrera-t-il à l'aéroport ?",
+      "a2": "Votre chauffeur professionnel attendra votre arrivée dans la zone d'arrivée de l'aéroport, tenant une pancarte clairement visible indiquant votre nom ou les informations de votre entreprise spécifiées.",
+      "q3": "Combien de temps après l'arrivée du vol vais-je rencontrer mon chauffeur ?",
+      "a3": "Notre chauffeur est prévu pour être là à vous attendre avant l'atterrissage de votre vol et vous accueillera à la sortie de la récupération des bagages—pas d'attente nécessaire."
+    },
+    "taxi": {
+      "title": "Services de Taxi",
+      "q1": "Puis-je pré-réserver mon taxi ?",
+      "a1": "Absolument ! Nous encourageons la pré-réservation pour une disponibilité garantie mais acceptons également les demandes de course immédiates si des voitures sont disponibles à proximité.",
+      "q2": "Vos chauffeurs de taxi sont-ils pleinement qualifiés et assurés ?",
+      "a2": "Certainement ! Tous nos chauffeurs sont entièrement agréés et assurés professionnellement. La sécurité et le confort de votre voyage restent nos priorités absolues.",
+      "q3": "Y a-t-il une limitation sur la distance de voyage pour les réservations de taxi ?",
+      "a3": "Pas du tout. Nous répondons à la fois aux courts trajets dans la ville et aux transferts longue distance vers différentes régions."
+    },
+    "minivan": {
+      "title": "Locations de Minivan (Avec ou Sans Chauffeur)",
+      "q1": "Qu'est-ce qui est inclus dans mon service de location de minivan ?",
+      "a1": "Chaque forfait de location comprend un kilométrage illimité, une couverture d'assurance standard (avec des mises à niveau optionnelles), la navigation GPS (sur demande), des véhicules modernes confortables et une assistance routière 24/7.",
+      "q2": "Puis-je louer un minivan sans chauffeur ?",
+      "a2": "Oui, des minivans en auto-conduite sont disponibles. Alternativement, des options de véhicules avec chauffeur sont également proposées pour une expérience de voyage complètement détendue et sans les mains.",
+      "q3": "Y a-t-il une période minimale de location ?",
+      "a3": "Les locations commencent à partir d'une journée seulement, avec des tarifs réduits appliqués aux locations de plusieurs jours et de plus longue durée.",
+      "q4": "Existe-t-il des exigences de documentation spécifiques pour la location de minivan ?",
+      "a4": "Oui, la documentation standard comprend un permis de conduire valide, un passeport ou une pièce d'identité officielle, et une preuve de paiement. Des détails supplémentaires seront clarifiés pendant votre processus de réservation."
+    },
+    "vehicles": {
+      "title": "Types de Véhicules et Disponibilité",
+      "q1": "Quels types de véhicules votre flotte comprend-elle ?",
+      "a1": "Notre flotte diversifiée comprend des berlines confortables, des taxis de luxe, des minivans spacieux et des véhicules exécutifs luxueux adaptés à différentes tailles de groupe et préférences de voyage.",
+      "q2": "Pouvez-vous accueillir des groupes ou des grandes familles ?",
+      "a2": "Absolument ! Nos minivans modernes et véhicules plus grands accueillent confortablement les familles et les groupes avec un espace de bagages substantiel disponible.",
+      "q3": "Fournissez-vous des sièges de sécurité pour enfants ?",
+      "a3": "Oui, des sièges de sécurité pour enfants, des rehausseurs et d'autres commodités peuvent être fournis à votre demande, gratuitement."
+    },
+    "luggage": {
+      "title": "Politiques de Bagages",
+      "q1": "Y a-t-il une limite de bagages ?",
+      "a1": "Les allocations standard sont généralement d'une valise et d'un bagage à main par passager. Mais pas d'inquiétude, si vous avez des pièces de bagages supplémentaires ou des articles plus grands, veuillez nous le faire savoir lors de la réservation—des véhicules spéciaux peuvent toujours être arrangés.",
+      "q2": "Pouvez-vous transporter des articles spéciaux comme des skis, des sacs de golf ou des vélos ?",
+      "a2": "Oui, nous pouvons accommoder l'équipement sportif et les bagages surdimensionnés. Incluez simplement vos exigences lors de la réservation pour garantir que le véhicule approprié soit désigné."
+    },
+    "changes": {
+      "title": "Politiques de Modifications et d'Annulation",
+      "q1": "Puis-je modifier les détails de ma réservation après confirmation ?",
+      "a1": "Absolument ! Les plans changent, nous comprenons. Contactez notre service client à tout moment pour ajuster votre réservation—sans tracas ni frais cachés.",
+      "q2": "Que se passe-t-il si je dois annuler ma réservation ?",
+      "a2": "Les annulations effectuées jusqu'à 24 heures avant votre voyage prévu bénéficient d'un remboursement complet et sans tracas. Pour les annulations dans les 24 heures, veuillez contacter le support pour obtenir de l'aide dans l'évaluation des options."
+    },
+    "safety": {
+      "title": "Sécurité et Fiabilité",
+      "q1": "Quels protocoles de sécurité suivez-vous ?",
+      "a1": "Votre sécurité est primordiale. Nos véhicules subissent une maintenance régulière stricte, des protocoles de nettoyage et une surveillance de conformité. Nos chauffeurs professionnels sont rigoureusement vérifiés et régulièrement formés aux procédures de sécurité des passagers.",
+      "q2": "Vos véhicules sont-ils assurés et inspectés régulièrement ?",
+      "a2": "Oui, chaque véhicule est entièrement assuré, homologué auprès des autorités locales requises et subit des inspections et un entretien approfondis et réguliers du véhicule."
+    },
+    "support": {
+      "title": "Support et Assistance Client",
+      "q1": "Comment puis-je contacter le support pendant mon voyage ?",
+      "a1": "Nous sommes disponibles pour vous 24/7 par téléphone, email ou chat en ligne en direct. Contactez-nous à n'importe quelle étape de votre voyage pour une aide immédiate ou pour résoudre tout problème ou question inattendu."
+    }
+  }
+}

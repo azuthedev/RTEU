@@ -1,1 +1,31 @@
-{}
+{
+  "meta": {
+    "title": "Vérifier l'e-mail | Royal Transfer EU",
+    "description": "Vérifiez votre adresse e-mail pour finaliser la création de votre compte Royal Transfer EU."
+  },
+  "states": {
+    "loading": {
+      "title": "Vérification de votre e-mail",
+      "message": "Veuillez patienter pendant que nous vérifions votre adresse e-mail..."
+    },
+    "success": {
+      "title": "E-mail vérifié !",
+      "message": "Merci d'avoir vérifié votre adresse e-mail. Votre compte est maintenant actif.",
+      "autoRedirect": "Vous allez être redirigé vers la page de connexion dans quelques secondes..."
+    },
+    "error": {
+      "title": "Échec de la vérification",
+      "defaultMessage": "Un problème est survenu lors de la vérification de votre e-mail. Le lien de vérification a peut-être expiré ou a déjà été utilisé."
+    }
+  },
+  "errors": {
+    "missingToken": "Jeton de vérification manquant",
+    "invalidToken": "Jeton de vérification invalide ou expiré",
+    "expiredToken": "Ce lien de vérification a expiré. Veuillez en demander un nouveau.",
+    "generic": "Impossible de vérifier votre e-mail. Le lien a peut-être expiré."
+  },
+  "buttons": {
+    "continue": "Continuer",
+    "tryAgain": "Réessayer"
+  }
+}

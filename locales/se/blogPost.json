@@ -1,1 +1,15 @@
-{}
+{
+  "seo": {
+    "titleSuffix": "Royal Transfer EU Blogg"
+  },
+  "blog": {
+    "backToBlogs": "Tillbaka till alla artiklar",
+    "minuteRead": "min läsning",
+    "country": "Italien",
+    "relatedArticles": "Relaterade artiklar",
+    "readMore": "Läs mer",
+    "ctaTitle": "Redo att utforska Italien?",
+    "ctaText": "Boka din premium flygplatstransfer och njut av en bekväm, stressfri start på ditt italienska äventyr.",
+    "ctaButton": "Boka din transfer"
+  }
+}

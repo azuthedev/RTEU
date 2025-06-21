@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Verifiering misslyckades | Royal Transfer EU",
+    "description": "E-postverifieringen misslyckades. Försök igen eller begär en ny verifieringslänk."
+  },
+  "title": "Verifiering misslyckades",
+  "errors": {
+    "generic": "Det uppstod ett problem vid verifiering av din e-post.",
+    "expired": "Verifieringslänken har gått ut. Begär ett nytt verifieringsmail.",
+    "invalid": "Verifieringslänken är ogiltig eller har redan använts."
+  },
+  "buttons": {
+    "tryAgain": "Försök igen",
+    "goHome": "Till startsidan"
+  }
+}

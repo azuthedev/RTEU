@@ -1,1 +1,113 @@
-{}
+{
+  "meta": {
+    "title": "Integritetspolicy | Royal Transfer EU",
+    "description": "Läs om hur Royal Transfer EU samlar in, använder och skyddar dina personuppgifter i enlighet med EU:s dataskyddslagar."
+  },
+  "title": "Integritetspolicy",
+  "intro": {
+    "p1": "Din integritet är viktig för oss. Denna integritetspolicy förklarar hur Royal Transfer EU samlar in, använder och skyddar dina personuppgifter när du använder våra tjänster eller besöker vår webbplats. Vi åtar oss att säkerställa sekretessen och säkerheten för din personliga information.",
+    "p2": "Denna policy gäller för alla personuppgifter som samlas in via våra:",
+    "list": {
+      "item1": "Webbplats på",
+      "item2": "Mobilapplikation",
+      "item3": "Kundtjänstinteraktioner",
+      "item4": "Boknings- och transporttjänster"
+    }
+  },
+  "collect": {
+    "title": "Information vi samlar in",
+    "description": "Vi samlar in och behandlar olika typer av personuppgifter beroende på hur du interagerar med våra tjänster:",
+    "provided": {
+      "title": "Information du lämnar till oss",
+      "item1": "Kontaktuppgifter (namn, e-postadress, telefonnummer)",
+      "item2": "Kontoinformation (användarnamn, lösenord)",
+      "item3": "Bokningsdetaljer (upphämtnings-/avlämningsplatser, datum, tider, passagerarinformation)",
+      "item4": "Betalningsinformation (kreditkortsuppgifter, faktureringsadress)",
+      "item5": "Kommunikationsinnehåll (meddelanden via kontaktformulär, e-post eller chatt)",
+      "item6": "Feedback och omdömen"
+    },
+    "automatic": {
+      "title": "Information som samlas in automatiskt",
+      "item1": "Enhetsinformation (IP-adress, webbläsartyp, operativsystem)",
+      "item2": "Användningsdata (besökta sidor, tid på webbplatsen, klickade länkar)",
+      "item3": "Platsdata (när det tillåts av enhetsinställningar)",
+      "item4": "Cookies och liknande spårningstekniker (enligt vår Cookiepolicy)"
+    }
+  },
+  "use": {
+    "title": "Hur vi använder din information",
+    "description": "Vi använder dina personuppgifter för följande ändamål:",
+    "item1": "För att tillhandahålla och hantera våra transporttjänster",
+    "item2": "För att hantera bokningar och betalningar",
+    "item3": "För att kommunicera med dig om dina bokningar eller förfrågningar",
+    "item4": "För att förbättra våra tjänster och webbplatsens funktionalitet",
+    "item5": "För att anpassa din upplevelse och erbjuda relevant innehåll",
+    "item6": "För att skicka marknadsföringskommunikation (med ditt samtycke)",
+    "item7": "För att uppfylla juridiska skyldigheter",
+    "item8": "För att skydda våra rättigheter, egendom eller säkerhet",
+    "legal": "Vi behandlar dina personuppgifter baserat på avtal, rättsliga skyldigheter, berättigade intressen och ditt samtycke där det är tillämpligt."
+  },
+  "rights": {
+    "title": "Dina rättigheter",
+    "description": "Enligt dataskyddslagar har du rättigheter gällande dina personuppgifter, inklusive:",
+    "access": {
+      "title": "Tillgång:",
+      "description": "Begära en kopia av dina personuppgifter"
+    },
+    "rectification": {
+      "title": "Rättelse:",
+      "description": "Begära rättelse av felaktiga uppgifter"
+    },
+    "erasure": {
+      "title": "Radering:",
+      "description": "Begära radering av dina uppgifter under vissa omständigheter"
+    },
+    "restriction": {
+      "title": "Begränsning:",
+      "description": "Begära begränsad behandling av dina uppgifter"
+    },
+    "portability": {
+      "title": "Dataportabilitet:",
+      "description": "Begära överföring av dina uppgifter i ett strukturerat format"
+    },
+    "objection": {
+      "title": "Invändning:",
+      "description": "Invända mot behandling av dina uppgifter under vissa omständigheter"
+    },
+    "consent": {
+      "title": "Återkalla samtycke:",
+      "description": "Återkalla tidigare lämnat samtycke"
+    },
+    "contact": "För att utöva någon av dessa rättigheter, kontakta oss på"
+  },
+  "security": {
+    "title": "Datasäkerhet",
+    "description": "Vi implementerar lämpliga tekniska och organisatoriska åtgärder för att skydda dina personuppgifter mot obehörig åtkomst, oavsiktlig förlust eller förstörelse. Våra säkerhetsrutiner granskas och uppdateras regelbundet vid behov."
+  },
+  "retention": {
+    "title": "Lagring av data",
+    "description": "Vi behåller dina personuppgifter endast så länge det är nödvändigt för att uppfylla de syften för vilka de samlades in, inklusive juridiska, redovisnings- eller rapporteringskrav. Vid fastställande av lagringstid beaktar vi mängd, typ och känslighet av data, potentiell risk för obehörig användning eller avslöjande, syftet med behandlingen och tillämpliga lagkrav."
+  },
+  "cookies": {
+    "title": "Cookies",
+    "description": "Vår webbplats använder cookies och liknande tekniker för att förbättra din upplevelse. Vår Cookiepolicy, som finns på webbplatsen, förklarar hur vi samlar in, använder och skyddar din personliga information.",
+    "link": "Cookiepolicy"
+  },
+  "contact": {
+    "title": "Kontakta oss",
+    "description": "Om du har frågor, funderingar eller önskemål angående denna integritetspolicy eller vår databehandling, kontakta oss på:",
+    "company": "Royal Transfer EU",
+    "email": {
+      "label": "E-post:",
+      "address": "privacy@royaltransfereu.com"
+    },
+    "phone": {
+      "label": "Telefon:",
+      "number": "+39 351 748 22 44"
+    },
+    "address": {
+      "label": "Adress:",
+      "value": "123 Transfer Street, EU 12345"
+    }
+  }
+}

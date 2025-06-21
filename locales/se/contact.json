@@ -1,1 +1,86 @@
-{}
+{
+  "meta": {
+    "title": "Kontakta Oss | Royal Transfer EU",
+    "description": "Kontakta Royal Transfer EU för bokningsassistans, support eller partnerskapsförfrågningar. Vi finns tillgängliga dygnet runt för att hjälpa dig med dina resebehov."
+  },
+  "hero": {
+    "title": "Vi Vill Gärna Höra från Dig!",
+    "description": "Oavsett om du har frågor om våra tjänster, behöver hjälp med en bokning eller vill utforska partnersamarbeten är vi här för att hjälpa."
+  },
+  "contactInfo": {
+    "title": "Kontakta Oss",
+    "phone": {
+      "label": "Telefon",
+      "number": "+39 351 748 22 44",
+      "availability": "Tillgänglig dygnet runt"
+    },
+    "email": {
+      "label": "E-post",
+      "address": "contact@royaltransfereu.com",
+      "response": "Snabb respons garanterad"
+    },
+    "address": {
+      "label": "Adress",
+      "line1": "123 Transfergatan",
+      "line2": "EU 12345"
+    },
+    "business": {
+      "label": "Öppettider",
+      "hours": "Support tillgänglig dygnet runt",
+      "office": "Kontor: Mån-Fre 9:00-18:00"
+    },
+    "leadership": {
+      "label": "Ledning",
+      "business": "För Affärsförfrågningar:",
+      "email": "partnerships@royaltransfereu.com"
+    }
+  },
+  "chatButton": "Chatta med Oss Nu",
+  "immediateHelp": {
+    "title": "Behöver du Omedelbar Hjälp?",
+    "description": "Vårt kundservice-team som är tillgängligt dygnet runt är redo att hjälpa dig med brådskande ärenden.",
+    "callButton": "Ring Nu: +39 351 748 22 44"
+  },
+  "form": {
+    "title": "Skicka Oss ett Meddelande",
+    "fields": {
+      "name": {
+        "label": "Fullständigt Namn",
+        "placeholder": "Ange ditt namn"
+      },
+      "email": {
+        "label": "E-postadress",
+        "placeholder": "Ange din e-post"
+      },
+      "phone": {
+        "label": "Telefonnummer",
+        "placeholder": "Ange ditt telefonnummer",
+        "help": "Valfritt, men rekommenderas för snabbare svar"
+      },
+      "subject": {
+        "label": "Ämne",
+        "placeholder": "Välj ett ämne",
+        "options": {
+          "booking": "Bokningsförfrågan",
+          "support": "Kundsupport",
+          "partnership": "Affärspartnerskap",
+          "feedback": "Feedback",
+          "other": "Annat"
+        }
+      },
+      "message": {
+        "label": "Meddelande",
+        "placeholder": "Ange ditt meddelande"
+      },
+      "submit": "Skicka Meddelande"
+    },
+    "sending": "Skickar...",
+    "success": "Tack för ditt meddelande! Vi återkommer till dig så snart som möjligt.",
+    "error": "Det uppstod ett problem när ditt meddelande skulle skickas. Vänligen försök igen.",
+    "privacy": "Genom att skicka detta formulär godkänner du vår Integritetspolicy"
+  },
+  "faq": {
+    "title": "Letar du efter Snabba Svar?",
+    "link": "Kolla in våra Vanliga Frågor"
+  }
+}

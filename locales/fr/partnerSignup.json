@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Inscription Partenaire | Royal Transfer EU",
+    "description": "Complétez votre inscription partenaire avec Royal Transfer EU et développez votre activité dès aujourd'hui."
+  },
+  "navigation": {
+    "backToHome": "Retour à l'accueil"
+  },
+  "invalidInvite": {
+    "title": "Code d'invitation invalide",
+    "defaultMessage": "Ce lien d'invitation est invalide ou a expiré.",
+    "contactMessage": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter notre support ou postuler via notre programme partenaire.",
+    "applyButton": "Devenir partenaire",
+    "contactButton": "Contacter le support"
+  },
+  "success": {
+    "title": "Compte créé !",
+    "message": "Votre compte partenaire a été créé avec succès. Vous serez redirigé vers votre tableau de bord sous peu."
+  },
+  "form": {
+    "title": "Inscription Partenaire",
+    "subtitle": "Complétez votre inscription pour rejoindre Royal Transfer EU en tant que partenaire.",
+    "prefillInfo": "Nous avons pré-rempli certaines informations de votre demande partenaire. Veuillez créer un mot de passe pour finaliser votre inscription.",
+    "hidePassword": "Masquer le mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "submittingButton": "Création du compte...",
+    "submitButton": "Finaliser l'inscription",
+    "termsText": "En finalisant l'inscription, vous acceptez nos",
+    "termsLink": "Conditions d'utilisation",
+    "andText": "et",
+    "privacyLink": "Politique de confidentialité",
+    "fields": {
+      "name": {
+        "label": "Nom complet"
+      },
+      "email": {
+        "label": "Adresse e-mail",
+        "help": "Cet e-mail a déjà été vérifié"
+      },
+      "phone": {
+        "label": "Numéro de téléphone"
+      },
+      "company": {
+        "label": "Nom de l'entreprise"
+      },
+      "password": {
+        "label": "Créer un mot de passe"
+      },
+      "confirmPassword": {
+        "label": "Confirmer le mot de passe"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "Le mot de passe est requis",
+      "length": "Le mot de passe doit contenir au moins 6 caractères"
+    },
+    "confirmPassword": {
+      "required": "Veuillez confirmer votre mot de passe",
+      "match": "Les mots de passe ne correspondent pas"
+    }
+  },
+  "errors": {
+    "noInviteCode": "Aucun code d'invitation fourni",
+    "invalidInvite": "Code d'invitation invalide ou expiré",
+    "validationError": "Impossible de valider le code d'invitation. Veuillez réessayer plus tard.",
+    "accountCreationFailed": "Échec de la création du compte",
+    "unexpectedError": "Une erreur inattendue est survenue lors de l'inscription"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Code d'invitation invalide",
+      "description": "Ce lien d'invitation est invalide ou a expiré."
+    },
+    "validationError": {
+      "title": "Erreur de validation",
+      "description": "Impossible de valider votre code d'invitation. Veuillez réessayer plus tard."
+    },
+    "accountCreated": {
+      "title": "Compte créé",
+      "description": "Votre compte partenaire a été créé avec succès !"
+    },
+    "signupFailed": {
+      "title": "Échec de l'inscription",
+      "description": "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
+    }
+  }
+}

@@ -1,1 +1,113 @@
-{}
+{
+  "meta": {
+    "title": "Politique de Confidentialité | Royal Transfer EU",
+    "description": "Découvrez comment Royal Transfer EU collecte, utilise et protège vos données personnelles conformément aux lois européennes sur la vie privée."
+  },
+  "title": "Politique de Confidentialité",
+  "intro": {
+    "p1": "Votre vie privée est importante pour nous. Cette Politique de Confidentialité explique comment Royal Transfer EU collecte, utilise et protège vos données personnelles lorsque vous utilisez nos services ou visitez notre site web. Nous nous engageons à garantir la confidentialité et la sécurité de vos informations personnelles.",
+    "p2": "Cette politique s'applique à toutes les données personnelles collectées via nos :",
+    "list": {
+      "item1": "Site web à",
+      "item2": "Application mobile",
+      "item3": "Interactions avec le service client",
+      "item4": "Services de réservation et de transport"
+    }
+  },
+  "collect": {
+    "title": "Informations que Nous Collectons",
+    "description": "Nous collectons et traitons différents types de données personnelles selon la manière dont vous interagissez avec nos services :",
+    "provided": {
+      "title": "Informations que Vous Nous Fournissez",
+      "item1": "Informations de contact (nom, adresse e-mail, numéro de téléphone)",
+      "item2": "Informations de compte (nom d'utilisateur, mot de passe)",
+      "item3": "Détails de réservation (lieux de prise en charge/dépose, dates, heures, informations des passagers)",
+      "item4": "Informations de paiement (détails de carte bancaire, adresse de facturation)",
+      "item5": "Contenu des communications (messages envoyés via nos formulaires de contact, e-mails ou chat)",
+      "item6": "Avis et retours"
+    },
+    "automatic": {
+      "title": "Informations Collectées Automatiquement",
+      "item1": "Informations sur l'appareil (adresse IP, type de navigateur, système d'exploitation)",
+      "item2": "Données d'utilisation (pages visitées, temps passé sur le site, liens cliqués)",
+      "item3": "Données de localisation (lorsque cela est autorisé par les paramètres de votre appareil)",
+      "item4": "Cookies et technologies de suivi similaires (comme décrit dans notre Politique de Cookies)"
+    }
+  },
+  "use": {
+    "title": "Comment Nous Utilisons Vos Informations",
+    "description": "Nous utilisons vos données personnelles pour les finalités suivantes :",
+    "item1": "Fournir et gérer nos services de transport",
+    "item2": "Traiter les réservations et les paiements",
+    "item3": "Communiquer avec vous au sujet de vos réservations ou demandes",
+    "item4": "Améliorer nos services et la fonctionnalité du site web",
+    "item5": "Personnaliser votre expérience et proposer du contenu pertinent",
+    "item6": "Envoyer des communications promotionnelles (avec votre consentement)",
+    "item7": "Respecter les obligations légales",
+    "item8": "Protéger nos droits, nos biens ou notre sécurité",
+    "legal": "Nous traitons vos données personnelles sur la base de l'exécution d'un contrat, d'obligations légales, d'intérêts légitimes et de votre consentement lorsque cela s'applique."
+  },
+  "rights": {
+    "title": "Vos Droits",
+    "description": "En vertu des lois sur la protection des données, vous disposez de droits concernant vos données personnelles, notamment :",
+    "access": {
+      "title": "Accès :",
+      "description": "Demander une copie de vos données personnelles"
+    },
+    "rectification": {
+      "title": "Rectification :",
+      "description": "Demander la correction de données inexactes"
+    },
+    "erasure": {
+      "title": "Suppression :",
+      "description": "Demander la suppression de vos données dans certaines circonstances"
+    },
+    "restriction": {
+      "title": "Limitation :",
+      "description": "Demander la limitation du traitement de vos données"
+    },
+    "portability": {
+      "title": "Portabilité des données :",
+      "description": "Demander le transfert de vos données dans un format structuré"
+    },
+    "objection": {
+      "title": "Opposition :",
+      "description": "Vous opposer au traitement de vos données dans certaines circonstances"
+    },
+    "consent": {
+      "title": "Retrait du consentement :",
+      "description": "Révoquer un consentement précédemment donné"
+    },
+    "contact": "Pour exercer l'un de ces droits, veuillez nous contacter à"
+  },
+  "security": {
+    "title": "Sécurité des Données",
+    "description": "Nous mettons en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données personnelles contre tout accès non autorisé, perte accidentelle ou destruction. Nos procédures de sécurité sont régulièrement révisées et mises à jour si nécessaire."
+  },
+  "retention": {
+    "title": "Conservation des Données",
+    "description": "Nous conservons vos données personnelles uniquement le temps nécessaire pour atteindre les objectifs pour lesquels elles ont été collectées, y compris les exigences légales, comptables ou de reporting. Lors de la détermination des durées de conservation, nous tenons compte de la quantité, de la nature et de la sensibilité des données, du risque potentiel d'utilisation ou de divulgation non autorisée, des finalités du traitement et des exigences légales applicables."
+  },
+  "cookies": {
+    "title": "Cookies",
+    "description": "Notre site utilise des cookies et des technologies similaires pour améliorer votre expérience de navigation. Notre Politique de Cookies, disponible sur notre site, explique comment nous collectons, utilisons et protégeons vos informations personnelles.",
+    "link": "Politique de Cookies"
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "description": "Si vous avez des questions, préoccupations ou demandes concernant cette Politique de Confidentialité ou nos pratiques de données, veuillez nous contacter à :",
+    "company": "Royal Transfer EU",
+    "email": {
+      "label": "E-mail :",
+      "address": "privacy@royaltransfereu.com"
+    },
+    "phone": {
+      "label": "Téléphone :",
+      "number": "+39 351 748 22 44"
+    },
+    "address": {
+      "label": "Adresse :",
+      "value": "123 Transfer Street, EU 12345"
+    }
+  }
+}

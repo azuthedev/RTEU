@@ -1,1 +1,43 @@
-{}
+{
+  "meta": {
+    "title": "Din profil | Royal Transfer EU",
+    "description": "Hantera din kontoinformation och dina inställningar."
+  },
+  "header": {
+    "title": "Din profil",
+    "description": "Hantera din kontoinformation och dina inställningar"
+  },
+  "personalInfo": {
+    "title": "Personlig information",
+    "fields": {
+      "name": "Fullständigt namn",
+      "email": "E-postadress",
+      "emailHelp": "E-post kan inte ändras",
+      "phone": "Telefonnummer",
+      "phoneHelp": "För bokningsnotiser (valfritt)"
+    }
+  },
+  "security": {
+    "title": "Kontosäkerhet",
+    "passwordReset": "Återställ lösenord",
+    "signOut": "Logga ut"
+  },
+  "helpBox": {
+    "title": "Behöver du hjälp?",
+    "description": "Om du har problem med ditt konto finns vårt supportteam här för att hjälpa dig.",
+    "contactLink": "Kontakta support"
+  },
+  "buttons": {
+    "save": "Spara ändringar",
+    "saving": "Sparar..."
+  },
+  "messages": {
+    "success": "Din profil har uppdaterats!",
+    "error": {
+      "general": "Det gick inte att uppdatera profilen",
+      "loading": "Det gick inte att ladda din profil. Försök att uppdatera sidan.",
+      "nameRequired": "Namn krävs"
+    }
+  },
+  "loading": "Laddar din profil..."
+}

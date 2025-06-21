@@ -1,85 +1,174 @@
 {
+  "seo": {
+    "title": "Royal Transfer EU | Premium Flygplatstransfer i Italien",
+    "description": "Professionella flygplatstransporter över hela Italien med mer än 15 års erfarenhet. Säkra, pålitliga och bekväma resor med engelsktalande förare."
+  },
+  "structuredData": {
+    "name": "Royal Transfer EU",
+    "description": "Premium flygplatstransfer och privata transporttjänster i Italien",
+    "provider": "Royal Transfer EU",
+    "serviceType": "Flygplatstransfer",
+    "areaServed": "Italien"
+  },
+  "schema": {
+    "name": "Royal Transfer EU",
+    "languages": "Engelska, Italienska"
+  },
+  "hero": {
+    "headline": "Vägen är en del",
+    "headline1": "av äventyret",
+    "subhead": "Njut av resan — vi tar hand om resten",
+    "image": {
+      "alt": "Lyxig sedantransferservice från Royal Transfer EU - professionell förare väntar vid en elegant svart bil på en vacker europeisk väg"
+    }
+  },
+  "benefits": {
+    "title": "Varför välja oss",
+    "subtitle": "Upplev premiumtransporttjänster skräddarsydda efter dina behov",
+    "items": {
+      "fixedPrices": {
+        "title": "Fasta priser",
+        "description": "Inga överraskningar, inga dolda avgifter. Vet exakt vad du kommer att betala i förväg."
+      },
+      "flightTracking": {
+        "title": "Flygspårning",
+        "description": "Vi övervakar din flygning och justerar upphämtningstiden baserat på faktisk ankomst."
+      },
+      "professionalDrivers": {
+        "title": "Professionella förare",
+        "description": "Erfarna, punktliga förare som känner till de lokala rutterna och talar engelska."
+      },
+      "comfortableVehicles": {
+        "title": "Bekväma fordon",
+        "description": "Res med stil med vår flotta av välunderhållna premiumfordon."
+      },
+      "support": {
+        "title": "Dygnet runt-support",
+        "description": "Vårt team är alltid tillgängligt för att hjälpa till med frågor eller ändringar."
+      },
+      "noWaiting": {
+        "title": "Ingen väntetid",
+        "description": "Din förare väntar på dig, även om din flygning är försenad."
+      }
+    }
+  },
+  "services": {
+    "title": "Våra tjänster",
+    "subtitle": "Premium transportlösningar för alla dina resebehov",
+    "learnMore": "Läs mer",
+    "airport": {
+      "title": "Flygplatstransfer",
+      "description": "Dörr-till-dörr-service mellan flygplatser och din destination med flygspårning och gratis väntetid."
+    },
+    "intercity": {
+      "title": "Transfer mellan städer",
+      "description": "Bekväma transferer mellan städer med erfarna förare som känner till de bästa rutterna."
+    },
+    "group": {
+      "title": "Grupptransfer",
+      "description": "Rymliga fordon för grupper av alla storlekar, vilket säkerställer att alla reser bekvämt tillsammans."
+    }
+  },
+  "bookingProcess": {
+    "title": "Hur det fungerar",
+    "subtitle": "Boka din premiumtransfer på bara några enkla steg",
+    "steps": {
+      "step1": {
+        "title": "Boka online",
+        "description": "Ange dina resuppgifter och välj ett fordon som passar dina behov."
+      },
+      "step2": {
+        "title": "Omedelbar bekräftelse",
+        "description": "Få omedelbar bekräftelse med alla detaljer om din transfer."
+      },
+      "step3": {
+        "title": "Möt din förare",
+        "description": "Din professionella förare väntar på den överenskomna upphämtningsplatsen."
+      },
+      "step4": {
+        "title": "Njut av din resa",
+        "description": "Koppla av i komfort medan vi tar dig säkert till din destination."
+      }
+    }
+  },
+  "testimonials": {
+  "title": "Vad våra kunder säger",
+  "subtitle": "Hör från resenärer som har upplevt vår premiumservice",
+  "quote1": "Enastående service, artiga förare och perfekt timing! Våra transferer var smidiga och stressfria. Rekommenderar starkt Royal Transfer!",
+  "author1": "Sarah P.",
+  "location1": "Storbritannien",
+  "quote2": "Utmärkt upplevelse från början till slut. Chauffören var professionell och fordonet var fläckfritt. Kommer definitivt att använda igen!",
+  "author2": "Marco R.",
+  "location2": "Italien",
+  "quote3": "Pålitlig och punktlig service. Bokningsprocessen var enkel och chauffören var mycket hjälpsam med vårt bagage.",
+  "author3": "John D.",
+  "location3": "USA"
+  },
+  "featuredDestinations": {
+    "title": "Populära destinationer",
+    "subtitle": "Upptäck våra mest efterfrågade rutter och destinationer",
+    "viewAll": "Visa alla destinationer"
+  },
+  "cta": {
+    "title": "Redo att boka din transfer?",
+    "subtitle": "Säkra din premiumtransfer nu och res med förtroende",
+    "button": "Boka nu"
+  },
+  "trustBadges": {
+    "title": "Betrodd av tusentals",
+    "subtitle": "Din säkerhet och tillfredsställelse är våra främsta prioriteringar"
+  },
   "benefits.headline": "Varför välja Royal Transfer EU?",
-  "benefits.trusted.head": "Betrodd av tusentals",
-  "benefits.trusted.sub": "Nöjda kunder världen över.",
-  "benefits.experience.head": "Mer än 15 års erfarenhet",
+  "benefits.trusted.head": "Betrodd av Tusentals",
+  "benefits.trusted.sub": "Nöjda kunder över hela världen.",
+  "benefits.experience.head": "15+ Års Erfarenhet",
   "benefits.experience.sub": "Branschveteraner.",
-  "benefits.safety.head": "Säkerhet och pålitlighet",
+  "benefits.safety.head": "Säkerhet & Pålitlighet",
   "benefits.safety.sub": "Din säkerhet är vår prioritet.",
-  "benefits.support.head": "Support dygnet runt",
-  "benefits.support.sub": "Alltid här för att hjälpa.",
+  "benefits.support.head": "24/7 Support",
+  "benefits.support.sub": "Alltid här för att hjälpa till.",
   
-  "destinations.head": "Populära destinationer",
+  "destinations.head": "Populära Destinationer",
   "destinations.sub": "Gå bortom vanlig service när du reser med Royal Transfer EU",
   
-  "trustbadges.head": "Betrodd av resenärer världen över",
-  "trustbadges.payments.head": "Säkra betalningar",
+  "trustbadges.head": "Betrodd av Resenärer Världen Över",
+  "trustbadges.payments.head": "Säkra Betalningar",
   "trustbadges.payments.sub": "Alla större kort accepteras",
-  "trustbadges.tripadvisor.head": "Tripadvisor-betyg",
+  "trustbadges.tripadvisor.head": "Tripadvisor Betyg",
   "trustbadges.tripadvisor.sub": "Baserat på över 1000 recensioner",
   "trustbadges.ssl.head": "SSL-krypterad",
-  "trustbadges.ssl.sub": "Din data är skyddad",
-  "trustbadges.methods": "Godkända betalningsmetoder",
+  "trustbadges.ssl.sub": "Dina data är skyddade",
+  "trustbadges.methods": "Accepterade Betalningsmetoder",
   "trustbadges.cash": "Kontant betalning tillgänglig",
   
-  "services.head": "Våra tjänster",
+  "services.head": "Våra Tjänster",
   "services.airport.head": "Flygplatstransfer",
-  "services.airport.sub": "Pålitliga, punktliga upphämtningar och avlämningar vid alla större flygplatser i Italien.",
-  "services.private.head": "Privata transfers",
-  "services.private.sub": "Professionella, förbokade transfers med kvalificerade förare och premiumfordon.",
+  "services.airport.sub": "Pålitliga, punktliga upphämtningar och avlämningar på alla större flygplatser i Italien.",
+  "services.private.head": "Privata Transferer",
+  "services.private.sub": "Professionella, förbokade transferer med kvalificerade förare och premiumfordon.",
   "services.minivan.head": "Minibussuthyrning",
   "services.minivan.sub": "Bekväma minibussar för grupper, familjeresor eller affärsbehov.",
   
   "about.head": "Din resa, omdefinierad.",
-  "about.sub": "I över 15 år har Royal Transfer EU tillhandahållit säkra, punktliga och bekväma flygplatstransfers i hela Italien. Tack vare år av erfarenhet och engagemang är vi den föredragna resepartnern för tusentals över hela världen.",
+  "about.sub": "I över 15 år har Royal Transfer EU tillhandahållit säkra, punktliga och bekväma flygplatstransferer i hela Italien. Genom år av erfarenhet och engagemang är vi den föredragna resepartnern för tusentals världen över.",
   "about.cta": "Läs mer",
   
-  "faq.head": "Vanliga frågor",
+  "faq.head": "Vanliga Frågor",
   "faq.cta": "Läs mer",
   "faq.how.head": "Hur bokar jag en resa?",
-  "faq.how.sub": "Boka online, via telefon eller via vår app—omedelbar bekräftelse garanterad.",
-  "faq.delay.head": "Vad händer om mitt flyg är försenat?",
-  "faq.delay.sub": "Inga problem! Vi spårar flyg och justerar upphämtningstider utan extra kostnad.",
-  "faq.prices.head": "Är era priser fasta eller variabla?",
-  "faq.prices.sub": "Välj mellan fasta priser för transparens eller flexibla priser baserade på avstånd.",
+  "faq.how.sub": "Boka online, via telefon eller via vår app – omedelbar bekräftelse garanteras.",
+  "faq.prices.head": "Är era priser fasta eller baserade på taxameter?",
+  "faq.prices.sub": "Välj mellan fasta priser för transparens eller flexibel prissättning baserad på avstånd.",
   "faq.where.head": "Var kommer min förare att möta mig på flygplatsen?",
-  "faq.where.sub": "Din förare kommer att vara i ankomsthallen med en skylt som visar ditt namn.",
-  "faq.group.head": "Erbjuder ni fordon för grupper eller familjer?",
+  "faq.where.sub": "Din förare kommer att vänta i ankomsthallen med en skylt som visar ditt namn.",
+  "faq.group.head": "Erbjuder ni grupp- eller familjevänliga fordon?",
   "faq.group.sub": "Ja! Våra rymliga minibussar är perfekta för grupper, familjer och affärsresor.",
   
-  "booking.head": "Bokningsprocessen förklarad",
-  "booking.book.head": "Boka en resa",
-  "booking.book.sub": "Få omedelbar bekräftelse. Gratis justeringar, flexibla villkor—alltid stressfritt.",
-  "booking.driver.head": "Möt din förare",
-  "booking.driver.sub": "Vid ankomst blir du personligen hälsad och eskorterad till ditt fordon. Förare övervakar ditt flyg för att anpassa sig till eventuella ändringar och förseningar, vilket ger ultimat sinnesfrid.",
-  "booking.comfort.head": "Njut av komforten",
-  "booking.comfort.sub": "Slappna av medan din professionella förare tar dig till din valda plats, och startar ditt äventyr på rätt sätt.",
-  
-  "testimonials.head": "Hör från våra nöjda resenärer",
-  
-  "cta.head": "Redo att starta din resa?",
-  "cta.button": "Boka din resa nu",
-  
-  "sitemap.quicklinks.head": "Snabblänkar",
-  "sitemap.quicklinks.home": "Hem",
-  "sitemap.quicklinks.faqs": "Vanliga frågor",
-  "sitemap.quicklinks.about": "Om oss",
-  "sitemap.quicklinks.partners": "Partners",
-  "sitemap.quicklinks.destinations": "Destinationer",
-  "sitemap.quicklinks.rentacar": "Hyr en bil",
-  "sitemap.quicklinks.services": "Tjänster",
-  "sitemap.quicklinks.contact": "Kontakt",
-  
-  "sitemap.gethelp.head": "Få hjälp",
-  "sitemap.gethelp.bookingsupport": "Bokningssupport",
-  "sitemap.gethelp.payment": "Betalningsinformation",
-  "sitemap.gethelp.terms": "Villkor",
-  "sitemap.gethelp.privacy": "Integritetspolicy",
-  "sitemap.gethelp.cookies": "Cookie-inställningar",
-  
-  "sitemap.contact.head": "Kontaktinformation",
-  
-  "hero.headline": "Vägen är en del",
-  "hero.headline1": "av äventyret",
-  "hero.subhead": "Njut av resan – vi tar hand om resten"
+  "booking.head": "Bokningsprocessen Förklarad",
+  "booking.book.head": "Boka en Resa",
+  "booking.book.sub": "Få omedelbar bekräftelse. Fria justeringar, flexibla villkor – alltid stressfritt.",
+  "booking.driver.head": "Möt Din Förare",
+  "booking.driver.sub": "Vid ankomst blir du personligen hälsad och eskorterad till ditt fordon. Förare övervakar ditt flyg för att anpassa sig till eventuella ändringar och förseningar, vilket ger dig fullständig sinnesro.",
+  "booking.comfort.head": "Njut av Komforten",
+  "booking.comfort.sub": "Koppla av medan din professionella förare tar dig till din valda destination, och börjar ditt äventyr på rätt sätt."
 }

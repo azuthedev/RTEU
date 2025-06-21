@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Blog de Voyage | Royal Transfer EU",
+    "description": "Explorez les guides de voyage en Italie, les conseils de transport et les informations sur les destinations pour vous aider à planifier votre voyage parfait."
+  },
+  "hero": {
+    "title": "Guides de Voyage et Aperçus",
+    "subtitle": "Explorez notre collection de conseils de voyage, de guides de destination et de conseils de transport pour votre aventure italienne"
+  },
+  "featured": {
+    "title": "Articles en Vedette"
+  },
+  "latest": {
+    "title": "Derniers Articles"
+  },
+  "categories": {
+    "title": "Parcourir par Catégorie",
+    "items": [
+      {
+        "name": "Guides de Voyage",
+        "description": "Guides complets pour les destinations populaires",
+        "slug": "guides-voyage"
+      },
+      {
+        "name": "Transport",
+        "description": "Conseils pour naviguer dans les villes italiennes",
+        "slug": "transport"
+      },
+      {
+        "name": "Expériences Culturelles",
+        "description": "Art, histoire et traditions locales",
+        "slug": "experiences-culturelles"
+      },
+      {
+        "name": "Gastronomie",
+        "description": "Aventures culinaires à travers l'Italie",
+        "slug": "gastronomie"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Abonnez-vous à Notre Newsletter de Voyage",
+    "description": "Recevez les derniers conseils de voyage, guides de destination et offres exclusives directement dans votre boîte de réception.",
+    "emailPlaceholder": "Votre adresse e-mail",
+    "button": "S'abonner",
+    "privacyNote": "En vous abonnant, vous acceptez notre Politique de Confidentialité. Vous pouvez vous désabonner à tout moment."
+  },
+  "blog": {
+    "readMore": "Lire Plus",
+    "minuteRead": "min de lecture",
+    "loading": "Chargement des articles de blog..."
+  }
+}

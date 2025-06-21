@@ -1,1 +1,81 @@
-{}
+{
+  "meta": {
+    "title": "Réservation Confirmée | Royal Transfer EU",
+    "description": "Votre réservation de transfert a été confirmée. Merci d'avoir choisi Royal Transfer EU."
+  },
+  "title": "Réservation Confirmée !",
+  "description": "Merci d'avoir réservé avec Royal Transfer EU. Votre transfert a été confirmé avec succès.",
+  "loading": "Chargement des détails de la réservation...",
+  "error": {
+    "title": "Erreur",
+    "contactSupport": "Impossible de trouver votre réservation. Veuillez contacter le support.",
+    "loadFailed": "Impossible de charger les détails de la réservation",
+    "noReference": "Aucune référence de réservation trouvée",
+    "noData": "Aucune donnée de réservation trouvée",
+    "fetchFailed": "Impossible de récupérer les détails de la réservation"
+  },
+  "toast": {
+    "linkSuccess": {
+      "title": "Réservation Liée",
+      "description": "Votre réservation a été liée à votre compte."
+    },
+    "linkFailed": {
+      "title": "Échec de Liaison de Réservation",
+      "description": "Vous pouvez la lier manuellement dans votre page de réservations."
+    }
+  },
+  "reference": {
+    "label": "Référence de Réservation",
+    "note": "Veuillez conserver cette référence pour vos dossiers"
+  },
+  "details": {
+    "title": "Détails de la Réservation",
+    "from": "De :",
+    "to": "À :",
+    "transferDate": "Date de Transfert :",
+    "returnDate": "Date de Retour :",
+    "vehicle": "Véhicule :",
+    "passengers": "Passagers :",
+    "luggage": "Bagages :",
+    "items": "articles",
+    "extras": "Extras :",
+    "price": "Prix :",
+    "paymentMethod": "Méthode de Paiement :",
+    "status": "Statut :",
+    "confirmed": "Confirmé",
+    "notes": "Notes :",
+    "noData": "Aucune information détaillée de réservation disponible."
+  },
+  "confirmation": {
+    "email": "Un e-mail de confirmation a été envoyé à votre adresse e-mail avec tous les détails de votre réservation.",
+    "contact": "Si vous avez des questions ou besoin de modifier votre réservation, veuillez contacter notre équipe de support client."
+  },
+  "buttons": {
+    "viewBookings": "Voir Mes Réservations",
+    "checkingAccount": "Vérification du Compte...",
+    "signIn": "Se Connecter Pour Gérer la Réservation",
+    "createAccount": "Créer un Compte pour Gérer la Réservation",
+    "home": "Retour à l'Accueil"
+  },
+  "whatsNext": {
+    "title": "Et Ensuite ?",
+    "confirmation": {
+      "title": "E-mail de Confirmation",
+      "description": "Vérifiez votre boîte de réception pour les informations détaillées de la réservation"
+    },
+    "assignment": {
+      "title": "Affectation du Chauffeur",
+      "description": "Vous recevrez les détails du chauffeur 24 heures avant le ramassage"
+    },
+    "ready": {
+      "title": "Prêt à Partir",
+      "description": "Votre chauffeur vous attendra à l'endroit spécifié"
+    }
+  },
+  "links": {
+    "contactHelp": "Besoin d'aide ? Contactez le support"
+  },
+  "date": {
+    "invalid": "Date invalide"
+  }
+}

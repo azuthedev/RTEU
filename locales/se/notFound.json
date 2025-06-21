@@ -1,1 +1,12 @@
-{}
+{
+  "meta": {
+    "title": "404 - Sidan hittades inte | Royal Transfer EU",
+    "description": "Sidan du letar efter finns inte. Hitta din väg tillbaka till vår webbplats."
+  },
+  "title": "Sidan hittades inte",
+  "message": "Hoppsan! Sidan du letar efter finns inte eller har flyttats.",
+  "searchPlaceholder": "Sök på vår webbplats...",
+  "backToHome": "Tillbaka till startsidan",
+  "contactSupport": "Kontakta support",
+  "popularPages": "Populära sidor:"
+}

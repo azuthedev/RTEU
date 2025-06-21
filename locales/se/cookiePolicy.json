@@ -1,1 +1,50 @@
-{}
+{
+  "meta": {
+    "title": "Cookie-policy | Royal Transfer EU",
+    "description": "Lär dig om hur Royal Transfer EU använder cookies och hur du hanterar dina cookie-inställningar."
+  },
+  "title": "Cookie-policy",
+  "intro": {
+    "title": "Vad är Cookies",
+    "description": "Cookies är små textfiler som placeras på din dator eller mobila enhet av webbplatser du besöker. De används i stor utsträckning för att få webbplatser att fungera mer effektivt och för att ge information till webbplatsens ägare. Cookies hjälper oss att förbättra din webbplatsupplevelse på flera sätt, inklusive att komma ihåg dina preferenser, analysera hur vår webbplats används och personalisera din upplevelse."
+  },
+  "usage": {
+    "title": "Hur Vi Använder Cookies",
+    "description": "Royal Transfer EU använder cookies för olika ändamål, inklusive:",
+    "list": [
+      "Säkerställa att webbplatsen fungerar korrekt",
+      "Förstå hur du använder vår webbplats för att förbättra din upplevelse",
+      "Komma ihåg dina preferenser och inställningar",
+      "Mäta effektiviteten av våra marknadsföringskampanjer"
+    ]
+  },
+  "types": {
+    "title": "Typer av Cookies Vi Använder",
+    "necessary": {
+      "title": "Nödvändiga Cookies",
+      "description": "Dessa cookies är nödvändiga för webbplatsens funktion och kan inte stängas av i våra system. De ställs vanligtvis bara in som svar på handlingar du gör, såsom att ställa in dina integritetsinställningar, logga in eller fylla i formulär. Du kan ställa in din webbläsare för att blockera dessa cookies, men vissa delar av webbplatsen kan då inte fungera som förväntat."
+    },
+    "analytics": {
+      "title": "Analytiska Cookies",
+      "description": "Dessa cookies låter oss räkna besök och trafikkällor, så att vi kan mäta och förbättra prestandan på vår webbplats. De hjälper oss att förstå vilka sidor som är mest och minst populära, och se hur besökare rör sig runt på webbplatsen. Om du inaktiverar dessa cookies kommer vi inte att veta när du har besökt vår webbplats."
+    },
+    "marketing": {
+      "title": "Marknadsförings-cookies",
+      "description": "Dessa cookies kan ställas in på vår webbplats av våra annonspartners. De kan användas av dessa företag för att bygga en profil av dina intressen och visa dig relevanta annonser på andra webbplatser. De lagrar inte direkt personlig information, men är baserade på att unikt identifiera din webbläsare och internetenhet."
+    },
+    "preferences": {
+      "title": "Preferens-cookies",
+      "description": "Dessa cookies gör det möjligt för webbplatsen att komma ihåg dina preferenser, val och inställningar för att tillhandahålla förbättrade, personaliserade funktioner. De kan ställas in av oss eller av tredjepartsleverantörer vars tjänster vi har lagt till på våra sidor."
+    }
+  },
+  "managing": {
+    "title": "Hantera Dina Cookie-inställningar",
+    "description": "Du kan hantera dina cookie-inställningar när som helst genom att klicka på länken \"Cookie-inställningar\" i sidfoten på vår webbplats. Dessutom låter de flesta webbläsare dig kontrollera cookies genom deras inställningar. Observera att om du väljer att blockera vissa cookies, kan det påverka din upplevelse på vår webbplats.",
+    "more": "För att ta reda på mer om cookies, inklusive hur du ser vilka cookies som har ställts in och hur du hanterar och tar bort dem, besök www.allaboutcookies.org."
+  },
+  "changes": {
+    "title": "Ändringar i Denna Cookie-policy",
+    "description": "Vi kan uppdatera vår Cookie-policy från tid till annan för att återspegla förändringar i teknik, reglering eller vår affärsverksamhet. Alla ändringar kommer att publiceras på denna sida, och om ändringarna är betydande kommer vi att ge ett mer framträdande meddelande.",
+    "updated": "Denna Cookie-policy uppdaterades senast den 25 april 2025."
+  }
+}

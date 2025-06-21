@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Reseblogg | Royal Transfer EU",
+    "description": "Utforska reseguider för Italien, transporttips och destinationsinformation för att hjälpa dig planera din perfekta resa."
+  },
+  "hero": {
+    "title": "Reseguider & Insikter",
+    "subtitle": "Utforska vår samling av resetips, destinationsguider och transportråd för ditt italienska äventyr"
+  },
+  "featured": {
+    "title": "Utvalda artiklar"
+  },
+  "latest": {
+    "title": "Senaste artiklar"
+  },
+  "categories": {
+    "title": "Bläddra efter kategori",
+    "items": [
+      {
+        "name": "Reseguider",
+        "description": "Omfattande guider till populära destinationer",
+        "slug": "travel-guides"
+      },
+      {
+        "name": "Transport",
+        "description": "Tips för att navigera i italienska städer",
+        "slug": "transportation"
+      },
+      {
+        "name": "Kulturella upplevelser",
+        "description": "Konst, historia och lokala traditioner",
+        "slug": "cultural-experiences"
+      },
+      {
+        "name": "Mat & Matställen",
+        "description": "Kulinariska äventyr över hela Italien",
+        "slug": "food-dining"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Prenumerera på vårt resenewsletter",
+    "description": "Få de senaste resetipsen, destinationsguiderna och exklusiva erbjudanden levererade direkt till din inkorg.",
+    "emailPlaceholder": "Din e-postadress",
+    "button": "Prenumerera",
+    "privacyNote": "Genom att prenumerera godkänner du vår integritetspolicy. Du kan avsluta prenumerationen när som helst."
+  },
+  "blog": {
+    "readMore": "Läs mer",
+    "minuteRead": "min läsning",
+    "loading": "Laddar blogginlägg..."
+  }
+}

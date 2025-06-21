@@ -1,1 +1,50 @@
-{}
+{
+  "meta": {
+    "title": "Politique de Cookies | Royal Transfer EU",
+    "description": "Découvrez comment Royal Transfer EU utilise les cookies et comment gérer vos préférences de cookies."
+  },
+  "title": "Politique de Cookies",
+  "intro": {
+    "title": "Que Sont les Cookies",
+    "description": "Les cookies sont de petits fichiers texte qui sont placés sur votre ordinateur ou appareil mobile par les sites web que vous visitez. Ils sont largement utilisés pour faire fonctionner les sites web de manière plus efficace et pour fournir des informations aux propriétaires du site. Les cookies nous aident à améliorer votre expérience sur le site web de plusieurs façons, notamment en mémorisant vos préférences, en analysant comment notre site web est utilisé et en personnalisant votre expérience."
+  },
+  "usage": {
+    "title": "Comment Nous Utilisons les Cookies",
+    "description": "Royal Transfer EU utilise des cookies à diverses fins, notamment:",
+    "list": [
+      "Assurer le bon fonctionnement du site web",
+      "Comprendre comment vous utilisez notre site web pour améliorer votre expérience",
+      "Mémoriser vos préférences et paramètres",
+      "Mesurer l'efficacité de nos campagnes marketing"
+    ]
+  },
+  "types": {
+    "title": "Types de Cookies que Nous Utilisons",
+    "necessary": {
+      "title": "Cookies Nécessaires",
+      "description": "Ces cookies sont essentiels au fonctionnement de notre site web et ne peuvent pas être désactivés dans nos systèmes. Ils sont généralement établis uniquement en réponse à des actions que vous effectuez, comme la définition de vos préférences de confidentialité, la connexion ou le remplissage de formulaires. Vous pouvez configurer votre navigateur pour bloquer ces cookies, mais certaines parties du site web peuvent ne pas fonctionner comme prévu."
+    },
+    "analytics": {
+      "title": "Cookies d'Analyse",
+      "description": "Ces cookies nous permettent de compter les visites et les sources de trafic, afin que nous puissions mesurer et améliorer les performances de notre site web. Ils nous aident à comprendre quelles pages sont les plus et les moins populaires, et à voir comment les visiteurs se déplacent sur le site. Si vous désactivez ces cookies, nous ne saurons pas quand vous avez visité notre site."
+    },
+    "marketing": {
+      "title": "Cookies Marketing",
+      "description": "Ces cookies peuvent être définis par nos partenaires publicitaires via notre site. Ils peuvent être utilisés par ces entreprises pour établir un profil de vos intérêts et vous montrer des publicités pertinentes sur d'autres sites. Ils ne stockent pas directement des informations personnelles, mais sont basés sur l'identification unique de votre navigateur et de votre appareil internet."
+    },
+    "preferences": {
+      "title": "Cookies de Préférences",
+      "description": "Ces cookies permettent au site web de se souvenir de vos préférences, choix et paramètres pour fournir des fonctionnalités améliorées et personnalisées. Ils peuvent être définis par nous ou par des fournisseurs tiers dont nous avons ajouté les services à nos pages."
+    }
+  },
+  "managing": {
+    "title": "Gérer Vos Préférences de Cookies",
+    "description": "Vous pouvez gérer vos préférences de cookies à tout moment en cliquant sur le lien \"Paramètres des Cookies\" dans le pied de page de notre site web. De plus, la plupart des navigateurs web vous permettent de contrôler les cookies via leurs paramètres. Veuillez noter que si vous choisissez de bloquer certains cookies, cela peut affecter votre expérience sur notre site web.",
+    "more": "Pour en savoir plus sur les cookies, y compris comment voir quels cookies ont été définis et comment les gérer et les supprimer, visitez www.allaboutcookies.org."
+  },
+  "changes": {
+    "title": "Modifications de Cette Politique de Cookies",
+    "description": "Nous pouvons mettre à jour notre Politique de Cookies de temps à autre pour refléter des changements dans la technologie, la réglementation ou nos pratiques commerciales. Tout changement sera publié sur cette page, et si les changements sont significatifs, nous fournirons un avis plus visible.",
+    "updated": "Cette Politique de Cookies a été mise à jour pour la dernière fois le 25 avril 2025."
+  }
+}

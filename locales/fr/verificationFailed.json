@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Échec de la vérification | Royal Transfer EU",
+    "description": "La vérification de l'e-mail a échoué. Veuillez réessayer ou demander un nouveau lien de vérification."
+  },
+  "title": "Échec de la vérification",
+  "errors": {
+    "generic": "Un problème est survenu lors de la vérification de votre e-mail.",
+    "expired": "Le lien de vérification a expiré. Veuillez demander un nouvel e-mail de vérification.",
+    "invalid": "Le lien de vérification est invalide ou a déjà été utilisé."
+  },
+  "buttons": {
+    "tryAgain": "Réessayer",
+    "goHome": "Accueil"
+  }
+}

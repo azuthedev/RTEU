@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Verifica fallita | Royal Transfer EU",
+    "description": "La verifica dell'e-mail non è riuscita. Riprova o richiedi un nuovo link di verifica."
+  },
+  "title": "Verifica fallita",
+  "errors": {
+    "generic": "Si è verificato un problema durante la verifica dell'e-mail.",
+    "expired": "Il link di verifica è scaduto. Richiedi una nuova e-mail di verifica.",
+    "invalid": "Il link di verifica non è valido o è già stato utilizzato."
+  },
+  "buttons": {
+    "tryAgain": "Riprova",
+    "goHome": "Torna alla home"
+  }
+}

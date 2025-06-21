@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Bokning Avbruten | Royal Transfer EU",
+    "description": "Din bokning har avbrutits. Ingen betalning har behandlats."
+  },
+  "title": "Bokning Avbruten",
+  "message": "Din bokningsprocess har avbrutits. Ingen betalning har behandlats.",
+  "nextSteps": {
+    "title": "Vad skulle du vilja göra härnäst?",
+    "description": "Du kan försöka boka igen eller kontakta vårt supportteam om du behöver hjälp."
+  },
+  "buttons": {
+    "home": "Återgå till Hem",
+    "contact": "Kontakta Support"
+  }
+}

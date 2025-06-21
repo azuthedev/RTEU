@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Vos Réservations | Royal Transfer EU",
+    "description": "Consultez et gérez vos réservations Royal Transfer EU."
+  },
+  "header": {
+    "title": "Vos Réservations",
+    "refreshButton": "Actualiser"
+  },
+  "error": {
+    "retry": "Réessayer",
+    "networkError": "Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.",
+    "configError": "Problème de configuration de la base de données. Veuillez actualiser la page ou contacter le support si le problème persiste.",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "permissionError": "Accès refusé. Vous n'avez pas l'autorisation de consulter ces réservations.",
+    "serverError": "Une erreur serveur s'est produite. Veuillez réessayer dans quelques instants.",
+    "noSession": "Pas de session active - veuillez vous reconnecter",
+    "emailLookupFailed": "Impossible de déterminer l'email de l'utilisateur pour la recherche de réservation",
+    "edgeFunctionFailed": "Échec de la fonction Edge",
+    "reloginMessage": "Veuillez vous reconnecter pour accéder à vos réservations."
+  },
+  "loading": {
+    "auth": "Chargement de l'authentification...",
+    "bookings": "Chargement de vos réservations..."
+  },
+  "toast": {
+    "noUpcoming": "Aucune réservation à venir",
+    "noUpcomingDesc": "Vous n'avez aucune réservation à venir.",
+    "noPast": "Aucune réservation passée",
+    "noPastDesc": "Vous n'avez aucune réservation passée.",
+    "error": "Erreur lors du chargement des réservations",
+    "detailsError": "Erreur lors du chargement des détails",
+    "detailsErrorDesc": "Impossible de charger les détails de la réservation. Veuillez réessayer.",
+    "linkSuccess": "Réservation liée",
+    "linkSuccessDesc": "Cette réservation a été liée à votre compte.",
+    "linkError": "Erreur",
+    "linkErrorDesc": "Échec de la liaison de la réservation à votre compte.",
+    "referenceCopied": "Référence de réservation copiée",
+    "referenceCopiedDesc": "La référence a été copiée dans le presse-papiers"
+  },
+  "tabs": {
+    "upcoming": "À venir",
+    "past": "Passées"
+  },
+  "emptyState": {
+    "upcoming": "Aucune réservation à venir",
+    "past": "Aucune réservation passée",
+    "bookButton": "Réserver un transfert"
+  },
+  "bookingItem": {
+    "from": "De",
+    "to": "À",
+    "link": "Lier",
+    "linkTooltip": "Lier à mon compte"
+  },
+  "dateTime": {
+    "na": "N/A",
+    "invalid": "Date invalide"
+  },
+  "currency": {
+    "na": "N/A"
+  },
+  "contact": {
+    "notProvided": "Non fourni"
+  },
+  "vehicle": {
+    "standard": "Standard"
+  },
+  "payment": {
+    "card": "Carte"
+  },
+  "status": {
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "in_progress": "En cours",
+    "accepted": "Accepté",
+    "pending": "En attente"
+  },
+  "bookingDetails": {
+    "title": "Détails de la réservation",
+    "copyReference": "Cliquez pour copier la référence de réservation",
+    "trip": {
+      "title": "Informations sur le trajet",
+      "pickup": "Prise en charge",
+      "dropoff": "Dépose",
+      "vehicle": "Véhicule",
+      "passengers": "Passagers",
+      "luggage": "Bagages",
+      "items": "articles",
+      "tripType": "Type de trajet",
+      "oneWay": "Aller simple",
+      "roundTrip": "Aller-retour"
+    },
+    "price": {
+      "title": "Prix",
+      "payment": "Méthode de paiement"
+    },
+    "flightInfo": {
+      "title": "Informations de vol",
+      "flightNumber": "Numéro de vol"
+    },
+    "contact": {
+      "title": "Informations de contact",
+      "name": "Nom du client",
+      "email": "Email",
+      "phone": "Téléphone"
+    },
+    "extras": {
+      "title": "Services supplémentaires"
+    },
+    "stops": {
+      "title": "Arrêts supplémentaires"
+    },
+    "notes": {
+      "title": "Notes"
+    },
+    "linkBooking": {
+      "title": "Lier cette réservation",
+      "description": "Cette réservation correspond à votre email mais n'est pas encore liée à votre compte.",
+      "button": "Lier à mon compte",
+      "linking": "Liaison en cours..."
+    },
+    "buttons": {
+      "close": "Fermer",
+      "closeLabel": "Fermer les détails",
+      "support": "Support",
+      "manage": "Gérer"
+    }
+  }
+}

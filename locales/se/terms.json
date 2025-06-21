@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "title": "Allmänna villkor | Royal Transfer EU",
+    "description": "Allmänna villkor för Royal Transfer EUs premiumtransfer­tjänster. Läs våra användarvillkor innan du bokar."
+  },
+  "structuredData": {
+    "name": "Allmänna villkor",
+    "description": "Allmänna villkor för Royal Transfer EUs premiumtransfer­tjänster"
+  },
+  "title": "Allmänna villkor",
+  "sections": {
+    "introduction": {
+      "title": "1. Introduktion",
+      "paragraph1": "Välkommen till Royal Transfer EU. Dessa villkor reglerar din användning av vår webbplats och våra tjänster. Genom att använda vår webbplats eller våra transporttjänster godkänner du dessa villkor. Läs dem noggrant.",
+      "paragraph2": "I dessa villkor avser \"Royal Transfer EU\", \"vi\", \"oss\" och \"vår\" Royal Transfer EU, och \"du\" och \"din\" avser dig som kund, besökare, webbplatsanvändare eller användare av våra tjänster."
+    },
+    "booking": {
+      "title": "2. Bokningar",
+      "point1": "2.1. Alla bokningar via vår webbplats, telefon eller e-post innebär att du godkänner dessa villkor.",
+      "point2": "2.2. När din bokning är klar får du en bekräftelse via e-post med bokningsnummer. Kontrollera uppgifterna och kontakta oss omedelbart vid behov av ändringar.",
+      "point3": "2.3. Vid alla bokningar ansvarar huvudresenären för att all information är korrekt och fullständig.",
+      "point4": "2.4. Vi förbehåller oss rätten att neka en bokning utan att ange skäl."
+    },
+    "pricing": {
+      "title": "3. Priser och betalning",
+      "point1": "3.1. Alla priser på vår webbplats anges i euro (€) och inkluderar gällande skatter om inget annat anges.",
+      "point2": "3.2. Betalning kan ske med kredit-/betalkort vid bokning via vårt säkra system eller kontant till föraren efter avslutad tjänst.",
+      "point3": "3.3. Vid kontant betalning gäller euro (€).",
+      "point4": "3.4. Extra avgifter kan tillkomma för vissa tjänster, till exempel:",
+      "additionalCharges": [
+        "Väntetid utöver fri väntetid",
+        "Extra stopp som inte ingår i ursprungsbokningen",
+        "Ruttändringar under resan",
+        "Särskilda utrustningsönskemål vid tjänstens början"
+      ],
+      "point5": "3.5. Våra priser garanteras vid bokningstillfället. Ändringar kan innebära prisjusteringar."
+    },
+    "cancellations": {
+      "title": "4. Avbokningar och ändringar",
+      "point1": "4.1. Avbokningar ska göras skriftligen via e-post till support@royaltransfereu.com eller via vår kundportal.",
+      "point2": "4.2. Vår avbokningspolicy är:",
+      "policy": [
+        "Avbokning mer än 24 timmar före upphämtning: full återbetalning.",
+        "Avbokning 12–24 timmar före upphämtning: 50% avgift.",
+        "Avbokning mindre än 12 timmar före eller utebliven ankomst: 100% avgift."
+      ],
+      "point3": "4.3. Ändringar kan göras upp till 4 timmar före upphämtning, i mån av tillgänglighet. Ändringar mindre än 4 timmar före kan räknas som avbokning och ny bokning."
+    },
+    "airport": {
+      "title": "5. Flygplatshämtning och förseningar",
+      "point1": "5.1. Vid flygplatshämtning övervakar vi ankomsttider och justerar hämtningstiden vid försening utan extra kostnad.",
+      "point2": "5.2. Vi erbjuder fri väntetid:",
+      "waitingTime": [
+        "45 minuter efter planerad landning för internationella flyg",
+        "30 minuter efter landning för inrikesflyg",
+        "15 minuter vid övriga upphämtningsplatser"
+      ],
+      "point3": "5.3. Extra väntetid debiteras enligt vår timtaxa."
+    },
+    "service": {
+      "title": "6. Servicestandard och begränsningar",
+      "point1": "6.1. Vi erbjuder högkvalitativa transporttjänster med professionella förare och välskötta fordon.",
+      "point2": "6.2. Vi strävar efter punktlighet men ansvarar inte för förseningar utanför vår kontroll, såsom trafik, väder eller force majeure.",
+      "point3": "6.3. Max antal passagerare och bagage per fordon styrs av fordonstyp och måste följas av säkerhets- och komfortskäl.",
+      "point4": "6.4. Royal Transfer EU förbehåller sig rätten att neka transport av personer påverkade av alkohol, droger eller med farligt/olämpligt beteende."
+    },
+    "liability": {
+      "title": "7. Ansvar",
+      "point1": "7.1. Royal Transfer EU har ansvarsförsäkring och passagerarförsäkring enligt lag.",
+      "point2": "7.2. Vi ansvarar inte för förlust, skada eller olägenhet orsakad av omständigheter utanför vår kontroll.",
+      "point3": "7.3. Royal Transfer EU ansvarar inte för indirekta eller följdskador, inklusive men inte begränsat till missade flyg, anslutningar, inkomstbortfall eller affärsmöjligheter.",
+      "point4": "7.4. Vårt maximala ansvar gentemot dig är begränsat till det totala bokningsvärdet."
+    },
+    "belongings": {
+      "title": "8. Personliga tillhörigheter",
+      "point1": "8.1. Passagerare ansvarar för sina tillhörigheter. Royal Transfer EU och förare ansvarar inte för föremål som glöms kvar i fordonet.",
+      "point2": "8.2. Upphittade föremål återlämnas i möjligaste mån, men vi kan inte garantera återfåendet eller dess skick."
+    },
+    "dataProtection": {
+      "title": "9. Dataskydd och integritet",
+      "point1": "9.1. Royal Transfer EU värnar om din integritet. Vår integritetspolicy på webbplatsen förklarar hur vi samlar in, använder och skyddar dina uppgifter.",
+      "point2": "9.2. Genom att boka godkänner du insamling, behandling och överföring av dina uppgifter enligt vår integritetspolicy."
+    },
+    "intellectualProperty": {
+      "title": "10. Immateriella rättigheter",
+      "point1": "10.1. Allt innehåll på Royal Transfer EU:s webbplats, inklusive texter, grafik, logotyper, bilder och programvara, tillhör Royal Transfer EU eller dess leverantörer och skyddas av internationell upphovsrätt.",
+      "point2": "10.2. Du får inte återge, distribuera eller använda innehåll utan vårt skriftliga tillstånd."
+    },
+    "governingLaw": {
+      "title": "11. Tillämplig lag",
+      "point1": "11.1. Dessa villkor regleras av italiensk lag.",
+      "point2": "11.2. Tvister ska avgöras av italienska domstolar med exklusiv jurisdiktion."
+    },
+    "modifications": {
+      "title": "12. Ändringar av villkoren",
+      "point1": "12.1. Royal Transfer EU förbehåller sig rätten att ändra dessa villkor när som helst. Ändringar publiceras på webbplatsen och gäller omedelbart.",
+      "point2": "12.2. Det är ditt ansvar att regelbundet läsa igenom villkoren. Fortsatt användning av våra tjänster innebär att du godkänner ändringarna."
+    },
+    "contact": {
+      "title": "13. Kontaktinformation",
+      "point1": "13.1. Vid frågor om dessa villkor, kontakta oss på:",
+      "companyName": "Royal Transfer EU",
+      "email": "E-post:",
+      "phone": "Telefon:",
+      "lastUpdated": "Senast uppdaterad: 15 juni 2025"
+    }
+  }
+}

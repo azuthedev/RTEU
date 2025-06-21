@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Våra tjänster | Royal Transfer EU",
+    "description": "Utforska vårt utbud av transfer­tjänster – flygplatshämtning, privata transfers och minibussuthyrning för grupper och familjer."
+  },
+  "hero": {
+    "title": "Våra professionella transfer- och hyrtjänster",
+    "subtitle": "Res enkelt, säkert och utan stress.",
+    "imageAlt": "Royal Transfer EU Tjänster",
+    "scrollButton": "Scrolla för att se våra tjänster"
+  },
+  "overview": {
+    "title": "Resor behöver inte vara krångliga.",
+    "subtitle": "Hos Royal Transfer EU har vi noggrant planerat tjänster för alla dina behov."
+  },
+  "airport": {
+    "title": "Flygplatstransfer",
+    "description": "Gör din resa enkel från början till slut. Våra vänliga och professionella förare möter dig i tid på flygplatsen och kör dig direkt till din destination. Ingen väntan, ingen stress – bara avkopplande resor för affärs- eller semesterresenärer.",
+    "feature1": "Enkel dörr-till-dörr-service",
+    "feature2": "Vänliga förare som följer ditt flyg",
+    "feature3": "Alltid punktliga och redo när du landar",
+    "cta": "Boka flygplatstransfer"
+  },
+  "private": {
+    "title": "Privata transfers på begäran",
+    "description": "Behöver du ta dig från A till B med komfort och pålitlighet? Vår privata transfer­tjänst är för dig som värdesätter punktlighet, trygghet och kvalitetsfordon. Boka i förväg så ordnar vi resten.",
+    "feature1": "Privata punkt-till-punkt-transfers",
+    "feature2": "Kvalificerade, professionella förare",
+    "feature3": "Förbokning krävs – minst 4 timmar i förväg",
+    "feature4": "Endast rena, premiumfordon",
+    "cta": "Boka privat transfer"
+  },
+  "minivan": {
+    "title": "Bekväm minibussuthyrning",
+    "description": "Reser du med familj eller större grupp? Våra rymliga och rena minibussar tar hela sällskapet bekvämt. Hyr för en dag, en vecka eller längre – alltid enkelt och flexibelt.",
+    "feature1": "Rymliga bussar för grupper eller familjer",
+    "feature2": "Rena, pålitliga fordon",
+    "feature3": "Kör själv eller med förare",
+    "cta": "Hyr minibuss idag"
+  },
+  "whyLove": {
+    "title": "Varför resenärer älskar Royal Transfer EU"
+  },
+  "bookingProcess": {
+    "title": "Boka din resa i 3 enkla steg",
+    "step1": {
+      "title": "Välj din resa",
+      "description": "Välj tjänst – flygplatstransfer, taxi eller minibussuthyrning."
+    },
+    "step2": {
+      "title": "Omedelbar bekräftelse",
+      "description": "Du får snabbt detaljer och bekräftelse på din bokning."
+    },
+    "step3": {
+      "title": "Njut av resan",
+      "description": "Slappna av och låt våra förare ta hand om resten."
+    },
+    "cta": "Börja boka"
+  },
+  "testimonials": {
+    "cta": "Bli en av våra nöjda resenärer"
+  },
+  "faq": {
+    "title": "Har du frågor?",
+    "q1": "Hur bokar jag?",
+    "a1": "Boka enkelt online, via appen eller telefon. Du får omedelbar bekräftelse.",
+    "q2": "Betalningsalternativ?",
+    "a2": "Vi accepterar alla större kreditkort, onlinebetalningar och kontantbetalningar.",
+    "q3": "Vad händer om flyget är försenat?",
+    "a3": "Ingen fara! Vi övervakar ditt flyg och justerar upphämtningstiden automatiskt utan extra kostnad.",
+    "cta": "Visa alla frågor och svar"
+  },
+  "bottomCta": {
+    "title": "Redo att resa säkert och bekvämt?",
+    "buttonText": "Boka din resa nu"
+  }
+}

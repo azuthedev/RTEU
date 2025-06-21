@@ -1,1 +1,88 @@
-{}
+{
+  "meta": {
+    "title": "Om oss | Royal Transfer EU",
+    "description": "Lär dig om Royal Transfer EU:s 15+ års erfarenhet av att tillhandahålla premium flygplatstransfer och privata transporttjänster i hela Italien."
+  },
+  "hero": {
+    "title": "Om Royal Transfer EU",
+    "subtitle": "Premium flygplatstransfer med en personlig touch"
+  },
+  "history": {
+    "title": "Vår historia",
+    "paragraphs": [
+      "Royal Transfer EU grundades 2010 med ett enkelt uppdrag: att erbjuda resenärer pålitliga, premium flygplatstransfer i hela Italien.",
+      "Vad som började som en liten verksamhet med bara två fordon har växt till att bli en av Italiens mest betrodda privata transfertjänster, verksam i stora städer och resmål.",
+      "Vår resa har definierats av ett orubbligt engagemang för punktlighet, komfort och personlig service. Vi har transporterat över 100 000 passagerare, från affärsresenärer till familjer, och säkerställt att varje resa är smidig och stressfri."
+    ]
+  },
+  "mission": {
+    "title": "Vårt uppdrag",
+    "text": "Att göra resor sömlösa genom att erbjuda exceptionella flygplatstransferupplevelser med professionalism, pålitlighet och uppmärksamhet på detaljer.",
+    "values": {
+      "title": "Kärnvärden",
+      "punctuality": {
+        "title": "Punktlighet",
+        "description": "Vi förstår att tid är dyrbar, särskilt när man reser. Våra förare är alltid i tid och spårar flyg för att anpassa sig till eventuella ändringar i ditt schema."
+      },
+      "comfort": {
+        "title": "Komfort",
+        "description": "Våra välunderhållna premiumfordon säkerställer en bekväm resa, vilket låter dig slappna av efter en lång flygning eller förbereda dig för din nästa destination."
+      },
+      "service": {
+        "title": "Personlig service",
+        "description": "Vi erkänner att varje resenär har unika behov. Vår service är skräddarsydd för att möta dina specifika krav och preferenser."
+      },
+      "safety": {
+        "title": "Säkerhet",
+        "description": "Din säkerhet är vår högsta prioritet. Våra professionella förare är erfarna, licensierade och engagerade i säkra körvanor."
+      }
+    }
+  },
+  "services": {
+    "title": "Våra tjänster",
+    "subtitle": "Premium transportlösningar för alla dina resebehov",
+    "airport": {
+      "title": "Flygplatstransfer",
+      "description": "Dörr-till-dörr-service mellan flygplatser och din destination med flygspårning och gratis väntetid."
+    },
+    "intercity": {
+      "title": "Transfer mellan städer",
+      "description": "Bekväma transferer mellan städer med erfarna förare som känner till de bästa rutterna."
+    },
+    "events": {
+      "title": "Evenemang & konferenstransfer",
+      "description": "Pålitlig transport för företagsevenemang, konferenser och speciella tillfällen."
+    },
+    "group": {
+      "title": "Grupptransfer",
+      "description": "Rymliga fordon för grupper av alla storlekar, vilket säkerställer att alla reser bekvämt tillsammans."
+    }
+  },
+  "team": {
+    "title": "Vårt team",
+    "subtitle": "Möt proffsen bakom din smidiga reseupplevelse",
+    "description": "Vårt team består av erfarna förare, kundtjänstspecialister och driftchefer som arbetar tillsammans för att säkerställa att din resa är perfekt från bokning till ankomst.",
+    "drivers": {
+      "title": "Professionella förare",
+      "description": "Våra noggrant utvalda förare kombinerar lokal kunskap med professionell utbildning. De talar flytande engelska och är engagerade i att tillhandahålla exceptionell service."
+    },
+    "support": {
+      "title": "Kundtjänst",
+      "description": "Tillgänglig dygnet runt för att hjälpa till med bokningar, ändringar eller frågor du kan ha före, under eller efter din resa."
+    },
+    "operations": {
+      "title": "Driftteam",
+      "description": "Arbetar bakom kulisserna för att koordinera transferer, övervaka flyg och säkerställa att varje detalj hanteras perfekt."
+    }
+  },
+  "coverage": {
+    "title": "Var vi verkar",
+    "description": "Vi tillhandahåller premium transfertjänster i stora italienska städer och destinationer, inklusive Rom, Milano, Florens, Venedig, Neapel och många fler. Oavsett om du anländer till en stor internationell flygplats eller behöver transport mellan städer har vi dig täckt.",
+    "cities": ["Rom", "Milano", "Florens", "Venedig", "Neapel", "Turin", "Bologna", "Pisa", "Bari", "Catania", "Palermo"]
+  },
+  "cta": {
+    "title": "Upplev Premium Transferer",
+    "text": "Redo att uppleva bekymmersfritt resande med Royal Transfer EU?",
+    "button": "Boka Din Transfer"
+  }
+}

@@ -1,1 +1,69 @@
-{}
+{
+  "meta": {
+    "title": "Connexion | Royal Transfer EU",
+    "description": "Connectez-vous à votre compte Royal Transfer EU pour gérer vos réservations, consulter votre profil et plus encore."
+  },
+  "tabs": {
+    "customer": "Client",
+    "driver": "Chauffeur"
+  },
+  "devMode": {
+    "title": "Mode Développement Actif",
+    "description": "Les erreurs d'authentification seront contournées pour les tests."
+  },
+  "booking": {
+    "reference": "Votre référence de réservation: {{reference}}",
+    "message": "Connectez-vous pour gérer votre réservation."
+  },
+  "verification": {
+    "title": "Vérification d'Email Requise",
+    "description": "Votre compte doit être vérifié avant de pouvoir vous connecter. Veuillez vérifier votre email pour un lien de vérification ou demander un nouveau.",
+    "sending": "Envoi de l'email de vérification...",
+    "resend": "Renvoyer l'Email de Vérification"
+  },
+  "driver": {
+    "title": "Portail Chauffeur",
+    "message": "Veuillez vous connecter via notre portail partenaire pour accéder au tableau de bord des chauffeurs.",
+    "becomePartner": "Devenir Partenaire",
+    "goToPortal": "Aller au Portail Partenaire"
+  },
+  "form": {
+    "or": "ou",
+    "email": "Email",
+    "password": "Mot de passe",
+    "linkingBooking": "Liaison de la réservation...",
+    "signingIn": "Connexion en cours...",
+    "signInAndLink": "Se Connecter & Lier la Réservation",
+    "signIn": "Se Connecter",
+    "forgotPassword": "Mot de passe oublié ?"
+  },
+  "errors": {
+    "missingCredentials": "Veuillez saisir à la fois l'email et le mot de passe",
+    "emailVerification": "Votre adresse email doit être vérifiée avant de pouvoir continuer.",
+    "emailRequired": "Veuillez saisir votre adresse email",
+    "noAccount": "Aucun compte trouvé avec cette adresse email. Veuillez vous inscrire d'abord.",
+    "alreadyVerified": "Cet email est déjà vérifié. Veuillez essayer de vous connecter à nouveau.",
+    "recentVerification": "Un email de vérification a été envoyé récemment. Veuillez vérifier votre boîte de réception ou attendre {{time}} minute(s) avant d'en demander un autre.",
+    "sendVerificationFailed": "Échec de l'envoi du code de vérification",
+    "verificationFailed": "Échec de l'envoi de l'email de vérification",
+    "emailNotVerified": "Votre adresse email doit être vérifiée avant de pouvoir continuer.",
+    "emailNeedsVerification": "Votre adresse email doit être vérifiée. Veuillez vérifier votre boîte de réception ou demander un nouvel email de vérification.",
+    "loginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants."
+  },
+  "success": {
+    "emailVerified": "Email vérifié avec succès ! Vous pouvez maintenant vous connecter."
+  },
+  "toast": {
+    "bookingLinked": {
+      "title": "Succès",
+      "message": "La réservation a été liée à votre compte."
+    },
+    "bookingLinkFailed": {
+      "title": "Échec de Liaison de Réservation",
+      "message": "Vous pouvez la lier manuellement dans votre page de réservations."
+    }
+  },
+  "backToHome": "Retour à l'Accueil",
+  "signUp": "S'inscrire",
+  "needHelp": "Besoin d'Aide ? Contacter le Support"
+}

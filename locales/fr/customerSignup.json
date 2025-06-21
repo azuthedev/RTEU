@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Créer un Compte | Royal Transfer EU",
+    "description": "Inscrivez-vous pour obtenir un compte Royal Transfer EU afin de gérer vos réservations et recevoir des offres exclusives",
+    "titlePartner": "Inscription Partenaire | Royal Transfer EU",
+    "descriptionPartner": "Complétez votre inscription partenaire avec Royal Transfer EU"
+  },
+  "backToHome": "Retour à l'Accueil",
+  "loading": {
+    "validatingInvite": "Validation de votre code d'invitation..."
+  },
+  "inviteError": {
+    "title": "Code d'Invitation Invalide",
+    "message": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter notre équipe de support.",
+    "signUp": "S'inscrire Sans Invitation",
+    "contact": "Contacter le Support"
+  },
+  "success": {
+    "title": "Compte Créé !",
+    "message": "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter pour gérer vos réservations et votre profil.",
+    "messagePartner": "Votre compte partenaire a été créé avec succès. Vous serez redirigé vers votre profil sous peu."
+  },
+  "partnerMessage": "Merci d'avoir demandé à devenir partenaire de Royal Transfer EU. Veuillez compléter votre inscription pour commencer.",
+  "bookingMessage": "La création d'un compte liera votre réservation {{reference}} à votre profil.",
+  "form": {
+    "titlePartner": "Compléter l'Inscription Partenaire",
+    "title": "Créer un Compte",
+    "name": "Nom Complet",
+    "email": "Adresse Email",
+    "phone": "Téléphone (Optionnel)",
+    "phoneHelp": "Pour les notifications de réservation",
+    "password": "Mot de Passe",
+    "confirmPassword": "Confirmer le Mot de Passe",
+    "creating": "Création du Compte...",
+    "create": "Créer un Compte",
+    "terms": "En créant un compte, vous acceptez nos",
+    "termsLink": "Conditions d'Utilisation",
+    "and": "et",
+    "privacyLink": "Politique de Confidentialité",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "signIn": "Se connecter"
+  },
+  "errors": {
+    "invalidInvite": "Code d'invitation invalide ou expiré",
+    "validateInvite": "Échec de la validation de l'invitation. Veuillez réessayer plus tard.",
+    "userCreationFailed": "Échec de la création de l'utilisateur",
+    "invalidEmail": "Veuillez entrer une adresse email valide",
+    "verificationFailed": "Échec de l'envoi de l'email de vérification",
+    "sendVerificationFailed": "Échec de l'envoi de l'email de vérification",
+    "unexpectedError": "Une erreur inattendue s'est produite"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Invitation Invalide",
+      "message": "Ce lien d'invitation est invalide ou a expiré."
+    },
+    "validationError": {
+      "title": "Erreur de Validation",
+      "message": "Échec de la validation de votre code d'invitation. Veuillez réessayer plus tard."
+    },
+    "accountCreated": {
+      "title": "Compte Créé",
+      "message": "Votre compte a été créé avec succès !"
+    },
+    "signupFailed": {
+      "title": "Échec de l'Inscription",
+      "message": "Une erreur s'est produite lors de l'inscription."
+    }
+  },
+  "validation": {
+    "nameRequired": "Le nom est requis",
+    "passwordRequired": "Le mot de passe est requis",
+    "passwordLength": "Le mot de passe doit contenir au moins 6 caractères",
+    "confirmRequired": "Veuillez confirmer votre mot de passe",
+    "passwordsMatch": "Les mots de passe ne correspondent pas"
+  }
+}

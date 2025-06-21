@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Dina Bokningar | Royal Transfer EU",
+    "description": "Visa och hantera dina Royal Transfer EU-bokningar."
+  },
+  "header": {
+    "title": "Dina Bokningar",
+    "refreshButton": "Uppdatera"
+  },
+  "error": {
+    "retry": "Försök igen",
+    "networkError": "Nätverksanslutningen misslyckades. Kontrollera din internetanslutning och försök igen.",
+    "configError": "Problem med databaskonfigurationen. Försök uppdatera sidan eller kontakta support om problemet kvarstår.",
+    "sessionExpired": "Din session har gått ut. Vänligen logga in igen.",
+    "permissionError": "Åtkomst nekad. Du har inte behörighet att visa dessa bokningar.",
+    "serverError": "Ett serverfel inträffade. Vänligen försök igen om en stund.",
+    "noSession": "Ingen aktiv session - vänligen logga in igen",
+    "emailLookupFailed": "Kunde inte fastställa användarens e-post för bokningssökning",
+    "edgeFunctionFailed": "Edge-funktionen misslyckades",
+    "reloginMessage": "Vänligen logga in igen för att komma åt dina bokningar."
+  },
+  "loading": {
+    "auth": "Laddar autentisering...",
+    "bookings": "Laddar dina bokningar..."
+  },
+  "toast": {
+    "noUpcoming": "Inga kommande bokningar",
+    "noUpcomingDesc": "Du har inga kommande bokningar.",
+    "noPast": "Inga tidigare bokningar",
+    "noPastDesc": "Du har inga tidigare bokningar.",
+    "error": "Fel vid laddning av bokningar",
+    "detailsError": "Fel vid laddning av detaljer",
+    "detailsErrorDesc": "Kunde inte ladda bokningsdetaljer. Vänligen försök igen.",
+    "linkSuccess": "Bokning länkad",
+    "linkSuccessDesc": "Denna bokning har länkats till ditt konto.",
+    "linkError": "Fel",
+    "linkErrorDesc": "Misslyckades med att länka bokningen till ditt konto.",
+    "referenceCopied": "Bokningsreferens kopierad",
+    "referenceCopiedDesc": "Referensen har kopierats till urklipp"
+  },
+  "tabs": {
+    "upcoming": "Kommande",
+    "past": "Tidigare"
+  },
+  "emptyState": {
+    "upcoming": "Inga kommande bokningar",
+    "past": "Inga tidigare bokningar",
+    "bookButton": "Boka en transfer"
+  },
+  "bookingItem": {
+    "from": "Från",
+    "to": "Till",
+    "link": "Länka",
+    "linkTooltip": "Länka till mitt konto"
+  },
+  "dateTime": {
+    "na": "N/A",
+    "invalid": "Ogiltigt datum"
+  },
+  "currency": {
+    "na": "N/A"
+  },
+  "contact": {
+    "notProvided": "Ej angivet"
+  },
+  "vehicle": {
+    "standard": "Standard"
+  },
+  "payment": {
+    "card": "Kort"
+  },
+  "status": {
+    "completed": "Slutförd",
+    "cancelled": "Avbokad",
+    "in_progress": "Pågående",
+    "accepted": "Accepterad",
+    "pending": "Väntande"
+  },
+  "bookingDetails": {
+    "title": "Bokningsdetaljer",
+    "copyReference": "Klicka för att kopiera bokningsreferensen",
+    "trip": {
+      "title": "Reseinformation",
+      "pickup": "Upphämtning",
+      "dropoff": "Avlämning",
+      "vehicle": "Fordon",
+      "passengers": "Passagerare",
+      "luggage": "Bagage",
+      "items": "föremål",
+      "tripType": "Restyp",
+      "oneWay": "Enkel resa",
+      "roundTrip": "Tur och retur"
+    },
+    "price": {
+      "title": "Pris",
+      "payment": "Betalningsmetod"
+    },
+    "flightInfo": {
+      "title": "Flyginformation",
+      "flightNumber": "Flygnummer"
+    },
+    "contact": {
+      "title": "Kontaktinformation",
+      "name": "Kundnamn",
+      "email": "E-post",
+      "phone": "Telefon"
+    },
+    "extras": {
+      "title": "Ytterligare tjänster"
+    },
+    "stops": {
+      "title": "Extra stopp"
+    },
+    "notes": {
+      "title": "Anteckningar"
+    },
+    "linkBooking": {
+      "title": "Länka denna bokning",
+      "description": "Denna bokning matchar din e-post men är inte ännu länkad till ditt konto.",
+      "button": "Länka till mitt konto",
+      "linking": "Länkar..."
+    },
+    "buttons": {
+      "close": "Stäng",
+      "closeLabel": "Stäng detaljer",
+      "support": "Support",
+      "manage": "Hantera"
+    }
+  }
+}

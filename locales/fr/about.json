@@ -1,1 +1,88 @@
-{}
+{
+  "meta": {
+    "title": "À Propos | Royal Transfer EU",
+    "description": "Découvrez les 15+ années d'expérience de Royal Transfer EU dans la fourniture de transferts aéroport premium et services de transport privé à travers l'Italie."
+  },
+  "hero": {
+    "title": "À Propos de Royal Transfer EU",
+    "subtitle": "Transferts aéroport premium avec une touche personnelle"
+  },
+  "history": {
+    "title": "Notre Histoire",
+    "paragraphs": [
+      "Fondée en 2010, Royal Transfer EU a commencé avec une mission simple : offrir aux voyageurs des transferts aéroport fiables et premium dans toute l'Italie.",
+      "Ce qui a commencé comme une petite opération avec seulement deux véhicules est devenu l'un des services de transfert privé les plus fiables d'Italie, opérant dans les principales villes et destinations.",
+      "Notre parcours a été défini par un engagement inébranlable envers la ponctualité, le confort et le service personnalisé. Nous avons transporté plus de 100 000 passagers, des voyageurs d'affaires aux familles, en veillant à ce que chaque voyage soit fluide et sans stress."
+    ]
+  },
+  "mission": {
+    "title": "Notre Mission",
+    "text": "Rendre les voyages transparents en fournissant des expériences de transfert aéroport exceptionnelles avec professionnalisme, fiabilité et attention aux détails.",
+    "values": {
+      "title": "Valeurs Fondamentales",
+      "punctuality": {
+        "title": "Ponctualité",
+        "description": "Nous comprenons que le temps est précieux, surtout lors des voyages. Nos chauffeurs sont toujours à l'heure, suivant les vols pour s'adapter à tout changement dans votre horaire."
+      },
+      "comfort": {
+        "title": "Confort",
+        "description": "Nos véhicules premium bien entretenus assurent un voyage confortable, vous permettant de vous détendre après un long vol ou de vous préparer pour votre prochaine destination."
+      },
+      "service": {
+        "title": "Service Personnalisé",
+        "description": "Nous reconnaissons que chaque voyageur a des besoins uniques. Notre service est adapté pour répondre à vos exigences et préférences spécifiques."
+      },
+      "safety": {
+        "title": "Sécurité",
+        "description": "Votre sécurité est notre priorité absolue. Nos chauffeurs professionnels sont expérimentés, titulaires de licences et engagés dans des pratiques de conduite sûres."
+      }
+    }
+  },
+  "services": {
+    "title": "Nos Services",
+    "subtitle": "Solutions de transport premium pour tous vos besoins de voyage",
+    "airport": {
+      "title": "Transferts Aéroport",
+      "description": "Service porte-à-porte entre les aéroports et votre destination avec suivi de vol et temps d'attente gratuit."
+    },
+    "intercity": {
+      "title": "Transferts Intercités",
+      "description": "Transferts confortables entre les villes avec des chauffeurs expérimentés qui connaissent les meilleurs itinéraires."
+    },
+    "events": {
+      "title": "Transferts pour Événements & Conférences",
+      "description": "Transport fiable pour les événements d'entreprise, les conférences et les occasions spéciales."
+    },
+    "group": {
+      "title": "Transferts de Groupe",
+      "description": "Véhicules spacieux pour les groupes de toutes tailles, assurant que tout le monde voyage ensemble confortablement."
+    }
+  },
+  "team": {
+    "title": "Notre Équipe",
+    "subtitle": "Rencontrez les professionnels derrière votre expérience de voyage en douceur",
+    "description": "Notre équipe est composée de chauffeurs expérimentés, de spécialistes du service client et de responsables des opérations travaillant ensemble pour s'assurer que votre voyage est parfait de la réservation à l'arrivée.",
+    "drivers": {
+      "title": "Chauffeurs Professionnels",
+      "description": "Nos chauffeurs soigneusement sélectionnés combinent connaissance locale et formation professionnelle. Ils parlent couramment l'anglais et s'engagent à fournir un service exceptionnel."
+    },
+    "support": {
+      "title": "Service Client",
+      "description": "Disponible 24/7 pour vous aider avec les réservations, les changements ou toute question que vous pourriez avoir avant, pendant ou après votre voyage."
+    },
+    "operations": {
+      "title": "Équipe des Opérations",
+      "description": "Travaillant en coulisses pour coordonner les transferts, surveiller les vols et s'assurer que chaque détail est parfaitement géré."
+    }
+  },
+  "coverage": {
+    "title": "Où Nous Opérons",
+    "description": "Nous fournissons des services de transfert premium dans les principales villes et destinations italiennes, y compris Rome, Milan, Florence, Venise, Naples et bien d'autres. Que vous arriviez dans un grand aéroport international ou que vous ayez besoin de transport entre les villes, nous vous couvrons.",
+    "cities": ["Rome", "Milan", "Florence", "Venise", "Naples", "Turin", "Bologne", "Pise", "Bari", "Catane", "Palerme"]
+  },
+  "cta": {
+    "title": "Expérimentez des Transferts Premium",
+    "text": "Prêt à expérimenter des voyages sans tracas avec Royal Transfer EU?",
+    "button": "Réservez Votre Transfert"
+  }
+}

@@ -1,1 +1,81 @@
-{}
+{
+  "meta": {
+    "title": "Bokning Bekräftad | Royal Transfer EU",
+    "description": "Din transferbokning har bekräftats. Tack för att du väljer Royal Transfer EU."
+  },
+  "title": "Bokning Bekräftad!",
+  "description": "Tack för din bokning hos Royal Transfer EU. Din transfer har framgångsrikt bekräftats.",
+  "loading": "Laddar bokningsdetaljer...",
+  "error": {
+    "title": "Fel",
+    "contactSupport": "Kunde inte hitta din bokning. Vänligen kontakta support.",
+    "loadFailed": "Kunde inte ladda bokningsdetaljer",
+    "noReference": "Ingen bokningsreferens hittades",
+    "noData": "Inga bokningsdata hittades",
+    "fetchFailed": "Kunde inte hämta bokningsdetaljer"
+  },
+  "toast": {
+    "linkSuccess": {
+      "title": "Bokning Kopplad",
+      "description": "Din bokning har kopplats till ditt konto."
+    },
+    "linkFailed": {
+      "title": "Koppling av Bokning Misslyckades",
+      "description": "Du kan koppla den manuellt på din bokningssida."
+    }
+  },
+  "reference": {
+    "label": "Bokningsreferens",
+    "note": "Vänligen behåll denna referens för dina uppgifter"
+  },
+  "details": {
+    "title": "Bokningsdetaljer",
+    "from": "Från:",
+    "to": "Till:",
+    "transferDate": "Transferdatum:",
+    "returnDate": "Returdatum:",
+    "vehicle": "Fordon:",
+    "passengers": "Passagerare:",
+    "luggage": "Bagage:",
+    "items": "artiklar",
+    "extras": "Tillval:",
+    "price": "Pris:",
+    "paymentMethod": "Betalningsmetod:",
+    "status": "Status:",
+    "confirmed": "Bekräftad",
+    "notes": "Anteckningar:",
+    "noData": "Ingen detaljerad bokningsinformation tillgänglig."
+  },
+  "confirmation": {
+    "email": "Ett bekräftelsemail har skickats till din e-postadress med alla detaljer om din bokning.",
+    "contact": "Om du har några frågor eller behöver ändra din bokning, vänligen kontakta vår kundtjänst."
+  },
+  "buttons": {
+    "viewBookings": "Visa Mina Bokningar",
+    "checkingAccount": "Kontrollerar Konto...",
+    "signIn": "Logga In För Att Hantera Bokning",
+    "createAccount": "Skapa Konto för Att Hantera Bokning",
+    "home": "Återgå till Startsidan"
+  },
+  "whatsNext": {
+    "title": "Vad Händer Nu?",
+    "confirmation": {
+      "title": "Bekräftelsemail",
+      "description": "Kolla din inkorg för detaljerad bokningsinformation"
+    },
+    "assignment": {
+      "title": "Förartilldelning",
+      "description": "Du får föraruppgifter 24 timmar före upphämtning"
+    },
+    "ready": {
+      "title": "Redo Att Åka",
+      "description": "Din förare kommer att möta dig på den angivna platsen"
+    }
+  },
+  "links": {
+    "contactHelp": "Behöver du hjälp? Kontakta support"
+  },
+  "date": {
+    "invalid": "Ogiltigt datum"
+  }
+}

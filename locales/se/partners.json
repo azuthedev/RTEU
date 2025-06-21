@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Bli Partner | Royal Transfer EU",
+    "description": "Gå med i Royal Transfer EUs partnernätverk och väx din verksamhet. Ansök nu för att bli en officiell partner."
+  },
+  "hero": {
+    "title": "Bli partner med Royal Transfer EU",
+    "subtitle": "Gå med i vårt nätverk av professionella förare och väx din verksamhet",
+    "cta": "Ansök nu"
+  },
+  "benefits": {
+    "title": "Varför samarbeta med oss",
+    "description": "Gå med i ett växande nätverk av professionella förare och företag för att utöka dina affärsmöjligheter och erbjuda premiumtjänster till resenärer över hela Europa.",
+    "items": {
+      "bookings": {
+        "title": "Stadiga bokningar",
+        "description": "Få en stadig ström av förbetalda bokningar via vår plattform, vilket minskar tomma resor och stilleståndstid."
+      },
+      "clientele": {
+        "title": "Premiumkunder",
+        "description": "Betjäna kvalitetsmedvetna kunder som värderar professionell service och är villiga att betala för en överlägsen upplevelse."
+      },
+      "schedule": {
+        "title": "Flexibelt schema",
+        "description": "Välj när du vill arbeta och vilka bokningar du accepterar, och behåll full kontroll över ditt schema."
+      },
+      "support": {
+        "title": "Professionellt stöd",
+        "description": "Få tillgång till vårt dedikerade partnerstöd för hjälp med bokningar, kundkommunikation och tekniska frågor."
+      },
+      "technology": {
+        "title": "Teknologiplattform",
+        "description": "Använd vår förarapp för att hantera bokningar, navigering och kundkommunikation på ett och samma ställe."
+      },
+      "growth": {
+        "title": "Tillväxtmöjligheter",
+        "description": "Expandera din verksamhet med tillgång till internationella resenärer och företagskunder."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Partnerkrav",
+    "description": "Vi håller höga standarder för att säkerställa exceptionell service för alla våra kunder.",
+    "list": [
+      "Giltigt yrkesförarbevis och alla nödvändiga tillstånd",
+      "Ren, välskött bil som är yngre än 5 år",
+      "Kommersiell försäkring med lämpligt skydd",
+      "Utmärkt kännedom om lokala vägar och sevärdheter",
+      "Professionellt utseende och starka kundservicekunskaper",
+      "Flytande engelska i tal och skrift",
+      "Smartphone med stabil internetuppkoppling",
+      "Flexibel tillgänglighet inklusive helger och helgdagar",
+      "Bakgrundskontroll och prickfri körhistorik"
+    ]
+  },
+  "form": {
+    "title": "Ansök om att bli partner",
+    "description": "Fyll i formuläret nedan för att påbörja din ansökan. Vårt team granskar din ansökan och kontaktar dig inom 2-3 arbetsdagar.",
+    "fields": {
+      "name": {
+        "label": "Fullständigt namn",
+        "placeholder": "Ange ditt fullständiga namn"
+      },
+      "email": {
+        "label": "E-postadress",
+        "placeholder": "Ange din e-post"
+      },
+      "phone": {
+        "label": "Telefonnummer",
+        "placeholder": "Ange ditt telefonnummer",
+        "help": "Inkludera landskod, t.ex. +46"
+      },
+      "company": {
+        "label": "Företagsnamn",
+        "placeholder": "Ange ditt företagsnamn"
+      },
+      "vat": {
+        "label": "Momsregistreringsnummer",
+        "placeholder": "Ange ditt moms-/organisationsnummer",
+        "help": "Skatteidentifikationsnummer för ditt företag"
+      },
+      "vehicle": {
+        "label": "Fordonstyp (valfritt)",
+        "placeholder": "Välj fordonstyp",
+        "options": {
+          "sedan": "Sedan",
+          "minivan": "Minibuss",
+          "sprinter": "Sprinter",
+          "bus": "Buss"
+        }
+      },
+      "message": {
+        "label": "Ytterligare information",
+        "placeholder": "Berätta om din erfarenhet, fordonsdetaljer och tillgänglighet"
+      }
+    },
+    "validation": {
+      "name": "Vänligen ange ditt namn",
+      "email": "E-post krävs",
+      "emailFormat": "Ange en giltig e-postadress",
+      "phone": "Telefonnummer krävs",
+      "phoneFormat": "Ange ett giltigt telefonnummer",
+      "company": "Företagsnamn krävs",
+      "vat": "Momsregistreringsnummer krävs",
+      "message": "Ytterligare information krävs"
+    },
+    "buttons": {
+      "submit": "Skicka ansökan",
+      "submitting": "Skickar..."
+    },
+    "success": {
+      "title": "Ansökan skickad!",
+      "message": "Tack för ditt intresse för att samarbeta med Royal Transfer EU. Vi har mottagit din ansökan och vårt team kommer att granska den inom kort. Vi kontaktar dig inom 2-3 arbetsdagar med nästa steg.",
+      "button": {
+        "another": "Skicka en till ansökan",
+        "home": "Tillbaka till startsidan"
+      }
+    },
+    "verification": {
+      "title": "E-post verifierad",
+      "message": "Tack för att du verifierade din e-post! Vi har skickat en inbjudningslänk för att slutföra din registrering som partner. Kontrollera din inkorg.",
+      "emailSent": "Inbjudningslänk skickad till:",
+      "checkSpam": "Om du inte ser e-postmeddelandet i inkorgen, kontrollera din skräppost."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Valideringsfel i formuläret",
+        "description": "Kontrollera formuläret och åtgärda felen."
+      },
+      "success": {
+        "title": "Ansökan inskickad",
+        "description": "Din partneransökan har mottagits. Vi kontaktar dig snart!"
+      },
+      "error": {
+        "title": "Fel vid inskickning",
+        "description": "Något gick fel. Försök igen senare."
+      },
+      "verifyEmail": {
+        "title": "Verifiera din e-post",
+        "description": "Kontrollera din e-post för en verifieringskod."
+      },
+      "verificationSuccess": {
+        "title": "E-post verifierad",
+        "description": "Din partneransökan har mottagits och din e-post är verifierad. Kontrollera din e-post för en inbjudningslänk för att slutföra registreringen."
+      }
+    },
+    "errors": {
+      "default": "Något gick fel. Försök igen senare."
+    }
+  },
+  "faq": {
+    "title": "Vanliga frågor",
+    "description": "Allt du behöver veta om att bli partner med Royal Transfer EU",
+    "items": {
+      "start": {
+        "question": "Hur snabbt kan jag börja efter att jag ansökt?",
+        "answer": "När din ansökan är godkänd guidar vi dig genom onboarding-processen, som vanligtvis tar 3–7 dagar beroende på dokumentverifiering och slutförd utbildning."
+      },
+      "payment": {
+        "question": "Hur får jag betalt för genomförda resor?",
+        "answer": "Utbetalningar sker veckovis. Du får direktinsättningar till ditt registrerade bankkonto för alla genomförda resor, minus plattformsavgiften."
+      },
+      "areas": {
+        "question": "Vilka områden kan jag erbjuda tjänster i?",
+        "answer": "Du kan välja dina föredragna områden vid registreringen. Du kan arbeta i alla områden där du har laglig rätt att köra."
+      },
+      "vehicle": {
+        "question": "Behöver jag tillhandahålla eget fordon?",
+        "answer": "Ja, partners måste ha egna fordon som uppfyller våra kvalitetskrav. Ditt fordon måste vara rent, välskött och yngre än 5 år."
+      },
+      "commission": {
+        "question": "Hur ser provisionsstrukturen ut?",
+        "answer": "Vår provision varierar beroende på tjänstetyp och plats, vanligtvis mellan 15–25 %. Fullständig information ges under onboarding-processen."
+      },
+      "exclusivity": {
+        "question": "Kan jag arbeta för andra transferbolag samtidigt?",
+        "answer": "Ja, vårt partnerskap är icke-exklusivt. Du är välkommen att arbeta med andra företag eller driva din egen verksamhet parallellt med oss."
+      }
+    }
+  }
+}

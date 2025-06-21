@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Réservation Annulée | Royal Transfer EU",
+    "description": "Votre réservation a été annulée. Aucun paiement n'a été traité."
+  },
+  "title": "Réservation Annulée",
+  "message": "Votre processus de réservation a été annulé. Aucun paiement n'a été traité.",
+  "nextSteps": {
+    "title": "Que souhaitez-vous faire ensuite ?",
+    "description": "Vous pouvez essayer de réserver à nouveau ou contacter notre équipe d'assistance si vous avez besoin d'aide."
+  },
+  "buttons": {
+    "home": "Retour à l'Accueil",
+    "contact": "Contacter l'Assistance"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "title": "E-post verifierad | Royal Transfer EU",
+    "description": "Din e-post har verifierats. Du kan nu logga in och boka våra tjänster."
+  },
+  "title": "E-post verifierad!",
+  "message": "Tack för att du verifierade din e-postadress. Ditt konto är nu aktivt.",
+  "autoRedirect": "Du omdirigeras till inloggningssidan om några sekunder...",
+  "button": {
+    "continue": "Fortsätt"
+  }
+}
