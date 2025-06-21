@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Our Services | Royal Transfer EU",
+    "description": "Explore our range of transfer services including airport pickups, private transfers, and minivan rentals for groups and families."
+  },
+  "hero": {
+    "title": "Our Professional Transfer & Rental Solutions",
+    "subtitle": "Travel made simple, safe, and stress-free.",
+    "imageAlt": "Royal Transfer EU Services",
+    "scrollButton": "Scroll to see our services"
+  },
+  "overview": {
+    "title": "Travel doesn't have to be hard.",
+    "subtitle": "At Royal Transfer EU, we have carefully planned services to meet your every need."
+  },
+  "airport": {
+    "title": "Airport Transfers",
+    "description": "Make your travel easy from start to finish. Our friendly and professional drivers meet you on time at the airport and take you directly to your destination. No waiting, no stress, just relaxing rides for business or holiday trips.",
+    "feature1": "Door-to-door easy service",
+    "feature2": "Friendly drivers who track your flights",
+    "feature3": "Always on time and ready when you land",
+    "cta": "Book an Airport Transfer"
+  },
+  "private": {
+    "title": "Private Transfers On-Demand",
+    "description": "Need to get from A to B with comfort and reliability? Our private transfer service is designed for travelers who value punctuality, peace of mind, and quality vehicles. Book your ride in advance and let us handle the rest.",
+    "feature1": "Point-to-point private transfers",
+    "feature2": "Qualified, professional drivers",
+    "feature3": "Pre-booking required — minimum 4 hours in advance",
+    "feature4": "Clean, premium vehicles only",
+    "cta": "Book Your Private Transfer"
+  },
+  "minivan": {
+    "title": "Comfortable Minivan Rentals",
+    "description": "Going somewhere with family or a larger group? Our spacious and clean minivans can comfortably take your whole group together. Rent for one day, one week, or even longer—always easy and flexible.",
+    "feature1": "Spacious vans for groups or family adventures",
+    "feature2": "Clean, reliable vehicles",
+    "feature3": "Self-drive or driver options",
+    "cta": "Rent a Minivan Today"
+  },
+  "whyLove": {
+    "title": "Why Travelers Love Royal Transfer EU"
+  },
+  "bookingProcess": {
+    "title": "Book Your Ride in 3 Easy Steps",
+    "step1": {
+      "title": "Choose Your Ride",
+      "description": "Select your service—airport transfer, taxi, or minivan rental."
+    },
+    "step2": {
+      "title": "Instant Confirmation",
+      "description": "You'll quickly receive details and booking confirmation."
+    },
+    "step3": {
+      "title": "Enjoy the Ride",
+      "description": "Relax and let our drivers handle the rest."
+    },
+    "cta": "Start Your Booking"
+  },
+  "testimonials": {
+    "cta": "Join Our Happy Travelers"
+  },
+  "faq": {
+    "title": "Have Questions?",
+    "q1": "How to book?",
+    "a1": "Book easily online, through our app, or by phone. You'll receive instant confirmation.",
+    "q2": "Payment options?",
+    "a2": "We accept all major credit cards, online payments, and cash payments.",
+    "q3": "What happens if flights are delayed?",
+    "a3": "Don't worry! We monitor your flight and adjust pickup time automatically at no extra cost.",
+    "cta": "View All FAQs"
+  },
+  "bottomCta": {
+    "title": "Ready to Travel Safely and Comfortably?",
+    "buttonText": "Book Your Ride Now"
+  }
+}

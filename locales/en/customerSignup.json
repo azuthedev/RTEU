@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "title": "Create Account | Royal Transfer EU",
+    "description": "Sign up for a Royal Transfer EU account to manage your bookings and get exclusive offers",
+    "titlePartner": "Partner Registration | Royal Transfer EU",
+    "descriptionPartner": "Complete your partner registration with Royal Transfer EU"
+  },
+  "backToHome": "Back to Home",
+  "loading": {
+    "validatingInvite": "Validating your invite code..."
+  },
+  "inviteError": {
+    "title": "Invalid Invite Code",
+    "message": "If you believe this is an error, please contact our support team.",
+    "signUp": "Sign Up Without Invite",
+    "contact": "Contact Support"
+  },
+  "success": {
+    "title": "Account Created!",
+    "message": "Your account has been created successfully. You can now log in to manage your bookings and profile.",
+    "messagePartner": "Your partner account has been created successfully. You'll be redirected to your profile shortly."
+  },
+  "partnerMessage": "Thank you for applying to be a partner with Royal Transfer EU. Please complete your registration to get started.",
+  "bookingMessage": "Creating an account will link your booking {{reference}} to your profile.",
+  "form": {
+    "titlePartner": "Complete Partner Registration",
+    "title": "Create an Account",
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone (Optional)",
+    "phoneHelp": "For booking notifications",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "creating": "Creating Account...",
+    "create": "Create Account",
+    "terms": "By creating an account, you agree to our",
+    "termsLink": "Terms of Service",
+    "and": "and",
+    "privacyLink": "Privacy Policy",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "errors": {
+    "invalidInvite": "Invalid or expired invite code",
+    "validateInvite": "Failed to validate invite. Please try again later.",
+    "userCreationFailed": "User creation failed",
+    "invalidEmail": "Please enter a valid email address",
+    "verificationFailed": "Failed to send verification email",
+    "sendVerificationFailed": "Failed to send verification email",
+    "unexpectedError": "An unexpected error occurred"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Invalid Invite",
+      "message": "This invite link is invalid or has expired."
+    },
+    "validationError": {
+      "title": "Validation Error",
+      "message": "Failed to validate your invite code. Please try again later."
+    },
+    "accountCreated": {
+      "title": "Account Created",
+      "message": "Your account has been created successfully!"
+    },
+    "signupFailed": {
+      "title": "Signup Failed",
+      "message": "An error occurred during signup."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name is required",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password must be at least 6 characters long",
+    "confirmRequired": "Please confirm your password",
+    "passwordsMatch": "Passwords do not match"
+  }
+}

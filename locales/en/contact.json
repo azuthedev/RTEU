@@ -1,1 +1,86 @@
-{}
+{
+  "meta": {
+    "title": "Contact Us | Royal Transfer EU",
+    "description": "Get in touch with Royal Transfer EU for booking assistance, support, or partnership inquiries. We're available 24/7 to help with your travel needs."
+  },
+  "hero": {
+    "title": "We'd Love to Hear from You!",
+    "description": "Whether you have questions about our services, need assistance with a booking, or want to explore partnership opportunities, we're here to help."
+  },
+  "contactInfo": {
+    "title": "Get in Touch",
+    "phone": {
+      "label": "Phone",
+      "number": "+39 351 748 22 44",
+      "availability": "Available 24/7"
+    },
+    "email": {
+      "label": "Email",
+      "address": "contact@royaltransfereu.com",
+      "response": "Quick response guaranteed"
+    },
+    "address": {
+      "label": "Address",
+      "line1": "123 Transfer Street",
+      "line2": "EU 12345"
+    },
+    "business": {
+      "label": "Business Hours",
+      "hours": "24/7 Support Available",
+      "office": "Office: Mon-Fri 9:00-18:00"
+    },
+    "leadership": {
+      "label": "Leadership",
+      "business": "For Business Inquiries:",
+      "email": "partnerships@royaltransfereu.com"
+    }
+  },
+  "chatButton": "Chat with Us Now",
+  "immediateHelp": {
+    "title": "Need Immediate Help?",
+    "description": "Our 24/7 customer support team is ready to assist you with any urgent matters.",
+    "callButton": "Call Now: +39 351 748 22 44"
+  },
+  "form": {
+    "title": "Send Us a Message",
+    "fields": {
+      "name": {
+        "label": "Full Name",
+        "placeholder": "Enter your name"
+      },
+      "email": {
+        "label": "Email Address",
+        "placeholder": "Enter your email"
+      },
+      "phone": {
+        "label": "Phone Number",
+        "placeholder": "Enter your phone number",
+        "help": "Optional, but recommended for faster response"
+      },
+      "subject": {
+        "label": "Subject",
+        "placeholder": "Select a subject",
+        "options": {
+          "booking": "Booking Inquiry",
+          "support": "Customer Support",
+          "partnership": "Business Partnership",
+          "feedback": "Feedback",
+          "other": "Other"
+        }
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": "Enter your message"
+      },
+      "submit": "Send Message"
+    },
+    "sending": "Sending...",
+    "success": "Thank you for your message! We will get back to you shortly.",
+    "error": "There was a problem sending your message. Please try again.",
+    "privacy": "By submitting this form, you agree to our Privacy Policy"
+  },
+  "faq": {
+    "title": "Looking for Quick Answers?",
+    "link": "Check our Frequently Asked Questions"
+  }
+}

@@ -1,1 +1,53 @@
-{}
+{
+  "meta": {
+    "title": "Travel Blog | Royal Transfer EU",
+    "description": "Explore Italy travel guides, transportation tips, and destination insights to help plan your perfect trip."
+  },
+  "hero": {
+    "title": "Travel Guides & Insights",
+    "subtitle": "Explore our collection of travel tips, destination guides, and transportation advice for your Italian adventure"
+  },
+  "featured": {
+    "title": "Featured Articles"
+  },
+  "latest": {
+    "title": "Latest Articles"
+  },
+  "categories": {
+    "title": "Browse by Category",
+    "items": [
+      {
+        "name": "Travel Guides",
+        "description": "Comprehensive guides to popular destinations",
+        "slug": "travel-guides"
+      },
+      {
+        "name": "Transportation",
+        "description": "Tips for navigating Italian cities",
+        "slug": "transportation"
+      },
+      {
+        "name": "Cultural Experiences",
+        "description": "Art, history, and local traditions",
+        "slug": "cultural-experiences"
+      },
+      {
+        "name": "Food & Dining",
+        "description": "Culinary adventures across Italy",
+        "slug": "food-dining"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Subscribe to Our Travel Newsletter",
+    "description": "Get the latest travel tips, destination guides, and exclusive offers delivered straight to your inbox.",
+    "emailPlaceholder": "Your email address",
+    "button": "Subscribe",
+    "privacyNote": "By subscribing, you agree to our Privacy Policy. You can unsubscribe at any time."
+  },
+  "blog": {
+    "readMore": "Read More",
+    "minuteRead": "min read",
+    "loading": "Loading blog posts..."
+  }
+}

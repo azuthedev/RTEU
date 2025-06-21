@@ -1,1 +1,130 @@
-{}
+{
+  "meta": {
+    "title": "Your Bookings | Royal Transfer EU",
+    "description": "View and manage your Royal Transfer EU bookings."
+  },
+  "header": {
+    "title": "Your Bookings",
+    "refreshButton": "Refresh"
+  },
+  "error": {
+    "retry": "Retry",
+    "networkError": "Network connection failed. Please check your internet connection and try again.",
+    "configError": "Database configuration issue. Please try refreshing the page or contact support if the problem persists.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "permissionError": "Access denied. You do not have permission to view these bookings.",
+    "serverError": "Server error occurred. Please try again in a few moments.",
+    "noSession": "No active session - please sign in again",
+    "emailLookupFailed": "Could not determine user email for booking lookup",
+    "edgeFunctionFailed": "Edge Function failed",
+    "reloginMessage": "Please sign in again to access your bookings."
+  },
+  "loading": {
+    "auth": "Loading authentication...",
+    "bookings": "Loading your bookings..."
+  },
+  "toast": {
+    "noUpcoming": "No upcoming bookings",
+    "noUpcomingDesc": "You don't have any upcoming bookings.",
+    "noPast": "No past bookings",
+    "noPastDesc": "You don't have any past bookings.",
+    "error": "Error Loading Bookings",
+    "detailsError": "Error Loading Details",
+    "detailsErrorDesc": "Could not load booking details. Please try again.",
+    "linkSuccess": "Booking Linked",
+    "linkSuccessDesc": "This booking has been linked to your account.",
+    "linkError": "Error",
+    "linkErrorDesc": "Failed to link booking to your account.",
+    "referenceCopied": "Booking Reference Copied",
+    "referenceCopiedDesc": "Reference has been copied to clipboard"
+  },
+  "tabs": {
+    "upcoming": "Upcoming",
+    "past": "Past"
+  },
+  "emptyState": {
+    "upcoming": "No upcoming bookings",
+    "past": "No past bookings",
+    "bookButton": "Book a Transfer"
+  },
+  "bookingItem": {
+    "from": "From",
+    "to": "To",
+    "link": "Link",
+    "linkTooltip": "Link to my account"
+  },
+  "dateTime": {
+    "na": "N/A",
+    "invalid": "Invalid date"
+  },
+  "currency": {
+    "na": "N/A"
+  },
+  "contact": {
+    "notProvided": "Not provided"
+  },
+  "vehicle": {
+    "standard": "Standard"
+  },
+  "payment": {
+    "card": "Card"
+  },
+  "status": {
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "in_progress": "In Progress",
+    "accepted": "Accepted",
+    "pending": "Pending"
+  },
+  "bookingDetails": {
+    "title": "Booking Details",
+    "copyReference": "Click to copy booking reference",
+    "trip": {
+      "title": "Trip Information",
+      "pickup": "Pickup",
+      "dropoff": "Dropoff",
+      "vehicle": "Vehicle",
+      "passengers": "Passengers",
+      "luggage": "Luggage",
+      "items": "items",
+      "tripType": "Trip Type",
+      "oneWay": "One Way",
+      "roundTrip": "Round Trip"
+    },
+    "price": {
+      "title": "Price",
+      "payment": "Payment Method"
+    },
+    "flightInfo": {
+      "title": "Flight Information",
+      "flightNumber": "Flight Number"
+    },
+    "contact": {
+      "title": "Contact Information",
+      "name": "Customer Name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "extras": {
+      "title": "Additional Services"
+    },
+    "stops": {
+      "title": "Extra Stops"
+    },
+    "notes": {
+      "title": "Notes"
+    },
+    "linkBooking": {
+      "title": "Link This Booking",
+      "description": "This booking matches your email but isn't linked to your account yet.",
+      "button": "Link to My Account",
+      "linking": "Linking..."
+    },
+    "buttons": {
+      "close": "Close",
+      "closeLabel": "Close details",
+      "support": "Support",
+      "manage": "Manage"
+    }
+  }
+}

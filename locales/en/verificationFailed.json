@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "Verification Failed | Royal Transfer EU",
+    "description": "Email verification failed. Please try again or request a new verification link."
+  },
+  "title": "Verification Failed",
+  "errors": {
+    "generic": "There was a problem verifying your email.",
+    "expired": "The verification link has expired. Please request a new verification email.",
+    "invalid": "The verification link is invalid or has already been used."
+  },
+  "buttons": {
+    "tryAgain": "Try Again",
+    "goHome": "Go Home"
+  }
+}

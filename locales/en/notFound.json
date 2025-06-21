@@ -1,1 +1,12 @@
-{}
+{
+  "meta": {
+    "title": "404 - Page Not Found | Royal Transfer EU",
+    "description": "The page you are looking for does not exist. Find your way back to our website."
+  },
+  "title": "Page Not Found",
+  "message": "Oops! The page you're looking for doesn't exist or has been moved.",
+  "searchPlaceholder": "Search our website...",
+  "backToHome": "Back to Homepage",
+  "contactSupport": "Contact Support",
+  "popularPages": "Popular Pages:"
+}

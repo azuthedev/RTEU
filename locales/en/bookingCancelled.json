@@ -1,1 +1,16 @@
-{}
+{
+  "meta": {
+    "title": "Booking Cancelled | Royal Transfer EU",
+    "description": "Your booking has been cancelled. No payment has been processed."
+  },
+  "title": "Booking Cancelled",
+  "message": "Your booking process has been cancelled. No payment has been processed.",
+  "nextSteps": {
+    "title": "What Would You Like to Do Next?",
+    "description": "You can try booking again or contact our support team if you need assistance."
+  },
+  "buttons": {
+    "home": "Return to Home",
+    "contact": "Contact Support"
+  }
+}

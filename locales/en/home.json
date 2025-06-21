@@ -1,91 +1,121 @@
 {
-  "header.cta": "Book Now",
-  "header.home": "Home",
-  "header.about": "About Us",
-  "header.services": "Services",
-  "header.destinations": "Destinations",
-  "header.faqs": "FAQs",
-  "header.partners": "Partners",
-  "header.contact": "Contact",
-  "header.signin": "Sign In",
-  "hero.headline": "The road is part of",
-  "hero.headline1": "the adventure",
-  "hero.subhead": "Enjoy the trip – we'll handle the rest",
-  "searchform.oneway": "One Way",
-  "searchform.roundtrip": "Round Trip",
-  "searchform.pickup": "Pickup location",
-  "searchform.dropoff": "Dropoff location",
-  "searchform.date": "Select departure date",
-  "searchform.dates": "Select departure & return dates",
-  "searchform.passenger": "Passenger",
-  "searchform.passengers": "Passengers",
-  "searchform.cta": "See Prices",
-  "benefits.headline": "Why Choose Royal Transfer EU?",
-  "benefits.trusted.head": "Trusted by Thousands",
-  "benefits.trusted.sub": "Happy customers worldwide.",
-  "benefits.experience.head": "15+ Years Experience",
-  "benefits.experience.sub": "Industry veterans.",
-  "benefits.safety.head": "Safety & Reliability",
-  "benefits.safety.sub": "Your security is our priority.",
-  "benefits.support.head": "24/7 Support",
-  "benefits.support.sub": "Always here to help.",
-  "destinations.head": "Popular Destinations",
-  "destinations.sub": "Go Beyond Regular Service when Travelling with Royal Transfer EU",
-  "trustbadges.head": "Trusted by Travelers Worldwide",
-  "trustbadges.payments.head": "Secure Payments",
-  "trustbadges.payments.sub": "All major cards accepted",
-  "trustbadges.tripadvisor.head": "Tripadvisor Rating",
-  "trustbadges.tripadvisor.sub": "Based on 1000+ reviews",
-  "trustbadges.ssl.head": "SSL Encrypted",
-  "trustbadges.ssl.sub": "Your data is protected",
-  "trustbadges.methods": "Accepted Payment Methods",
-  "trustbadges.cash": "Cash payment available",
-  "services.head": "Our Services",
-  "services.airport.head": "Airport Transfers",
-  "services.airport.sub": "Reliable, timely pick-ups and drop-offs at all major airports across Italy.",
-  "services.private.head": "Private Transfers",
-  "services.private.sub": "Professional, pre-booked transfers with qualified drivers and premium vehicles.",
-  "services.minivan.head": "Minivan Rentals",
-  "services.minivan.sub": "Comfortable minivans for groups, family trips, or business needs.",
-  "about.head": "Your journey, redefined.",
-  "about.sub": "For over 15 years, Royal Transfer EU has provided safe, punctual, and comfortable airport transfers throughout Italy. Leveraging years of experience and dedication, we're the preferred travel partner for thousands worldwide.",
-  "about.cta": "Read More",
-  "faq.head": "Frequently Asked Questions",
-  "faq.cta": "Read More",
-  "faq.how.head": "How do I book a ride?",
-  "faq.how.sub": "Book online, via phone, or through our app—instant confirmation guaranteed.",
-  "faq.delay.head": "What happens if my flight is delayed?",
-  "faq.delay.sub": "No worries! We track flights and adjust pick-up times at no extra cost.",
-  "faq.prices.head": "Are your prices fixed or metered?",
-  "faq.prices.sub": "Choose between fixed fares for transparency or flexible pricing based on distance.",
-  "faq.where.head": "Where will my driver meet me at the airport?",
-  "faq.where.sub": "Your driver will be at the arrivals area with a sign displaying your name.",
-  "faq.group.head": "Do you offer group or family-friendly vehicles?",
-  "faq.group.sub": "Yes! Our spacious minivans are perfect for groups, families, and business trips.",
-  "booking.head": "Booking Process Explained",
-  "booking.book.head": "Book a Ride",
-  "booking.book.sub": "Get instant confirmation. Free adjustments, flexible terms—always stress-free.",
-  "booking.driver.head": "Meet Your Driver",
-  "booking.driver.sub": "Upon arrival, be personally greeted and escorted to your vehicle. Drivers monitor your flight to accomodateany changes and delays, providing ultimate peace of mind.",
-  "booking.comfort.head": "Enjoy the Comfort",
-  "booking.comfort.sub": "Relax as your professional driver takes you to your chosen location, starting your adventure on the right note.",
-  "testimonials.head": "Hear from our Happy Travelers",
-  "cta.head": "Ready to Start Your Journey?",
-  "cta.button": "Book Your Ride Now",
-  "sitemap.quicklinks.head": "Quick Links",
-  "sitemap.quicklinks.home": "Home",
-  "sitemap.quicklinks.faqs": "FAQs",
-  "sitemap.quicklinks.about": "About Us",
-  "sitemap.quicklinks.partners": "Partners",
-  "sitemap.quicklinks.destinations": "Destinations",
-  "sitemap.quicklinks.rentacar": "Rent a Car",
-  "sitemap.quicklinks.services": "Services",
-  "sitemap.quicklinks.contact": "Contact",
-  "sitemap.gethelp.head": "Get Help",
-  "sitemap.gethelp.bookingsupport": "Booking Support",
-  "sitemap.gethelp.payment": "Payment Information",
-  "sitemap.gethelp.terms": "Terms & Conditions",
-  "sitemap.gethelp.privacy": "Privacy Policy",
-  "sitemap.gethelp.cookies": "Cookie Settings",
-  "sitemap.contact.head": "Contact Information"
+  "seo": {
+    "title": "Royal Transfer EU | Premium Airport Transfers in Italy",
+    "description": "Professional airport transfers across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers."
+  },
+  "structuredData": {
+    "name": "Royal Transfer EU",
+    "description": "Premium airport transfers and private transfer services across Italy",
+    "provider": "Royal Transfer EU",
+    "serviceType": "Airport Transfer",
+    "areaServed": "Italy"
+  },
+  "schema": {
+    "name": "Royal Transfer EU",
+    "languages": "English, Italian"
+  },
+  "hero": {
+    "headline": "The road is part of",
+    "headline1": "the adventure",
+    "subhead": "Enjoy the trip — we'll handle the rest",
+    "image": {
+      "alt": "Luxury sedan transfer service by Royal Transfer EU - professional driver waiting by an elegant black car on a scenic European road"
+    }
+  },
+  "benefits": {
+    "title": "Why Choose Us",
+    "subtitle": "Experience premium transportation services tailored to your needs",
+    "items": {
+      "fixedPrices": {
+        "title": "Fixed Prices",
+        "description": "No surprises, no hidden fees. Know exactly what you'll pay in advance."
+      },
+      "flightTracking": {
+        "title": "Flight Tracking",
+        "description": "We monitor your flight and adjust pickup time based on actual arrival."
+      },
+      "professionalDrivers": {
+        "title": "Professional Drivers",
+        "description": "Experienced, punctual drivers who know the local routes and speak English."
+      },
+      "comfortableVehicles": {
+        "title": "Comfortable Vehicles",
+        "description": "Travel in style with our fleet of premium, well-maintained vehicles."
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Our team is always available to assist with any questions or changes."
+      },
+      "noWaiting": {
+        "title": "No Waiting",
+        "description": "Your driver will be waiting for you, even if your flight is delayed."
+      }
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Premium transportation solutions for all your travel needs",
+    "learnMore": "Learn more",
+    "airport": {
+      "title": "Airport Transfers",
+      "description": "Door-to-door service between airports and your destination with flight tracking and free waiting time."
+    },
+    "intercity": {
+      "title": "Intercity Transfers",
+      "description": "Comfortable transfers between cities with experienced drivers who know the best routes."
+    },
+    "group": {
+      "title": "Group Transfers",
+      "description": "Spacious vehicles for groups of all sizes, ensuring everyone travels together comfortably."
+    }
+  },
+  "bookingProcess": {
+    "title": "How It Works",
+    "subtitle": "Book your premium transfer in just a few easy steps",
+    "steps": {
+      "step1": {
+        "title": "Book Online",
+        "description": "Enter your trip details and select a vehicle that suits your needs."
+      },
+      "step2": {
+        "title": "Instant Confirmation",
+        "description": "Receive immediate confirmation with all your transfer details."
+      },
+      "step3": {
+        "title": "Meet Your Driver",
+        "description": "Your professional driver will be waiting at the agreed pickup location."
+      },
+      "step4": {
+        "title": "Enjoy Your Ride",
+        "description": "Relax in comfort as we take you safely to your destination."
+      }
+    }
+  },
+  "testimonials": {
+    "title": "What Our Customers Say",
+    "subtitle": "Hear from travelers who have experienced our premium service",
+    "quote1": "Outstanding service, polite drivers, and perfect timing! Our transfers were smooth and stress-free. Highly recommend Royal Transfer!",
+    "author1": "Sarah P.",
+    "location1": "UK",
+    "quote2": "Excellent experience from start to finish. The driver was professional and the vehicle was immaculate. Will definitely use again!",
+    "author2": "Marco R.",
+    "location2": "Italy",
+    "quote3": "Reliable and punctual service. The booking process was simple and the driver was very helpful with our luggage.",
+    "author3": "John D.",
+    "location3": "USA"
+  },
+  "featuredDestinations": {
+    "title": "Popular Destinations",
+    "subtitle": "Discover our most requested routes and destinations",
+    "viewAll": "View All Destinations"
+  },
+  "cta": {
+    "title": "Ready to Book Your Transfer?",
+    "subtitle": "Secure your premium transfer now and travel with confidence",
+    "button": "Book Now"
+  },
+  "trustBadges": {
+    "title": "Trusted By Thousands",
+    "subtitle": "Your safety and satisfaction are our top priorities"
+  }
 }

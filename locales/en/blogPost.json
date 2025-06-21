@@ -1,1 +1,15 @@
-{}
+{
+  "seo": {
+    "titleSuffix": "Royal Transfer EU Blog"
+  },
+  "blog": {
+    "backToBlogs": "Back to all articles",
+    "minuteRead": "min read",
+    "country": "Italy",
+    "relatedArticles": "Related Articles",
+    "readMore": "Read More",
+    "ctaTitle": "Ready to Explore Italy?",
+    "ctaText": "Book your premium airport transfer and enjoy a comfortable, stress-free start to your Italian adventure.",
+    "ctaButton": "Book Your Transfer"
+  }
+}

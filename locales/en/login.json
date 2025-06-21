@@ -1,1 +1,69 @@
-{}
+{
+  "meta": {
+    "title": "Sign In | Royal Transfer EU",
+    "description": "Sign in to your Royal Transfer EU account to manage your bookings, view your profile, and more."
+  },
+  "tabs": {
+    "customer": "Customer",
+    "driver": "Driver"
+  },
+  "devMode": {
+    "title": "Development Mode Active",
+    "description": "Authentication errors will be bypassed for testing."
+  },
+  "booking": {
+    "reference": "Your booking reference: {{reference}}",
+    "message": "Sign in to manage your booking."
+  },
+  "verification": {
+    "title": "Email Verification Required",
+    "description": "Your account needs to be verified before you can log in. Please check your email for a verification link or request a new one.",
+    "sending": "Sending verification email...",
+    "resend": "Resend Verification Email"
+  },
+  "driver": {
+    "title": "Driver Portal",
+    "message": "Please sign in through our partner portal to access the driver dashboard.",
+    "becomePartner": "Become a Partner",
+    "goToPortal": "Go to Partner Portal"
+  },
+  "form": {
+    "or": "or",
+    "email": "Email",
+    "password": "Password",
+    "linkingBooking": "Linking Booking...",
+    "signingIn": "Signing in...",
+    "signInAndLink": "Sign In & Link Booking",
+    "signIn": "Sign In",
+    "forgotPassword": "Forgot your password?"
+  },
+  "errors": {
+    "missingCredentials": "Please enter both email and password",
+    "emailVerification": "Your email address needs to be verified before you can continue.",
+    "emailRequired": "Please enter your email address",
+    "noAccount": "No account found with this email address. Please sign up first.",
+    "alreadyVerified": "This email is already verified. Please try logging in again.",
+    "recentVerification": "A verification email was recently sent. Please check your inbox or wait {{time}} minute(s) before requesting another.",
+    "sendVerificationFailed": "Failed to send verification code",
+    "verificationFailed": "Failed to send verification email",
+    "emailNotVerified": "Your email address needs to be verified before you can continue.",
+    "emailNeedsVerification": "Your email address needs to be verified. Please check your inbox or request a new verification email.",
+    "loginFailed": "Failed to sign in. Please check your credentials."
+  },
+  "success": {
+    "emailVerified": "Email verified successfully! You can now log in."
+  },
+  "toast": {
+    "bookingLinked": {
+      "title": "Success",
+      "message": "Booking has been linked to your account."
+    },
+    "bookingLinkFailed": {
+      "title": "Booking Link Failed",
+      "message": "You can link this manually in your bookings page."
+    }
+  },
+  "backToHome": "Back to Home",
+  "signUp": "Sign up",
+  "needHelp": "Need Help? Contact Support"
+}

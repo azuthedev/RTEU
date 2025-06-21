@@ -1,1 +1,181 @@
-{}
+{
+  "meta": {
+    "title": "Become a Partner | Royal Transfer EU",
+    "description": "Join the Royal Transfer EU partner network and grow your business. Apply now to become an official partner."
+  },
+  "hero": {
+    "title": "Partner with Royal Transfer EU",
+    "subtitle": "Join our network of professional drivers and grow your business",
+    "cta": "Apply Now"
+  },
+  "benefits": {
+    "title": "Why Partner With Us",
+    "description": "Join a growing network of professional drivers and companies to expand your business opportunities and provide premium services to travelers across Europe.",
+    "items": {
+      "bookings": {
+        "title": "Consistent Bookings",
+        "description": "Receive a steady stream of pre-paid bookings through our platform, reducing empty returns and idle time."
+      },
+      "clientele": {
+        "title": "Premium Clientele",
+        "description": "Serve high-quality clients who value professional service and are willing to pay for superior experiences."
+      },
+      "schedule": {
+        "title": "Flexible Schedule",
+        "description": "Choose when you work and which bookings you accept, maintaining full control of your schedule."
+      },
+      "support": {
+        "title": "Professional Support",
+        "description": "Access our dedicated partner support team for assistance with bookings, client communication, and technical issues."
+      },
+      "technology": {
+        "title": "Technology Platform",
+        "description": "Use our driver app to manage bookings, navigation, and client communication all in one place."
+      },
+      "growth": {
+        "title": "Growth Opportunities",
+        "description": "Expand your business with access to international travelers and corporate clients."
+      }
+    }
+  },
+  "requirements": {
+    "title": "Partner Requirements",
+    "description": "We maintain high standards to ensure exceptional service for all our customers.",
+    "list": [
+      "Valid professional driver's license and all required permits",
+      "Clean, well-maintained vehicle less than 5 years old",
+      "Commercial insurance with appropriate coverage",
+      "Excellent knowledge of local roads and attractions",
+      "Professional appearance and strong customer service skills",
+      "Fluent English communication skills",
+      "Smartphone with reliable internet connection",
+      "Flexible availability including weekends and holidays",
+      "Background check and clean driving record"
+    ]
+  },
+  "form": {
+    "title": "Apply to Become a Partner",
+    "description": "Fill out the form below to start your application process. Our team will review your application and contact you within 2-3 business days.",
+    "fields": {
+      "name": {
+        "label": "Full Name",
+        "placeholder": "Enter your full name"
+      },
+      "email": {
+        "label": "Email Address",
+        "placeholder": "Enter your email"
+      },
+      "phone": {
+        "label": "Phone Number",
+        "placeholder": "Enter your phone number",
+        "help": "Include country code, e.g., +39"
+      },
+      "company": {
+        "label": "Company Name",
+        "placeholder": "Enter your company name"
+      },
+      "vat": {
+        "label": "VAT Number",
+        "placeholder": "Enter your VAT/tax number",
+        "help": "Tax identification number for your business"
+      },
+      "vehicle": {
+        "label": "Vehicle Type (Optional)",
+        "placeholder": "Select a vehicle type",
+        "options": {
+          "sedan": "Sedan",
+          "minivan": "Minivan",
+          "sprinter": "Sprinter",
+          "bus": "Bus"
+        }
+      },
+      "message": {
+        "label": "Additional Information",
+        "placeholder": "Tell us about your experience, vehicle details, and availability"
+      }
+    },
+    "validation": {
+      "name": "Please enter your name",
+      "email": "Email is required",
+      "emailFormat": "Please enter a valid email address",
+      "phone": "Phone number is required",
+      "phoneFormat": "Please enter a valid phone number",
+      "company": "Company name is required",
+      "vat": "VAT number is required",
+      "message": "Additional information is required"
+    },
+    "buttons": {
+      "submit": "Submit Application",
+      "submitting": "Submitting..."
+    },
+    "success": {
+      "title": "Application Submitted!",
+      "message": "Thank you for your interest in partnering with Royal Transfer EU. We've received your application and our team will review it shortly. We'll contact you within 2-3 business days with next steps.",
+      "button": {
+        "another": "Submit Another Application",
+        "home": "Return to Home"
+      }
+    },
+    "verification": {
+      "title": "Email Verified Successfully",
+      "message": "Thank you for verifying your email! We have sent you an invitation link to complete your registration as a partner. Please check your email inbox.",
+      "emailSent": "Invite link sent to:",
+      "checkSpam": "If you don't see the email in your inbox, please check your spam or junk folder."
+    },
+    "toast": {
+      "validationError": {
+        "title": "Form Validation Error",
+        "description": "Please check the form and fix the errors."
+      },
+      "success": {
+        "title": "Application Submitted",
+        "description": "Your partner application has been received. We will contact you soon!"
+      },
+      "error": {
+        "title": "Form Submission Failed",
+        "description": "Something went wrong. Please try again later."
+      },
+      "verifyEmail": {
+        "title": "Verify Your Email",
+        "description": "Please check your email for a verification code."
+      },
+      "verificationSuccess": {
+        "title": "Email Verified Successfully",
+        "description": "Your partner application has been received and your email is verified. Please check your email for an invitation link to complete your registration."
+      }
+    },
+    "errors": {
+      "default": "Something went wrong. Please try again later."
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Everything you need to know about becoming a partner with Royal Transfer EU",
+    "items": {
+      "start": {
+        "question": "How soon can I start after applying?",
+        "answer": "After your application is approved, we'll guide you through onboarding which typically takes 3-7 days depending on document verification and training completion."
+      },
+      "payment": {
+        "question": "How do I get paid for completed trips?",
+        "answer": "Payments are processed on a weekly basis. You'll receive direct deposits to your registered bank account for all completed trips, minus the platform fee."
+      },
+      "areas": {
+        "question": "What areas can I provide service in?",
+        "answer": "You can choose your preferred service areas during registration. You can serve any areas where you're legally permitted to operate as a driver."
+      },
+      "vehicle": {
+        "question": "Do I need to provide my own vehicle?",
+        "answer": "Yes, partners are required to have their own vehicles that meet our quality standards. Your vehicle must be clean, well-maintained, and less than 5 years old."
+      },
+      "commission": {
+        "question": "What is the commission structure?",
+        "answer": "Our commission varies based on service type and location, typically ranging from 15-25%. Full details will be provided during the onboarding process."
+      },
+      "exclusivity": {
+        "question": "Can I work for other transfer companies simultaneously?",
+        "answer": "Yes, our partnership is non-exclusive. You're welcome to work with other companies or maintain your independent business alongside partnering with us."
+      }
+    }
+  }
+}

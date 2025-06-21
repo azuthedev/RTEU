@@ -1,1 +1,81 @@
-{}
+{
+  "meta": {
+    "title": "Booking Confirmed | Royal Transfer EU",
+    "description": "Your transfer booking has been confirmed. Thank you for choosing Royal Transfer EU."
+  },
+  "title": "Booking Confirmed!",
+  "description": "Thank you for booking with Royal Transfer EU. Your transfer has been successfully confirmed.",
+  "loading": "Loading booking details...",
+  "error": {
+    "title": "Error",
+    "contactSupport": "Could not find your booking. Please contact support.",
+    "loadFailed": "Could not load booking details",
+    "noReference": "No booking reference found",
+    "noData": "No booking data found",
+    "fetchFailed": "Could not retrieve booking details"
+  },
+  "toast": {
+    "linkSuccess": {
+      "title": "Booking Linked",
+      "description": "Your booking has been linked to your account."
+    },
+    "linkFailed": {
+      "title": "Booking Link Failed",
+      "description": "You can link this manually in your bookings page."
+    }
+  },
+  "reference": {
+    "label": "Booking Reference",
+    "note": "Please keep this reference for your records"
+  },
+  "details": {
+    "title": "Booking Details",
+    "from": "From:",
+    "to": "To:",
+    "transferDate": "Transfer Date:",
+    "returnDate": "Return Date:",
+    "vehicle": "Vehicle:",
+    "passengers": "Passengers:",
+    "luggage": "Luggage:",
+    "items": "items",
+    "extras": "Extras:",
+    "price": "Price:",
+    "paymentMethod": "Payment Method:",
+    "status": "Status:",
+    "confirmed": "Confirmed",
+    "notes": "Notes:",
+    "noData": "No detailed booking information available."
+  },
+  "confirmation": {
+    "email": "A confirmation email has been sent to your email address with all the details of your booking.",
+    "contact": "If you have any questions or need to modify your booking, please contact our customer support team."
+  },
+  "buttons": {
+    "viewBookings": "View My Bookings",
+    "checkingAccount": "Checking Account...",
+    "signIn": "Sign In To Manage Booking",
+    "createAccount": "Create Account to Manage Booking",
+    "home": "Return to Home"
+  },
+  "whatsNext": {
+    "title": "What's Next?",
+    "confirmation": {
+      "title": "Confirmation Email",
+      "description": "Check your inbox for detailed booking information"
+    },
+    "assignment": {
+      "title": "Driver Assignment",
+      "description": "You'll receive driver details 24 hours before pickup"
+    },
+    "ready": {
+      "title": "Ready to Go",
+      "description": "Your driver will meet you at the specified location"
+    }
+  },
+  "links": {
+    "contactHelp": "Need help? Contact support"
+  },
+  "date": {
+    "invalid": "Invalid date"
+  }
+}

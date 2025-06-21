@@ -1,1 +1,88 @@
-{}
+{
+  "meta": {
+    "title": "About Us | Royal Transfer EU",
+    "description": "Learn about Royal Transfer EU's 15+ years of experience providing premium airport transfers and private transportation services across Italy."
+  },
+  "hero": {
+    "title": "About Royal Transfer EU",
+    "subtitle": "Premium airport transfers with a personal touch"
+  },
+  "history": {
+    "title": "Our Story",
+    "paragraphs": [
+      "Founded in 2010, Royal Transfer EU began with a simple mission: to provide travelers with reliable, premium airport transfers throughout Italy.",
+      "What started as a small operation with just two vehicles has grown into one of Italy's most trusted private transfer services, operating across major cities and destinations.",
+      "Our journey has been defined by an unwavering commitment to punctuality, comfort, and personalized service. We've transported over 100,000 passengers, from business travelers to families, ensuring each journey is smooth and stress-free."
+    ]
+  },
+  "mission": {
+    "title": "Our Mission",
+    "text": "To make travel seamless by providing exceptional airport transfer experiences with professionalism, reliability, and attention to detail.",
+    "values": {
+      "title": "Core Values",
+      "punctuality": {
+        "title": "Punctuality",
+        "description": "We understand that time is precious, especially when traveling. Our drivers are always on time, tracking flights to adjust for any changes in your schedule."
+      },
+      "comfort": {
+        "title": "Comfort",
+        "description": "Our well-maintained premium vehicles ensure a comfortable journey, allowing you to relax after a long flight or prepare for your next destination."
+      },
+      "service": {
+        "title": "Personalized Service",
+        "description": "We recognize that each traveler has unique needs. Our service is tailored to meet your specific requirements and preferences."
+      },
+      "safety": {
+        "title": "Safety",
+        "description": "Your safety is our top priority. Our professional drivers are experienced, licensed, and committed to safe driving practices."
+      }
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Premium transportation solutions for all your travel needs",
+    "airport": {
+      "title": "Airport Transfers",
+      "description": "Door-to-door service between airports and your destination with flight tracking and free waiting time."
+    },
+    "intercity": {
+      "title": "Intercity Transfers",
+      "description": "Comfortable transfers between cities with experienced drivers who know the best routes."
+    },
+    "events": {
+      "title": "Event & Conference Transfers",
+      "description": "Reliable transportation for corporate events, conferences, and special occasions."
+    },
+    "group": {
+      "title": "Group Transfers",
+      "description": "Spacious vehicles for groups of all sizes, ensuring everyone travels together comfortably."
+    }
+  },
+  "team": {
+    "title": "Our Team",
+    "subtitle": "Meet the professionals behind your smooth travel experience",
+    "description": "Our team consists of experienced drivers, customer support specialists, and operations managers working together to ensure your journey is perfect from booking to arrival.",
+    "drivers": {
+      "title": "Professional Drivers",
+      "description": "Our carefully selected drivers combine local knowledge with professional training. They speak English fluently and are committed to providing exceptional service."
+    },
+    "support": {
+      "title": "Customer Support",
+      "description": "Available 24/7 to assist with bookings, changes, or any questions you may have before, during, or after your journey."
+    },
+    "operations": {
+      "title": "Operations Team",
+      "description": "Working behind the scenes to coordinate transfers, monitor flights, and ensure every detail is perfectly managed."
+    }
+  },
+  "coverage": {
+    "title": "Where We Operate",
+    "description": "We provide premium transfer services across major Italian cities and destinations, including Rome, Milan, Florence, Venice, Naples, and many more. Whether you're arriving at a major international airport or need transportation between cities, we've got you covered.",
+    "cities": ["Rome", "Milan", "Florence", "Venice", "Naples", "Turin", "Bologna", "Pisa", "Bari", "Catania", "Palermo"]
+  },
+  "cta": {
+    "title": "Experience Premium Transfers",
+    "text": "Ready to experience hassle-free travel with Royal Transfer EU?",
+    "button": "Book Your Transfer"
+  }
+}

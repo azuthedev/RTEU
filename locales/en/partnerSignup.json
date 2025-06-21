@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "title": "Partner Signup | Royal Transfer EU",
+    "description": "Complete your partner registration with Royal Transfer EU and start growing your business today."
+  },
+  "navigation": {
+    "backToHome": "Back to Home"
+  },
+  "invalidInvite": {
+    "title": "Invalid Invite Code",
+    "defaultMessage": "This invite link is invalid or has expired.",
+    "contactMessage": "If you believe this is an error, please contact our support team or apply to become a partner through our partner program.",
+    "applyButton": "Apply as Partner",
+    "contactButton": "Contact Support"
+  },
+  "success": {
+    "title": "Account Created!",
+    "message": "Your partner account has been created successfully. You'll be redirected to your dashboard shortly."
+  },
+  "form": {
+    "title": "Partner Registration",
+    "subtitle": "Complete your registration to join Royal Transfer EU as a partner.",
+    "prefillInfo": "We've pre-filled some information from your partner application. Please create a password to complete your registration.",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "submittingButton": "Creating Account...",
+    "submitButton": "Complete Registration",
+    "termsText": "By completing registration, you agree to our",
+    "termsLink": "Terms of Service",
+    "andText": "and",
+    "privacyLink": "Privacy Policy",
+    "fields": {
+      "name": {
+        "label": "Full Name"
+      },
+      "email": {
+        "label": "Email Address",
+        "help": "This email has already been verified"
+      },
+      "phone": {
+        "label": "Phone Number"
+      },
+      "company": {
+        "label": "Company Name"
+      },
+      "password": {
+        "label": "Create Password"
+      },
+      "confirmPassword": {
+        "label": "Confirm Password"
+      }
+    }
+  },
+  "validation": {
+    "password": {
+      "required": "Password is required",
+      "length": "Password must be at least 6 characters long"
+    },
+    "confirmPassword": {
+      "required": "Please confirm your password",
+      "match": "Passwords do not match"
+    }
+  },
+  "errors": {
+    "noInviteCode": "No invite code provided",
+    "invalidInvite": "Invalid or expired invite code",
+    "validationError": "Unable to validate invite code. Please try again later.",
+    "accountCreationFailed": "Account creation failed",
+    "unexpectedError": "An unexpected error occurred during signup"
+  },
+  "toast": {
+    "invalidInvite": {
+      "title": "Invalid Invite Code",
+      "description": "This invite link is invalid or has expired."
+    },
+    "validationError": {
+      "title": "Validation Error",
+      "description": "Unable to validate your invite code. Please try again later."
+    },
+    "accountCreated": {
+      "title": "Account Created",
+      "description": "Your partner account has been created successfully!"
+    },
+    "signupFailed": {
+      "title": "Signup Failed",
+      "description": "An error occurred during signup. Please try again."
+    }
+  }
+}

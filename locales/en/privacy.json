@@ -1,1 +1,113 @@
-{}
+{
+  "meta": {
+    "title": "Privacy Policy | Royal Transfer EU",
+    "description": "Learn about how Royal Transfer EU collects, uses, and protects your personal data in accordance with EU privacy laws."
+  },
+  "title": "Privacy Policy",
+  "intro": {
+    "p1": "Your privacy is important to us. This Privacy Policy explains how Royal Transfer EU collects, uses, and protects your personal data when you use our services or visit our website. We are committed to ensuring the privacy and security of your personal information.",
+    "p2": "This policy applies to all personal data collected through our:",
+    "list": {
+      "item1": "Website at",
+      "item2": "Mobile application",
+      "item3": "Customer service interactions",
+      "item4": "Booking and transportation services"
+    }
+  },
+  "collect": {
+    "title": "Information We Collect",
+    "description": "We collect and process various types of personal data depending on how you interact with our services:",
+    "provided": {
+      "title": "Information You Provide Us",
+      "item1": "Contact information (name, email address, phone number)",
+      "item2": "Account information (username, password)",
+      "item3": "Booking details (pickup/dropoff locations, dates, times, passenger information)",
+      "item4": "Payment information (credit card details, billing address)",
+      "item5": "Communication content (messages sent through our contact forms, emails, or chat)",
+      "item6": "Feedback and reviews"
+    },
+    "automatic": {
+      "title": "Information Collected Automatically",
+      "item1": "Device information (IP address, browser type, operating system)",
+      "item2": "Usage data (pages visited, time spent on site, links clicked)",
+      "item3": "Location data (when permitted by your device settings)",
+      "item4": "Cookies and similar tracking technologies (as described in our Cookie Policy)"
+    }
+  },
+  "use": {
+    "title": "How We Use Your Information",
+    "description": "We use your personal data for the following purposes:",
+    "item1": "To provide and manage our transportation services",
+    "item2": "To process bookings and payments",
+    "item3": "To communicate with you about your bookings or inquiries",
+    "item4": "To improve our services and website functionality",
+    "item5": "To personalize your experience and offer relevant content",
+    "item6": "To send promotional communications (with your consent)",
+    "item7": "To comply with legal obligations",
+    "item8": "To protect our rights, property, or safety",
+    "legal": "We process your personal data based on contract performance, legal obligations, legitimate interests, and your consent where applicable."
+  },
+  "rights": {
+    "title": "Your Rights",
+    "description": "Under data protection laws, you have rights regarding your personal data including:",
+    "access": {
+      "title": "Access:",
+      "description": "Request a copy of your personal data"
+    },
+    "rectification": {
+      "title": "Rectification:",
+      "description": "Request correction of inaccurate data"
+    },
+    "erasure": {
+      "title": "Erasure:",
+      "description": "Request deletion of your data in certain circumstances"
+    },
+    "restriction": {
+      "title": "Restriction:",
+      "description": "Request limited processing of your data"
+    },
+    "portability": {
+      "title": "Data Portability:",
+      "description": "Request transfer of your data in a structured format"
+    },
+    "objection": {
+      "title": "Objection:",
+      "description": "Object to processing of your data in certain circumstances"
+    },
+    "consent": {
+      "title": "Withdraw Consent:",
+      "description": "Revoke previously given consent"
+    },
+    "contact": "To exercise any of these rights, please contact us at"
+  },
+  "security": {
+    "title": "Data Security",
+    "description": "We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, accidental loss, or destruction. Our security procedures are regularly reviewed and updated as necessary."
+  },
+  "retention": {
+    "title": "Data Retention",
+    "description": "We retain your personal data only for as long as necessary to fulfill the purposes for which it was collected, including legal, accounting, or reporting requirements. When determining retention periods, we consider the amount, nature, and sensitivity of the data, the potential risk of harm from unauthorized use or disclosure, the purposes for which we process the data, and applicable legal requirements."
+  },
+  "cookies": {
+    "title": "Cookies",
+    "description": "Our website uses cookies and similar technologies to enhance your browsing experience. Our Cookie Policy, which is available on our website, explains how we collect, use, and protect your personal information.",
+    "link": "Cookie Policy"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "description": "If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:",
+    "company": "Royal Transfer EU",
+    "email": {
+      "label": "Email:",
+      "address": "privacy@royaltransfereu.com"
+    },
+    "phone": {
+      "label": "Phone:",
+      "number": "+39 351 748 22 44"
+    },
+    "address": {
+      "label": "Address:",
+      "value": "123 Transfer Street, EU 12345"
+    }
+  }
+}

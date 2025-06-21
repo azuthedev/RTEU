@@ -1,1 +1,103 @@
-{}
+{
+  "meta": {
+    "title": "Frequently Asked Questions | Royal Transfer EU",
+    "description": "Find answers to common questions about our services, booking process, and policies."
+  },
+  "title": "Frequently Asked Questions",
+  "intro": "We know your travel plans are important, and questions may arise. At Royal Transfer EU, our goal is your peace of mind. Below are answers to the most frequently asked questions. Don't see your question here? Feel free to contact our 24/7 customer support team anytime!",
+  "search": "Search FAQs...",
+  "needHelp": {
+    "title": "Still Have a Question?",
+    "description": "Our friendly team is available around the clock.",
+    "contactButton": "Contact Support Now",
+    "chatButton": "Speak to us Instantly!"
+  },
+  "categories": {
+    "booking": {
+      "title": "Booking & Reservations",
+      "q1": "How do I book an airport transfer or taxi?",
+      "a1": "It's simple! Book instantly online through our easy-to-use booking system, via our app, or by phone. You'll receive immediate confirmation and all travel details.",
+      "q2": "Can I make a special request when booking?",
+      "a2": "Absolutely! After selecting your journey details, you'll have the opportunity to add notes or request special amenities during the booking process or by contacting our customer support.",
+      "q3": "How far in advance should I book my transfer?",
+      "a3": "While we accept immediate and short-notice bookings, we recommend booking at least 24 hours before your scheduled pick-up for guaranteed availability, especially during peak seasons.",
+      "q4": "Can I reserve multiple rides at once?",
+      "a4": "Of course! Simply select 'Add Another Ride' during your booking or contact our customer service to help you schedule multiple rides effortlessly."
+    },
+    "pricing": {
+      "title": "Pricing & Payments",
+      "q1": "Do you offer fixed fares or metered rides?",
+      "a1": "We provide both options! Choose a fixed fare upfront for total transparency or a metered ride payable upon arrival — whichever suits your preference and travel needs.",
+      "q2": "How can I pay for my booking?",
+      "a2": "We accept all major credit/debit cards (Visa, MasterCard, American Express), online payments, bank transfers, and payments via secure online payment gateways. You can pay in advance or directly to the driver upon completion of the ride.",
+      "q3": "Are payments secure and protected?",
+      "a3": "Yes, safety is a top priority. Our online payment portals use encrypted SSL protection, ensuring your personal information and transactions remain fully secure.",
+      "q4": "Are there any other hidden charges or costs?",
+      "a4": "Absolutely not! Transparency is key at Royal Transfer EU. The confirmed price you receive includes all taxes, service charges, and fees unless additional optional services are specifically requested."
+    },
+    "airport": {
+      "title": "Airport Transfers & Pick-Up Procedures",
+      "q1": "What if my flight is delayed?",
+      "a1": "We actively monitor your flight status and automatically adjust your pick-up time. Rest assured, no additional charge applies for delays.",
+      "q2": "Where will my driver meet me at the airport?",
+      "a2": "Your professional driver will await your arrival in the airport's arrivals area, holding a clearly displayed sign showing your name or your specified company information.",
+      "q3": "How soon will I meet my driver after the flight's arrival?",
+      "a3": "Our driver is scheduled to be there waiting for you before your flight lands and will greet you upon exiting baggage reclaim—no waiting needed."
+    },
+    "taxi": {
+      "title": "Taxi Services",
+      "q1": "Can I pre-book my taxi?",
+      "a1": "Absolutely! We encourage pre-booking for guaranteed availability but also accept immediate ride requests if cars are available nearby.",
+      "q2": "Are your taxi drivers fully qualified and insured?",
+      "a2": "Definitely! All our drivers are fully licensed and professionally insured. Your journey's safety and comfort remain our top priorities.",
+      "q3": "Is there a limitation on the travel distance for taxi bookings?",
+      "a3": "None at all. We cater to both short journeys within the city and long-distance transfers to different regions."
+    },
+    "minivan": {
+      "title": "Minivan Rentals (With or Without Driver)",
+      "q1": "What's included in my minivan rental service?",
+      "a1": "Each rental package includes unlimited mileage, standard insurance coverage (with optional upgrades), GPS navigation (upon request), comfortable modern vehicles, and 24/7 roadside assistance.",
+      "q2": "Can I rent a minivan without a driver?",
+      "a2": "Yes, self-driven minivans are available. Alternatively, chauffeur-driven vehicle options are also on offer for a completely relaxed, hands-free travel experience.",
+      "q3": "Is there a minimum rental period?",
+      "a3": "Rentals begin at just one day, with discounted rates applied to multi-day and longer-duration rentals.",
+      "q4": "Are there specific documentation requirements for minivan rental?",
+      "a4": "Yes, standard documentation includes a valid driver's license, passport or official ID, and proof of payment. Additional details will be clarified during your booking process."
+    },
+    "vehicles": {
+      "title": "Vehicle Types & Availability",
+      "q1": "What types of vehicles does your fleet include?",
+      "a1": "Our diverse fleet includes comfortable sedans, luxury taxis, spacious minivans, and luxurious executive vehicles suitable for different group sizes and travel preferences.",
+      "q2": "Can you accommodate groups or large families?",
+      "a2": "Definitely! Our modern minivans and larger vehicles comfortably accommodate families and groups with substantial luggage space available.",
+      "q3": "Do you provide child safety seats?",
+      "a3": "Yes, child safety seats, booster seats, and other amenities can be provided at your request, free of charge."
+    },
+    "luggage": {
+      "title": "Luggage & Baggage Policies",
+      "q1": "Is there a luggage limit?",
+      "a1": "Standard allowances are typically one suitcase and one carry-on per passenger. But no worries, if you have additional pieces of luggage or larger items, please let us know when booking—special vehicles can always be arranged.",
+      "q2": "Can you transport special items like skis, golf bags, or bicycles?",
+      "a2": "Yes, we can accommodate sporting equipment and oversized luggage. Just include your requirements during booking to ensure the appropriate vehicle is designated."
+    },
+    "changes": {
+      "title": "Changes & Cancellation Policies",
+      "q1": "Can I modify my booking details after confirmation?",
+      "a1": "Absolutely! Plans change, we understand. Contact our customer support anytime to adjust your booking—with no hassle or hidden fees.",
+      "q2": "What if I need to cancel my reservation?",
+      "a2": "Cancellations made up to 24 hours before your scheduled journey receive a full, hassle-free refund. For cancellations within 24 hours, please contact support for assistance in evaluating options."
+    },
+    "safety": {
+      "title": "Safety, Security, and Reliability",
+      "q1": "What safety protocols do you follow?",
+      "a1": "Your safety is paramount. Our vehicles undergo strict regular maintenance, cleanliness protocols, and compliance monitoring. Our professional drivers are rigorously vetted and regularly trained in passenger safety procedures.",
+      "q2": "Are your vehicles insured and regularly inspected?",
+      "a2": "Yes, every vehicle is fully insured, licensed with required local authorities, and undergoes regular in-depth vehicle inspections and servicing."
+    },
+    "support": {
+      "title": "Customer Support & Assistance",
+      "q1": "How can I contact support during my journey?",
+      "a1": "We're available for you 24/7 by telephone, email, or live online chat. Reach out at any stage of your travel for immediate help or for solving any unexpected issues or questions."
+    }
+  }
+}
