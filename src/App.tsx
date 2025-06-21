@@ -1,3 +1,4 @@
+// Update App.tsx to include the new PartnerSignup route
 import React, { useEffect, Suspense, lazy, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -33,6 +34,7 @@ const Partners = lazy(() => import('./pages/Partners'));
 const Login = lazy(() => import('./pages/Login'));
 const Contact = lazy(() => import('./pages/Contact'));
 const CustomerSignup = lazy(() => import('./pages/CustomerSignup'));
+const PartnerSignup = lazy(() => import('./pages/PartnerSignup')); // Added new page
 const Blogs = lazy(() => import('./pages/Blogs'));
 const BlogsDestinations = lazy(() => import('./pages/BlogsDestinations'));
 const BookingFlow = lazy(() => import('./pages/BookingFlow'));
@@ -207,6 +209,7 @@ function AppRoutes() {
           <Route path="/services" element={<Services />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/partner-signup" element={<PartnerSignup />} /> {/* New route for partner signup */}
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/verification-success" element={<VerificationSuccess />} />

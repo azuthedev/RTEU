@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Helmet } from 'react-helmet-async';
 
 const VerifyEmail = () => {
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -15,6 +17,22 @@ const VerifyEmail = () => {
   const location = useLocation();
   const { trackEvent, setUserId } = useAnalytics();
   const { user, refreshSession } = useAuth();
+  const { t, isLoading } = useLanguage();
+
+  // If translations are still loading, show a loading spinner
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">{t('common.loading', 'Loading...')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const verifyEmailToken = async () => {
@@ -26,7 +44,7 @@ const VerifyEmail = () => {
         
         if (!token) {
           setVerificationStatus('error');
-          setErrorMessage('Missing verification token');
+          setErrorMessage(t('errors.missingToken', 'Missing verification token'));
           trackEvent('Authentication', 'Email Verification Failed', 'Missing Token');
           return;
         }
@@ -43,7 +61,7 @@ const VerifyEmail = () => {
         if (verificationError || !verification) {
           console.error("Verification error:", verificationError);
           setVerificationStatus('error');
-          setErrorMessage('Invalid or expired verification token');
+          setErrorMessage(t('errors.invalidToken', 'Invalid or expired verification token'));
           trackEvent('Authentication', 'Email Verification Failed', 'Invalid Token');
           return;
         }
@@ -51,7 +69,7 @@ const VerifyEmail = () => {
         // Check if the verification has expired
         if (new Date(verification.expires_at) < new Date()) {
           setVerificationStatus('error');
-          setErrorMessage('This verification link has expired. Please request a new one.');
+          setErrorMessage(t('errors.expiredToken', 'This verification link has expired. Please request a new one.'));
           trackEvent('Authentication', 'Email Verification Failed', 'Expired Token');
           return;
         }
@@ -89,13 +107,13 @@ const VerifyEmail = () => {
       } catch (error: any) {
         console.error('Verification error:', error);
         setVerificationStatus('error');
-        setErrorMessage(error.message || 'Failed to verify your email. The link may have expired.');
+        setErrorMessage(error.message || t('errors.generic', 'Failed to verify your email. The link may have expired.'));
         trackEvent('Authentication', 'Email Verification Failed', error.message);
       }
     };
 
     verifyEmailToken();
-  }, [location.search, trackEvent, navigate, setUserId, user, refreshSession]);
+  }, [location.search, trackEvent, navigate, setUserId, user, refreshSession, t]);
 
   const handleContinue = () => {
     navigate(redirectTo);
@@ -107,6 +125,13 @@ const VerifyEmail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>{t('meta.title', 'Verify Email | Royal Transfer EU')}</title>
+        <meta 
+          name="description" 
+          content={t('meta.description', 'Verify your email address to complete your Royal Transfer EU account setup.')} 
+        />
+      </Helmet>
       <Header />
       
       <main className="pt-32 pb-16">
@@ -120,9 +145,9 @@ const VerifyEmail = () => {
             {verificationStatus === 'loading' && (
               <div className="text-center py-8">
                 <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Verifying Your Email</h2>
+                <h2 className="text-xl font-semibold mb-2">{t('states.loading.title', 'Verifying Your Email')}</h2>
                 <p className="text-gray-600">
-                  Please wait while we verify your email address...
+                  {t('states.loading.message', 'Please wait while we verify your email address...')}
                 </p>
               </div>
             )}
@@ -134,20 +159,20 @@ const VerifyEmail = () => {
                     <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-semibold mb-4">Email Verified!</h2>
+                <h2 className="text-2xl font-semibold mb-4">{t('states.success.title', 'Email Verified!')}</h2>
                 <p className="text-gray-600 mb-8">
-                  Thank you for verifying your email address. Your account is now active.
+                  {t('states.success.message', 'Thank you for verifying your email address. Your account is now active.')}
                 </p>
                 <div className="bg-gray-50 p-4 rounded-md mb-8">
                   <p className="text-sm text-gray-600">
-                    You will be redirected to the login page in a few seconds...
+                    {t('states.success.autoRedirect', 'You will be redirected to the login page in a few seconds...')}
                   </p>
                 </div>
                 <button
                   onClick={handleContinue}
                   className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
                 >
-                  Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('buttons.continue', 'Continue')} <ArrowRight className="ml-2 h-4 w-4" />
                 </button>
               </div>
             )}
@@ -159,15 +184,15 @@ const VerifyEmail = () => {
                     <XCircle className="h-8 w-8 text-red-600" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-semibold mb-4">Verification Failed</h2>
+                <h2 className="text-2xl font-semibold mb-4">{t('states.error.title', 'Verification Failed')}</h2>
                 <p className="text-gray-600 mb-8">
-                  {errorMessage || 'There was a problem verifying your email. The verification link may have expired or already been used.'}
+                  {errorMessage || t('states.error.defaultMessage', 'There was a problem verifying your email. The verification link may have expired or already been used.')}
                 </p>
                 <button
                   onClick={handleTryAgain}
                   className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
                 >
-                  Try Again <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('buttons.tryAgain', 'Try Again')} <ArrowRight className="ml-2 h-4 w-4" />
                 </button>
               </div>
             )}

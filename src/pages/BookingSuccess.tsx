@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -15,6 +15,7 @@ import SignUpModal from '../components/SignUpModal';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '../components/ui/use-toast';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Helper function to retry database operations
 const retryDatabaseOperation = async (operation, maxRetries = 2) => {
@@ -35,6 +36,7 @@ const BookingSuccess = () => {
   const { user } = useAuth();
   const { trackEvent } = useAnalytics();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // States for booking data
   const [bookingReference, setBookingReference] = useState<string | null>(null);
@@ -81,12 +83,12 @@ const BookingSuccess = () => {
       fetchBookingDetails(bookingRef);
     } else {
       setLoading(false);
-      setError('No booking reference found');
+      setError(t('error.noReference', 'No booking reference found'));
     }
     
     // Track booking success
     trackEvent('Booking', 'Booking Success', bookingRef || 'Unknown');
-  }, [location, trackEvent]);
+  }, [location, trackEvent, t]);
 
   const fetchBookingDetails = async (reference: string) => {
     setLoading(true);
@@ -108,7 +110,7 @@ const BookingSuccess = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response from edge function:', errorText);
-        throw new Error('Could not retrieve booking details');
+        throw new Error(t('error.fetchFailed', 'Could not retrieve booking details'));
       }
       
       const data = await response.json();
@@ -123,16 +125,16 @@ const BookingSuccess = () => {
       }
       
       // If we reach here, something went wrong
-      throw new Error('No booking data found');
+      throw new Error(t('error.noData', 'No booking data found'));
       
     } catch (error) {
       console.error('Error fetching booking details:', error);
       toast({
-        title: "Error",
-        description: "Could not find your booking. Please contact support.",
+        title: t('error.title', "Error"),
+        description: t('error.contactSupport', "Could not find your booking. Please contact support."),
         variant: "destructive"
       });
-      setError('Could not load booking details');
+      setError(t('error.loadFailed', 'Could not load booking details'));
     } finally {
       setLoading(false);
     }
@@ -201,8 +203,8 @@ const BookingSuccess = () => {
       trackEvent('Booking', 'Booking Linked On Signup', reference);
       
       toast({
-        title: "Booking Linked",
-        description: "Your booking has been linked to your account.",
+        title: t('toast.linkSuccess.title', "Booking Linked"),
+        description: t('toast.linkSuccess.description', "Your booking has been linked to your account."),
         variant: "success"
       });
     } catch (error) {
@@ -217,8 +219,8 @@ const BookingSuccess = () => {
       
       // Show user-friendly error but don't fail the flow
       toast({
-        title: "Booking Link Failed",
-        description: "You can link this manually in your bookings page.",
+        title: t('toast.linkFailed.title', "Booking Link Failed"),
+        description: t('toast.linkFailed.description', "You can link this manually in your bookings page."),
         variant: "destructive"
       });
     }
@@ -235,7 +237,7 @@ const BookingSuccess = () => {
         minute: '2-digit'
       });
     } catch (e) {
-      return 'Invalid date';
+      return t('date.invalid', 'Invalid date');
     }
   };
 
@@ -350,7 +352,7 @@ const BookingSuccess = () => {
           <div className="max-w-md mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-              <p className="text-lg">Loading booking details...</p>
+              <p className="text-lg">{t('loading', 'Loading booking details...')}</p>
             </div>
           </div>
         </main>
@@ -362,8 +364,8 @@ const BookingSuccess = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>Booking Confirmed | Royal Transfer EU</title>
-        <meta name="description" content="Your transfer booking has been confirmed. Thank you for choosing Royal Transfer EU." />
+        <title>{t('meta.title', 'Booking Confirmed | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Your transfer booking has been confirmed. Thank you for choosing Royal Transfer EU.')} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <Header />
@@ -382,21 +384,21 @@ const BookingSuccess = () => {
               </div>
             </div>
             
-            <h1 className="text-3xl font-bold mb-4">Booking Confirmed!</h1>
+            <h1 className="text-3xl font-bold mb-4">{t('title', 'Booking Confirmed!')}</h1>
             <p className="text-lg text-gray-600 mb-6">
-              Thank you for booking with Royal Transfer EU. Your transfer has been successfully confirmed.
+              {t('description', 'Thank you for booking with Royal Transfer EU. Your transfer has been successfully confirmed.')}
             </p>
             
             {bookingReference && (
               <div className="mb-8 text-center bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <p className="text-sm text-gray-500 mb-2">Booking Reference</p>
+                <p className="text-sm text-gray-500 mb-2">{t('reference.label', 'Booking Reference')}</p>
                 <p className="font-mono text-3xl font-bold">{bookingReference}</p>
-                <p className="text-sm text-gray-500 mt-2">Please keep this reference for your records</p>
+                <p className="text-sm text-gray-500 mt-2">{t('reference.note', 'Please keep this reference for your records')}</p>
               </div>
             )}
             
             <div className="bg-gray-50 p-6 rounded-lg mb-8 text-left">
-              <h2 className="text-xl font-semibold mb-4">Booking Details</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('details.title', 'Booking Details')}</h2>
               {error ? (
                 <div className="text-red-600 p-4 bg-red-50 rounded-md">
                   <p>{error}</p>
@@ -404,75 +406,75 @@ const BookingSuccess = () => {
               ) : bookingDetails ? (
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">From:</span>
+                    <span className="text-gray-600">{t('details.from', 'From:')}</span>
                     <span className="font-medium">{bookingDetails.pickup_address}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">To:</span>
+                    <span className="text-gray-600">{t('details.to', 'To:')}</span>
                     <span className="font-medium">{bookingDetails.dropoff_address}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Transfer Date:</span>
+                    <span className="text-gray-600">{t('details.transferDate', 'Transfer Date:')}</span>
                     <span className="font-medium">
                       {formatDateTime(bookingDetails.datetime)}
                     </span>
                   </div>
                   {bookingDetails.is_return && bookingDetails.return_datetime && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Return Date:</span>
+                      <span className="text-gray-600">{t('details.returnDate', 'Return Date:')}</span>
                       <span className="font-medium">
                         {formatDateTime(bookingDetails.return_datetime)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Vehicle:</span>
+                    <span className="text-gray-600">{t('details.vehicle', 'Vehicle:')}</span>
                     <span className="font-medium">{bookingDetails.vehicle_type}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Passengers:</span>
+                    <span className="text-gray-600">{t('details.passengers', 'Passengers:')}</span>
                     <span className="font-medium">{bookingDetails.passengers}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Luggage:</span>
-                    <span className="font-medium">{bookingDetails.luggage_count || 0} items</span>
+                    <span className="text-gray-600">{t('details.luggage', 'Luggage:')}</span>
+                    <span className="font-medium">{bookingDetails.luggage_count || 0} {t('details.items', 'items')}</span>
                   </div>
                   {bookingDetails.extra_items && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Extras:</span>
+                      <span className="text-gray-600">{t('details.extras', 'Extras:')}</span>
                       <span className="font-medium">{bookingDetails.extra_items.replace(/,/g, ', ')}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Price:</span>
+                    <span className="text-gray-600">{t('details.price', 'Price:')}</span>
                     <span className="font-medium">€{(bookingDetails.estimated_price || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Method:</span>
+                    <span className="text-gray-600">{t('details.paymentMethod', 'Payment Method:')}</span>
                     <span className="font-medium capitalize">{bookingDetails.payment_method}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className="font-medium text-green-600">Confirmed</span>
+                    <span className="text-gray-600">{t('details.status', 'Status:')}</span>
+                    <span className="font-medium text-green-600">{t('details.confirmed', 'Confirmed')}</span>
                   </div>
                   {bookingDetails.notes && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Notes:</span>
+                      <span className="text-gray-600">{t('details.notes', 'Notes:')}</span>
                       <span className="font-medium">{bookingDetails.notes}</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-600">No detailed booking information available.</p>
+                <p className="text-gray-600">{t('details.noData', 'No detailed booking information available.')}</p>
               )}
             </div>
             
             <div className="space-y-4 mb-8">
               <p className="text-gray-700">
-                A confirmation email has been sent to your email address with all the details of your booking.
+                {t('confirmation.email', 'A confirmation email has been sent to your email address with all the details of your booking.')}
               </p>
               <p className="text-gray-700">
-                If you have any questions or need to modify your booking, please contact our customer support team.
+                {t('confirmation.contact', 'If you have any questions or need to modify your booking, please contact our customer support team.')}
               </p>
             </div>
             
@@ -485,7 +487,7 @@ const BookingSuccess = () => {
                   }}
                   className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300"
                 >
-                  View My Bookings
+                  {t('buttons.viewBookings', 'View My Bookings')}
                 </button>
               ) : isCheckingUser ? (
                 <button 
@@ -493,7 +495,7 @@ const BookingSuccess = () => {
                   className="bg-gray-300 text-gray-600 px-6 py-3 rounded-md flex items-center justify-center"
                 >
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Checking Account...
+                  {t('buttons.checkingAccount', 'Checking Account...')}
                 </button>
               ) : existingUserWithSameEmail ? (
                 <button
@@ -501,7 +503,7 @@ const BookingSuccess = () => {
                   className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300 flex items-center justify-center"
                 >
                   <User className="w-5 h-5 mr-2" />
-                  Sign In To Manage Booking
+                  {t('buttons.signIn', 'Sign In To Manage Booking')}
                 </button>
               ) : (
                 <button
@@ -509,7 +511,7 @@ const BookingSuccess = () => {
                   className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300 flex items-center justify-center"
                 >
                   <User className="w-5 h-5 mr-2" />
-                  Create Account to Manage Booking
+                  {t('buttons.createAccount', 'Create Account to Manage Booking')}
                 </button>
               )}
               <button
@@ -519,13 +521,13 @@ const BookingSuccess = () => {
                 }}
                 className="border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
               >
-                Return to Home
+                {t('buttons.home', 'Return to Home')}
               </button>
             </div>
           </motion.div>
 
           <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-center mb-6">What's Next?</h2>
+            <h2 className="text-xl font-semibold text-center mb-6">{t('whatsNext.title', "What's Next?")}</h2>
             
             <div className="space-y-4">
               <div className="flex items-start">
@@ -533,9 +535,9 @@ const BookingSuccess = () => {
                   <span className="font-semibold">1</span>
                 </div>
                 <div>
-                  <h3 className="font-medium">Confirmation Email</h3>
+                  <h3 className="font-medium">{t('whatsNext.confirmation.title', 'Confirmation Email')}</h3>
                   <p className="text-sm text-gray-600">
-                    Check your inbox for detailed booking information
+                    {t('whatsNext.confirmation.description', 'Check your inbox for detailed booking information')}
                   </p>
                 </div>
               </div>
@@ -545,9 +547,9 @@ const BookingSuccess = () => {
                   <span className="font-semibold">2</span>
                 </div>
                 <div>
-                  <h3 className="font-medium">Driver Assignment</h3>
+                  <h3 className="font-medium">{t('whatsNext.assignment.title', 'Driver Assignment')}</h3>
                   <p className="text-sm text-gray-600">
-                    You'll receive driver details 24 hours before pickup
+                    {t('whatsNext.assignment.description', "You'll receive driver details 24 hours before pickup")}
                   </p>
                 </div>
               </div>
@@ -557,9 +559,9 @@ const BookingSuccess = () => {
                   <span className="font-semibold">3</span>
                 </div>
                 <div>
-                  <h3 className="font-medium">Ready to Go</h3>
+                  <h3 className="font-medium">{t('whatsNext.ready.title', 'Ready to Go')}</h3>
                   <p className="text-sm text-gray-600">
-                    Your driver will meet you at the specified location
+                    {t('whatsNext.ready.description', 'Your driver will meet you at the specified location')}
                   </p>
                 </div>
               </div>
@@ -571,7 +573,7 @@ const BookingSuccess = () => {
                 className="inline-flex items-center text-black hover:text-gray-700"
                 onClick={() => trackEvent('Navigation', 'Post-Booking Click', 'Contact Support')}
               >
-                Need help? Contact support
+                {t('links.contactHelp', 'Need help? Contact support')}
                 <ArrowRight className="w-4 h-4 ml-1" />
               </a>
             </div>
@@ -590,7 +592,6 @@ const BookingSuccess = () => {
           phone={bookingDetails.customer_phone || ''}
         />
       )}
-      
     </div>
   );
 };

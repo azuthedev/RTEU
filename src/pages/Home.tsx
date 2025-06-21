@@ -17,33 +17,35 @@ import LazyComponent from '../components/LazyComponent';
 import DeferredComponent from '../components/DeferredComponent';
 import { initGoogleMaps } from '../utils/optimizeThirdParty'; 
 import { BookingProvider, useBooking } from '../contexts/BookingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function HomeContent() {
   const location = useLocation();
   const { clearBookingState } = useBooking();
+  const { t } = useLanguage(); // Added useLanguage hook
   
   // Update SEO metadata when component mounts
   useEffect(() => {
     // Set basic SEO metadata
     updateMetaTags(
-      'Royal Transfer EU | Premium Airport Transfers & Taxi in Italy',
-      'Professional airport transfers and taxi services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers.',
+      t('home.seo.title', 'Royal Transfer EU | Premium Airport Transfers in Italy'),
+      t('home.seo.description', 'Professional airport transfers and private transfer services across Italy with 15+ years of experience. Safe, reliable, and comfortable travel with English-speaking drivers.'),
       location.pathname
     );
     
     // Add structured data for the service
     addStructuredData('Service', {
-      name: 'Royal Transfer EU',
-      description: 'Premium airport transfers and taxi services across Italy',
+      name: t('home.structuredData.name', 'Royal Transfer EU'),
+      description: t('home.structuredData.description', 'Premium airport transfers and private transfer services across Italy'),
       provider: {
         '@type': 'Organization',
-        name: 'Royal Transfer EU',
-        logo: 'https://i.imghippo.com/files/cDgm3025PmI.webp'
+        name: t('home.structuredData.provider', 'Royal Transfer EU'),
+        logo: 'https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp'
       },
-      serviceType: 'Airport Transfer',
+      serviceType: t('home.structuredData.serviceType', 'Airport Transfer'),
       areaServed: {
         '@type': 'Country',
-        name: 'Italy'
+        name: t('home.structuredData.areaServed', 'Italy')
       },
       offers: {
         '@type': 'Offer',
@@ -54,7 +56,7 @@ function HomeContent() {
         }
       }
     });
-  }, [location.pathname]);
+  }, [location.pathname, t]);
   
   // Initialize Google Maps early for search form
   useEffect(() => {
@@ -80,14 +82,14 @@ function HomeContent() {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
-            "name": "Royal Transfer EU",
-            "url": "https://royaltransfer.eu",
-            "logo": "https://i.imghippo.com/files/cDgm3025PmI.webp",
+            "name": t('home.schema.name', 'Royal Transfer EU'),
+            "url": "https://royaltransfereu.com",
+            "logo": "https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp",
             "contactPoint": {
               "@type": "ContactPoint",
               "telephone": "+393517482244",
               "contactType": "customer service",
-              "availableLanguage": ["English", "Italian"]
+              "availableLanguage": [t('home.schema.languages', 'English, Italian')]
             },
             "sameAs": [
               "https://www.instagram.com/royaltransfer1991/"

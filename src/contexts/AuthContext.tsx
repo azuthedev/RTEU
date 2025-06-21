@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
@@ -171,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
               method: 'GET',
               headers: {
                 ...getApiHeaders(),
-                'Authorization': `${currentSession.access_token}`
+                'Authorization': `Bearer ${currentSession.access_token}`
               }
             });
           }, {
@@ -297,6 +297,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           // Track signed in user
           setUserId(currentSession.user.id);
           
+          // Refresh session to ensure token is fresh before fetching user data
+          await refreshSession();
+          
           // Try to fetch user data, but don't fail initialization if it fails
           try {
             const userData = await fetchUserData(currentSession.user.id);
@@ -352,6 +355,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           trackEvent('Authentication', 'Sign In Success');
           setUserId(currentSession.user.id);
         }
+        
+        // Refresh session first to ensure token is fresh
+        await refreshSession();
         
         if (!userData || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
           try {
@@ -575,6 +581,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
         // Set user ID in GA
         setUserId(data.session.user.id);
         
+        // Ensure token is fresh
+        await refreshSession();
+        
         // Try to fetch user data but don't fail the sign in if it fails
         try {
           const userData = await fetchUserData(data.session.user.id);
@@ -765,7 +774,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
       
       // In development environment, provide fallback values
       if (isDevEnvironment.current) {
-        console.log('DEVELOPMENT FALLBACK: Simulating email verification check for', normalizedEmail);
+        console.log('DEVELOPMENT FALLBACK: Simulating email verification check for', email);
         
         // Some test emails to demonstrate different states
         const testCases: Record<string, { verified: boolean, exists: boolean, requiresVerification: boolean }> = {
@@ -774,9 +783,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, trackEvent
           'admin@example.com': { verified: true, exists: true, requiresVerification: false }
         };
         
-        const emailKey = normalizedEmail.toLowerCase();
+        const emailKey = email.toLowerCase();
         if (testCases[emailKey]) {
-          console.log(`DEVELOPMENT MODE: Using predefined test case for ${normalizedEmail}`);
+          console.log(`DEVELOPMENT MODE: Using predefined test case for ${emailKey}`);
           return testCases[emailKey];
         }
         

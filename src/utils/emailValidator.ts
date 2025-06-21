@@ -86,15 +86,6 @@ export const validateEmail = async (email: string): Promise<{
   }
 };
 
-// Helper to determine if we're in a development environment
-const isDevelopmentEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname.includes('local-credentialless') ||
-    window.location.hostname.includes('webcontainer')
-  );
-};
-
 /**
  * Sends an OTP verification code to the provided email
  * Uses the Edge Function for centralized verification
@@ -113,20 +104,6 @@ export const sendOtpEmail = async (
     console.log(`Sending verification email to ${email}${userId ? ` for user ${userId}` : ''}`);
     console.log(`With name: ${name || 'Not provided'}`);
     
-    // Check if we're in development mode first for faster fallback
-    const isDev = isDevelopmentEnvironment();
-    
-    if (isDev) {
-      console.log('DEVELOPMENT MODE: Simulating email verification without calling Edge Function');
-      
-      // Generate a fake verification ID for dev testing
-      return {
-        success: true,
-        verificationId: `dev-${Date.now()}`,
-        message: "DEV MODE: Verification code simulated (no actual email sent)"
-      };
-    }
-    
     // Get webhook secret from environment variables
     const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
@@ -137,15 +114,6 @@ export const sendOtpEmail = async (
       console.log('Available env variables:', Object.keys(import.meta.env)
         .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
-      
-      // Fallback for development
-      if (isDev) {
-        return {
-          success: true,
-          verificationId: `dev-${Date.now()}`,
-          message: "DEV MODE: No webhook secret found, verification simulated"
-        };
-      }
       
       return {
         success: false,
@@ -158,7 +126,7 @@ export const sendOtpEmail = async (
       console.log('Calling Edge Function with X-Auth header');
       
       // Determine URL based on environment
-      const baseUrl = isDev 
+      const baseUrl = import.meta.env.DEV 
         ? '/api/email-verification'  // Use local proxy in development
         : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
       
@@ -213,36 +181,10 @@ export const sendOtpEmail = async (
       };
     } catch (fetchError) {
       console.error('Fetch error sending OTP via Edge Function:', fetchError);
-      
-      // If in development, use fallback
-      if (isDev) {
-        console.log('DEVELOPMENT FALLBACK: Simulating email verification after fetch error');
-        return {
-          success: true,
-          verificationId: `dev-${Date.now()}`,
-          message: "DEV MODE: Verification code simulated after fetch error"
-        };
-      }
-      
       throw fetchError;
     }
   } catch (err: any) {
     console.error('Error sending OTP:', err);
-    
-    // Try fallback for development environment
-    const isDev = isDevelopmentEnvironment();
-    
-    if (isDev) {
-      console.log('DEVELOPMENT FALLBACK: Simulating email verification after error');
-      
-      // Generate a fake verification ID for dev testing
-      return {
-        success: true,
-        verificationId: `dev-${Date.now()}`,
-        message: "DEV MODE: Verification code simulated after error"
-      };
-    }
-    
     return {
       success: false,
       error: err.message || 'Failed to send verification code'
@@ -258,12 +200,6 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
   error?: string;
 }> => {
   try {
-    // Check if this is a development verification ID
-    if (verificationId.startsWith('dev-')) {
-      console.log('DEVELOPMENT MODE: Verification code accepted without validation');
-      return { success: true };
-    }
-    
     // Get webhook secret from environment variables
     const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
@@ -273,15 +209,6 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       console.log('Available env variables:', Object.keys(import.meta.env)
         .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
-      
-      // Fallback for development
-      const isDev = isDevelopmentEnvironment();
-      if (isDev) {
-        return {
-          success: true,
-          message: "DEV MODE: No webhook secret found, verification simulated"
-        };
-      }
       
       return {
         success: false,
@@ -294,8 +221,7 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       console.log('Calling verify Edge Function with token and verificationId');
       
       // Determine URL based on environment
-      const isDev = isDevelopmentEnvironment();
-      const baseUrl = isDev 
+      const baseUrl = import.meta.env.DEV 
         ? '/api/email-verification'  // Use local proxy in development
         : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
       
@@ -336,28 +262,10 @@ export const verifyOtp = async (otp: string, verificationId: string): Promise<{
       };
     } catch (fetchError) {
       console.error('Fetch error verifying OTP:', fetchError);
-      
-      // Development fallback
-      const isDev = isDevelopmentEnvironment();
-      
-      if (isDev) {
-        console.log('DEVELOPMENT FALLBACK: Accepting verification code after fetch error');
-        return { success: true };
-      }
-      
       throw fetchError;
     }
   } catch (err: any) {
     console.error('Error verifying OTP:', err);
-    
-    // Development fallback
-    const isDev = isDevelopmentEnvironment();
-    
-    if (isDev) {
-      console.log('DEVELOPMENT FALLBACK: Accepting verification code in dev mode');
-      return { success: true };
-    }
-    
     return {
       success: false,
       error: err.message || 'Failed to verify code'
@@ -377,32 +285,6 @@ export const checkEmailVerification = async (email: string): Promise<{
   error?: string;
 }> => {
   try {
-    // Check for development environment first for faster response
-    const isDev = isDevelopmentEnvironment();
-    
-    if (isDev) {
-      // Provide test cases for development
-      const testCases: Record<string, { verified: boolean, exists: boolean, requiresVerification: boolean }> = {
-        'verified@example.com': { verified: true, exists: true, requiresVerification: false },
-        'unverified@example.com': { verified: false, exists: true, requiresVerification: true },
-        'admin@example.com': { verified: true, exists: true, requiresVerification: false }
-      };
-      
-      const emailKey = email.toLowerCase();
-      if (testCases[emailKey]) {
-        console.log(`DEVELOPMENT MODE: Using test case for ${emailKey}`);
-        return testCases[emailKey];
-      }
-      
-      // Default test case
-      console.log(`DEVELOPMENT MODE: Using default test case for ${email}`);
-      return {
-        verified: false,
-        exists: true,
-        requiresVerification: true
-      };
-    }
-    
     // Get webhook secret from environment variables
     const webhookSecret = import.meta.env.VITE_WEBHOOK_SECRET;
     
@@ -413,16 +295,6 @@ export const checkEmailVerification = async (email: string): Promise<{
         .filter(key => !key.includes('KEY') && key !== 'VITE_WEBHOOK_SECRET')
         .join(', '));
       
-      // Fallback for development
-      if (isDev) {
-        return {
-          verified: false,
-          exists: true,
-          requiresVerification: true,
-          message: "DEV MODE: No webhook secret found, verification check simulated"
-        };
-      }
-      
       return {
         verified: false,
         exists: false,
@@ -432,7 +304,7 @@ export const checkEmailVerification = async (email: string): Promise<{
     }
     
     // Determine URL based on environment
-    const baseUrl = isDev 
+    const baseUrl = import.meta.env.DEV 
       ? '/api/email-verification'  // Use local proxy in development
       : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-verification`;
     
@@ -478,36 +350,10 @@ export const checkEmailVerification = async (email: string): Promise<{
       };
     } catch (fetchError) {
       console.error('Fetch error checking verification status:', fetchError);
-      
-      // If in development, use fallback
-      if (isDev) {
-        // Default test case for development when fetch fails
-        console.log(`DEVELOPMENT FALLBACK: Using default test case after fetch error`);
-        return {
-          verified: false,
-          exists: true,
-          requiresVerification: true
-        };
-      }
-      
       throw fetchError;
     }
   } catch (err: any) {
     console.error('Error checking email verification:', err);
-    
-    // Development fallback
-    const isDev = isDevelopmentEnvironment();
-    
-    if (isDev) {
-      // Default test case
-      console.log(`DEVELOPMENT FALLBACK: Using default test case after error`);
-      return {
-        verified: false,
-        exists: true,
-        requiresVerification: true
-      };
-    }
-    
     return {
       verified: false,
       exists: false,

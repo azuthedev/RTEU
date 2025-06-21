@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle, ArrowLeft, ShieldAlert } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useToast } from '../components/ui/use-toast';
 import Header from '../components/Header';
 import FormField from '../components/ui/form-field';
 import useFormValidation from '../hooks/useFormValidation';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Helmet } from 'react-helmet-async';
 
 const ResetPassword = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { resetPassword, verifyPasswordResetToken } = useAuth();
+  const { trackEvent } = useAnalytics();
+  const { toast } = useToast();
+  const { t, isLoading } = useLanguage();
+
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
@@ -23,25 +34,20 @@ const ResetPassword = () => {
   const [verifyingToken, setVerifyingToken] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   
-  const { resetPassword, verifyPasswordResetToken } = useAuth();
-  const { trackEvent } = useAnalytics();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
   // Define validation rules
   const validationRules = {
     password: [
-      { required: true, message: 'Please enter a password' },
+      { required: true, message: t('validation.passwordRequired', 'Please enter a password') },
       { 
         validate: (value) => value.length >= 6,
-        message: 'Password must be at least 6 characters long' 
+        message: t('validation.passwordLength', 'Password must be at least 6 characters long') 
       }
     ],
     confirmPassword: [
-      { required: true, message: 'Please confirm your password' },
+      { required: true, message: t('validation.confirmRequired', 'Please confirm your password') },
       { 
         validate: (value) => value === formData.password,
-        message: 'Passwords do not match' 
+        message: t('validation.passwordMatch', 'Passwords do not match') 
       }
     ]
   };
@@ -73,7 +79,7 @@ const ResetPassword = () => {
         if (!result.valid) {
           setVerifyingToken(false);
           setInvalidToken(true);
-          setError(result.error || 'Invalid or expired token');
+          setError(result.error || t('error.invalidToken', 'Invalid or expired token'));
           return;
         }
         
@@ -87,12 +93,12 @@ const ResetPassword = () => {
         console.error('Error verifying token:', error);
         setVerifyingToken(false);
         setInvalidToken(true);
-        setError(error.message || 'Failed to verify reset token');
+        setError(error.message || t('error.verifyFailed', 'Failed to verify reset token'));
       }
     };
     
     verifyToken();
-  }, [searchParams, verifyPasswordResetToken]);
+  }, [searchParams, verifyPasswordResetToken, t]);
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,7 +110,7 @@ const ResetPassword = () => {
     }
     
     if (!resetToken || !userEmail) {
-      setError('Invalid or missing reset token. Please request a new password reset link.');
+      setError(t('error.missingToken', 'Invalid or missing reset token. Please request a new password reset link.'));
       return;
     }
     
@@ -114,23 +120,37 @@ const ResetPassword = () => {
       const result = await resetPassword(formData.password, resetToken, userEmail);
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to reset your password. Please try again.');
+        throw new Error(result.error || t('error.resetFailed', 'Failed to reset your password. Please try again.'));
       }
       
       // Password reset successful
       setSuccess(true);
       trackEvent('Authentication', 'Password Reset Success');
       
+      // Show success toast
+      toast({
+        title: t('toast.success.title', 'Password Reset Successful'),
+        description: t('toast.success.description', 'Your password has been reset successfully. You can now sign in with your new password.'),
+        variant: "default"
+      });
+      
       // Redirect to login after a delay
       setTimeout(() => {
         navigate('/login', { 
-          state: { message: 'Your password has been reset successfully. Please sign in with your new password.' } 
+          state: { message: t('success.loginMessage', 'Your password has been reset successfully. Please sign in with your new password.') } 
         });
       }, 3000);
     } catch (error: any) {
       console.error('Error resetting password:', error);
-      setError(error.message || 'Failed to reset your password. Please try again.');
+      setError(error.message || t('error.unexpectedError', 'Failed to reset your password. Please try again.'));
       trackEvent('Authentication', 'Password Reset Error', error.message);
+      
+      // Show error toast
+      toast({
+        title: t('toast.error.title', 'Password Reset Failed'),
+        description: error.message || t('toast.error.description', 'An error occurred. Please try again or request a new reset link.'),
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -149,11 +169,30 @@ const ResetPassword = () => {
   const handleBackToLogin = () => {
     navigate('/login');
   };
+
+  // If translations are still loading, show a loading spinner
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header hideSignIn />
+        <div className="flex-1 flex items-center justify-center pt-32">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">{t('common.loading', 'Loading...')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Show loading state while verifying token
   if (verifyingToken) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Helmet>
+          <title>{t('meta.title', 'Reset Password | Royal Transfer EU')}</title>
+          <meta name="description" content={t('meta.description', 'Reset your password to access your Royal Transfer EU account.')} />
+        </Helmet>
         <Header hideSignIn />
         <main className="pt-32 pb-16">
           <div className="max-w-md mx-auto px-4">
@@ -166,9 +205,9 @@ const ResetPassword = () => {
               <div className="flex justify-center mb-6">
                 <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
               </div>
-              <h2 className="text-2xl font-semibold mb-4">Verifying Reset Link</h2>
+              <h2 className="text-2xl font-semibold mb-4">{t('verifying.title', 'Verifying Reset Link')}</h2>
               <p className="text-gray-600 mb-8">
-                Please wait while we verify your password reset link...
+                {t('verifying.message', 'Please wait while we verify your password reset link...')}
               </p>
             </motion.div>
           </div>
@@ -181,6 +220,10 @@ const ResetPassword = () => {
   if (invalidToken) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Helmet>
+          <title>{t('meta.invalidTitle', 'Invalid Reset Link | Royal Transfer EU')}</title>
+          <meta name="description" content={t('meta.invalidDescription', 'This password reset link is invalid or has expired. Please request a new one.')} />
+        </Helmet>
         <Header hideSignIn />
         
         <main className="pt-32 pb-16">
@@ -193,13 +236,13 @@ const ResetPassword = () => {
             >
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                  <ShieldAlert className="h-8 w-8 text-red-600" />
+                  <ShieldAlert className="w-8 h-8 text-red-600" />
                 </div>
               </div>
               
-              <h2 className="text-2xl font-semibold mb-4">Invalid Reset Link</h2>
+              <h2 className="text-2xl font-semibold mb-4">{t('invalid.title', 'Invalid Reset Link')}</h2>
               <p className="text-gray-600 mb-8">
-                {error || 'The password reset link is invalid or has expired. Please request a new password reset link.'}
+                {error || t('invalid.message', 'The password reset link is invalid or has expired. Please request a new password reset link.')}
               </p>
               
               <button
@@ -207,7 +250,7 @@ const ResetPassword = () => {
                 className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Login
+                {t('buttons.backToLogin', 'Back to Login')}
               </button>
             </motion.div>
           </div>
@@ -221,6 +264,10 @@ const ResetPassword = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Helmet>
+          <title>{t('meta.successTitle', 'Password Reset Successful | Royal Transfer EU')}</title>
+          <meta name="description" content={t('meta.successDescription', 'Your password has been successfully reset. You can now sign in with your new password.')} />
+        </Helmet>
         <Header hideSignIn />
         
         <main className="pt-32 pb-16">
@@ -233,18 +280,18 @@ const ResetPassword = () => {
             >
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
               </div>
               
-              <h2 className="text-2xl font-semibold mb-4">Password Reset Successful</h2>
+              <h2 className="text-2xl font-semibold mb-4">{t('success.title', 'Password Reset Successful')}</h2>
               <p className="text-gray-600 mb-8">
-                Your password has been reset successfully. You can now log in with your new password.
+                {t('success.message', 'Your password has been reset successfully. You can now log in with your new password.')}
               </p>
               
               <div className="bg-gray-50 p-4 rounded-md mb-6">
                 <p className="text-sm text-gray-600">
-                  Redirecting you to the login page...
+                  {t('success.redirecting', 'Redirecting you to the login page...')}
                 </p>
               </div>
             </motion.div>
@@ -258,6 +305,10 @@ const ResetPassword = () => {
   // Main password reset form
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>{t('meta.title', 'Reset Password | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Reset your password to access your Royal Transfer EU account.')} />
+      </Helmet>
       <Header hideSignIn />
       
       <main className="pt-32 pb-16">
@@ -268,10 +319,12 @@ const ResetPassword = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-2xl font-semibold mb-4 text-center">Reset Your Password</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-center">{t('form.title', 'Reset Your Password')}</h2>
             
             <p className="text-gray-600 mb-6 text-center">
-              {userEmail ? `Please enter a new password for ${userEmail}` : 'Please enter a new password for your account.'}
+              {userEmail 
+                ? t('form.subtitle.withEmail', `Please enter a new password for ${userEmail}`) 
+                : t('form.subtitle.noEmail', 'Please enter a new password for your account.')}
             </p>
             
             {error && (
@@ -286,7 +339,7 @@ const ResetPassword = () => {
                 <FormField
                   id="password"
                   name="password"
-                  label="New Password"
+                  label={t('form.newPassword', 'New Password')}
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleInputChange}
@@ -295,14 +348,14 @@ const ResetPassword = () => {
                   required
                   icon={<Lock className="h-5 w-5" />}
                   autoComplete="new-password"
-                  helpText="Must be at least 6 characters"
+                  helpText={t('form.passwordHelp', 'Must be at least 6 characters')}
                   inputClassName="pr-10"
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('buttons.hidePassword', 'Hide password') : t('buttons.showPassword', 'Show password')}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -312,7 +365,7 @@ const ResetPassword = () => {
                 <FormField
                   id="confirmPassword"
                   name="confirmPassword"
-                  label="Confirm New Password"
+                  label={t('form.confirmPassword', 'Confirm New Password')}
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
@@ -327,7 +380,7 @@ const ResetPassword = () => {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
-                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showConfirmPassword ? t('buttons.hidePassword', 'Hide password') : t('buttons.showPassword', 'Show password')}
                 >
                   {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -344,9 +397,9 @@ const ResetPassword = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Resetting Password...
+                    {t('buttons.resetting', 'Resetting Password...')}
                   </>
-                ) : 'Reset Password'}
+                ) : t('buttons.reset', 'Reset Password')}
               </button>
             </form>
             
@@ -355,7 +408,7 @@ const ResetPassword = () => {
                 onClick={handleBackToLogin}
                 className="text-sm text-blue-600 hover:text-blue-700"
               >
-                Back to Login
+                {t('buttons.backToLogin', 'Back to Login')}
               </button>
             </div>
           </motion.div>

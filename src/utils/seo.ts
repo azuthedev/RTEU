@@ -33,7 +33,7 @@ export const updateMetaTags = (
   if (ogTitle) ogTitle.setAttribute('content', title);
   if (ogDescription) ogDescription.setAttribute('content', description);
   
-  const baseUrl = 'https://royaltransfer.eu';
+  const baseUrl = 'https://royaltransfereu.com';
   const fullUrl = `${baseUrl}${path}`;
   
   if (ogUrl) ogUrl.setAttribute('content', fullUrl);
@@ -130,7 +130,7 @@ export const addStructuredData = (type: string, data: Record<string, any>): void
  * @param path Current path
  */
 export const addBreadcrumbData = (path: string): void => {
-  const baseUrl = 'https://royaltransfer.eu';
+  const baseUrl = 'https://royaltransfereu.com';
   const pathSegments = path.split('/').filter(Boolean);
   
   // No breadcrumbs needed for homepage

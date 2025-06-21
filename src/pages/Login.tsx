@@ -11,6 +11,8 @@ import PasswordResetModal from '../components/PasswordResetModal';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
 import GoogleAuthButton from '../components/GoogleAuthButton';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Helmet } from 'react-helmet-async';
 
 interface LocationState {
   message?: string;
@@ -37,6 +39,7 @@ const Login = () => {
   const [isLinkingBooking, setIsLinkingBooking] = useState(false);
   const { trackEvent } = useAnalytics();
   const { toast } = useToast();
+  const { t, isLoading: translationsLoading } = useLanguage();
 
   // For verification handling
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -108,7 +111,7 @@ const Login = () => {
     // If this login was redirected due to verification requirement
     if (state?.requireVerification) {
       setIsUnverifiedUser(true);
-      setError('Your email address needs to be verified before you can continue.');
+      setError(t('errors.emailVerification', 'Your email address needs to be verified before you can continue.'));
       extractedState.requireVerification = state.requireVerification;
       
       // Auto-trigger verification email if we have an email
@@ -153,8 +156,8 @@ const Login = () => {
       
       console.log('Booking linked successfully');
       toast({
-        title: "Success",
-        description: "Booking has been linked to your account.",
+        title: t('toast.bookingLinked.title', "Success"),
+        description: t('toast.bookingLinked.message', "Booking has been linked to your account."),
         variant: "success"
       });
       trackEvent('Booking', 'Booking Linked To Account', reference);
@@ -170,14 +173,14 @@ const Login = () => {
       
       // Show user-friendly error but don't fail the flow
       toast({
-        title: "Booking Link Failed",
-        description: "You can link this manually in your bookings page.",
+        title: t('toast.bookingLinkFailed.title', "Booking Link Failed"),
+        description: t('toast.bookingLinkFailed.message', "You can link this manually in your bookings page."),
         variant: "destructive"
       });
     } finally {
       setIsLinkingBooking(false);
     }
-  }, [toast, trackEvent]);
+  }, [toast, trackEvent, t]);
 
   const handleValidBookingFound = useCallback((data: any) => {
     setBookingData(data);
@@ -196,7 +199,7 @@ const Login = () => {
 
   const handleSendVerification = useCallback(async (email = formData.email) => {
     if (!email) {
-      setError('Please enter your email address');
+      setError(t('errors.emailRequired', 'Please enter your email address'));
       return;
     }
 
@@ -212,23 +215,23 @@ const Login = () => {
       }
       
       if (!verificationCheck.exists) {
-        throw new Error('No account found with this email address. Please sign up first.');
+        throw new Error(t('errors.noAccount', 'No account found with this email address. Please sign up first.'));
       }
       
       if (verificationCheck.verified) {
-        throw new Error('This email is already verified. Please try logging in again.');
+        throw new Error(t('errors.alreadyVerified', 'This email is already verified. Please try logging in again.'));
       }
       
       // Check if there's already a pending verification and it's recent
       if (verificationCheck.hasPendingVerification && verificationCheck.verificationAge && verificationCheck.verificationAge < 2) {
-        throw new Error(`A verification email was recently sent. Please check your inbox or wait ${Math.max(1, 2 - verificationCheck.verificationAge)} minute(s) before requesting another.`);
+        throw new Error(t('errors.recentVerification', 'A verification email was recently sent. Please check your inbox or wait {{time}} minute(s) before requesting another.', { time: Math.max(1, 2 - verificationCheck.verificationAge) }));
       }
       
       // Send verification email
       const result = await sendVerificationEmail(email);
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to send verification code');
+        throw new Error(result.error || t('errors.sendVerificationFailed', 'Failed to send verification code'));
       }
       
       setVerificationId(result.verificationId || '');
@@ -248,12 +251,12 @@ const Login = () => {
         setVerificationId(`dev-${Date.now()}`);
         setShowVerificationModal(true);
       } else {
-        setError(error.message || 'Failed to send verification email');
+        setError(error.message || t('errors.verificationFailed', 'Failed to send verification email'));
       }
     } finally {
       setIsSendingVerification(false);
     }
-  }, [formData.email, checkEmailVerification, sendVerificationEmail, trackEvent, isDevEnvironment]);
+  }, [formData.email, checkEmailVerification, sendVerificationEmail, trackEvent, isDevEnvironment, t]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,7 +264,7 @@ const Login = () => {
     setConflictMessage(null);
     
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password');
+      setError(t('errors.missingCredentials', 'Please enter both email and password'));
       return;
     }
 
@@ -303,7 +306,7 @@ const Login = () => {
         if (!userData?.email_verified) {
           // User needs to verify their email
           setIsUnverifiedUser(true);
-          setError('Your email address needs to be verified before you can continue.');
+          setError(t('errors.emailNotVerified', 'Your email address needs to be verified before you can continue.'));
           
           // Send verification email
           await handleSendVerification(formData.email);
@@ -340,9 +343,9 @@ const Login = () => {
       // Check if this is an unverified user
       if (error.message.includes('email') && error.message.includes('not verified')) {
         setIsUnverifiedUser(true);
-        setError('Your email address needs to be verified. Please check your inbox or request a new verification email.');
+        setError(t('errors.emailNeedsVerification', 'Your email address needs to be verified. Please check your inbox or request a new verification email.'));
       } else {
-        setError(error.message || 'Failed to sign in. Please check your credentials.');
+        setError(error.message || t('errors.loginFailed', 'Failed to sign in. Please check your credentials.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -359,7 +362,8 @@ const Login = () => {
     refreshSession, 
     navigate, 
     location.state, 
-    trackEvent
+    trackEvent,
+    t
   ]);
 
   const handleVerificationComplete = useCallback(async () => {
@@ -368,7 +372,7 @@ const Login = () => {
     
     setShowVerificationModal(false);
     setIsUnverifiedUser(false);
-    setSuccessMessage('Email verified successfully! You can now log in.');
+    setSuccessMessage(t('success.emailVerified', 'Email verified successfully! You can now log in.'));
     
     // Refresh the session to update the JWT claims
     await refreshSession();
@@ -377,7 +381,7 @@ const Login = () => {
     if (formData.email && formData.password) {
       await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
     }
-  }, [trackEvent, refreshSession, formData, handleSubmit]);
+  }, [trackEvent, refreshSession, formData, handleSubmit, t]);
 
   const handlePasswordResetClick = useCallback(() => {
     setShowPasswordResetModal(true);
@@ -397,7 +401,7 @@ const Login = () => {
   }, [navigate]);
 
   const redirectToPartnerPortal = useCallback(() => {
-    window.location.href = 'https://app.royaltransfer.eu/partner';
+    window.location.href = 'https://app.royaltransfereu.com/partner';
   }, []);
   
   const handleGoToLogin = useCallback(() => {
@@ -425,7 +429,7 @@ const Login = () => {
         }`}
         onClick={() => setIsDriver(false)}
       >
-        Customer
+        {t('tabs.customer', 'Customer')}
       </button>
       <button
         className={`flex-1 py-2 text-center rounded-lg transition-colors ${
@@ -433,17 +437,18 @@ const Login = () => {
         }`}
         onClick={() => setIsDriver(true)}
       >
-        Driver
+        {t('tabs.driver', 'Driver')}
       </button>
     </div>
-  ), [isDriver]);
+  ), [isDriver, t]);
 
-  if (authLoading) {
+  // Show loading spinner while authentication state or translations are loading
+  if (authLoading || translationsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p>Loading...</p>
+          <p>{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
     );
@@ -451,6 +456,10 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Helmet>
+        <title>{t('meta.title', 'Sign In | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Sign in to your Royal Transfer EU account to manage your bookings, view your profile, and more.')} />
+      </Helmet>
       <Header hideSignIn />
       
       <main className="flex-1 flex items-center justify-center px-4 py-12">
@@ -466,8 +475,8 @@ const Login = () => {
             
             {isDevEnvironment && (
               <div className="bg-amber-50 text-amber-800 p-3 rounded-md mb-4 text-sm">
-                <p className="font-medium">Development Mode Active</p>
-                <p className="mt-1">Authentication errors will be bypassed for testing.</p>
+                <p className="font-medium">{t('devMode.title', 'Development Mode Active')}</p>
+                <p className="mt-1">{t('devMode.description', 'Authentication errors will be bypassed for testing.')}</p>
               </div>
             )}
             
@@ -501,8 +510,8 @@ const Login = () => {
             {/* Booking Reference Message */}
             {bookingReference && bookingData && !isUnverifiedUser && (
               <div className="bg-blue-50 text-blue-700 p-3 rounded-md mb-6 text-sm">
-                <p className="font-medium">Your booking reference: {bookingReference}</p>
-                <p className="mt-1">Sign in to manage your booking.</p>
+                <p className="font-medium">{t('booking.reference', 'Your booking reference: {{reference}}', { reference: bookingReference })}</p>
+                <p className="mt-1">{t('booking.message', 'Sign in to manage your booking.')}</p>
               </div>
             )}
 
@@ -517,9 +526,9 @@ const Login = () => {
             {/* Unverified User Message */}
             {isUnverifiedUser && (
               <div className="bg-yellow-50 text-yellow-700 p-4 rounded-md mb-6">
-                <h3 className="font-semibold mb-2">Email Verification Required</h3>
+                <h3 className="font-semibold mb-2">{t('verification.title', 'Email Verification Required')}</h3>
                 <p className="text-sm mb-4">
-                  Your account needs to be verified before you can log in. Please check your email for a verification link or request a new one.
+                  {t('verification.description', 'Your account needs to be verified before you can log in. Please check your email for a verification link or request a new one.')}
                 </p>
                 <button
                   onClick={() => handleSendVerification()}
@@ -529,12 +538,12 @@ const Login = () => {
                   {isSendingVerification ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sending verification email...
+                      {t('verification.sending', 'Sending verification email...')}
                     </>
                   ) : (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2" />
-                      Resend Verification Email
+                      {t('verification.resend', 'Resend Verification Email')}
                     </>
                   )}
                 </button>
@@ -543,21 +552,21 @@ const Login = () => {
 
             {isDriver ? (
               <div className="text-center py-4">
-                <h2 className="text-xl font-semibold mb-4">Driver Portal</h2>
+                <h2 className="text-xl font-semibold mb-4">{t('driver.title', 'Driver Portal')}</h2>
                 <p className="text-gray-700 mb-6">
-                  Please sign in through our partner portal to access the driver dashboard.
+                  {t('driver.message', 'Please sign in through our partner portal to access the driver dashboard.')}
                 </p>
                 <button
                   onClick={handlePartnerClick}
                   className="w-full border-2 border-blue-600 bg-white text-blue-600 px-[calc(1.5rem-1px)] py-[calc(0.5rem-1px)] rounded-md hover:bg-blue-50 transition-all duration-300 mb-4"
                 >
-                  Become a Partner
+                  {t('driver.becomePartner', 'Become a Partner')}
                 </button>
                 <button
                   onClick={redirectToPartnerPortal}
                   className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-all duration-300 w-full"
                 >
-                  Go to Partner Portal
+                  {t('driver.goToPortal', 'Go to Partner Portal')}
                 </button>
               </div>
             ) : !isUnverifiedUser && (
@@ -572,14 +581,14 @@ const Login = () => {
                 
                 <div className="relative flex items-center justify-center">
                   <div className="flex-grow border-t border-gray-300"></div>
-                  <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+                  <span className="flex-shrink mx-4 text-gray-500 text-sm">{t('form.or', 'or')}</span>
                   <div className="flex-grow border-t border-gray-300"></div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
+                      {t('form.email', 'Email')}
                     </label>
                     <input
                       type="email"
@@ -594,7 +603,7 @@ const Login = () => {
 
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
+                      {t('form.password', 'Password')}
                     </label>
                     <input
                       type="password"
@@ -615,10 +624,10 @@ const Login = () => {
                     {isSubmitting || isLinkingBooking ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        {isLinkingBooking ? 'Linking Booking...' : 'Signing in...'}
+                        {isLinkingBooking ? t('form.linkingBooking', 'Linking Booking...') : t('form.signingIn', 'Signing in...')}
                       </>
                     ) : (
-                      bookingReference ? 'Sign In & Link Booking' : 'Sign In'
+                      bookingReference ? t('form.signInAndLink', 'Sign In & Link Booking') : t('form.signIn', 'Sign In')
                     )}
                   </button>
 
@@ -628,7 +637,7 @@ const Login = () => {
                       onClick={handlePasswordResetClick}
                       className="text-sm text-blue-600 hover:text-blue-700"
                     >
-                      Forgot your password?
+                      {t('form.forgotPassword', 'Forgot your password?')}
                     </button>
                   </div>
                 </form>
@@ -642,7 +651,7 @@ const Login = () => {
                 className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
+                {t('backToHome', 'Back to Home')}
               </Link>
             </div>
           </div>
@@ -653,7 +662,7 @@ const Login = () => {
               to="/customer-signup"
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
-              Sign up
+              {t('signUp', 'Sign up')}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -664,7 +673,7 @@ const Login = () => {
               to="/contact"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              Need Help? Contact Support
+              {t('needHelp', 'Need Help? Contact Support')}
             </Link>
           </div>
         </div>

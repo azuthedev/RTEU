@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/use-toast';
 import { withRetry } from '../utils/retryHelper';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Trip {
   id: string;
@@ -59,29 +60,30 @@ const Bookings = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [copiedRef, setCopiedRef] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Helper function to classify error types
   const classifyError = (error: any): { type: 'network' | 'auth' | 'permission' | 'server' | 'unknown', message: string } => {
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
     
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('TypeError: Failed to fetch')) {
-      return { type: 'network', message: 'Network connection failed. Please check your internet connection and try again.' };
+      return { type: 'network', message: t('bookings.error.networkError', 'Network connection failed. Please check your internet connection and try again.') };
     }
     
     if (errorMessage.includes('infinite recursion') || errorMessage.includes('42P17')) {
-      return { type: 'permission', message: 'Database configuration issue. Please try refreshing the page or contact support if the problem persists.' };
+      return { type: 'permission', message: t('bookings.error.configError', 'Database configuration issue. Please try refreshing the page or contact support if the problem persists.') };
     }
     
     if (errorMessage.includes('Invalid session') || errorMessage.includes('401')) {
-      return { type: 'auth', message: 'Your session has expired. Please sign in again.' };
+      return { type: 'auth', message: t('bookings.error.sessionExpired', 'Your session has expired. Please sign in again.') };
     }
     
     if (errorMessage.includes('403') || errorMessage.includes('Unauthorized')) {
-      return { type: 'permission', message: 'Access denied. You do not have permission to view these bookings.' };
+      return { type: 'permission', message: t('bookings.error.permissionError', 'Access denied. You do not have permission to view these bookings.') };
     }
     
     if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
-      return { type: 'server', message: 'Server error occurred. Please try again in a few moments.' };
+      return { type: 'server', message: t('bookings.error.serverError', 'Server error occurred. Please try again in a few moments.') };
     }
     
     return { type: 'unknown', message: errorMessage };
@@ -108,7 +110,7 @@ const Bookings = () => {
   }, [user, authLoading, navigate, location]);
 
   // Enhanced fetch trips function with better error handling
-  const fetchTrips = async (showLoadingState = true) => {
+  const fetchTrips = useCallback(async (showLoadingState = true) => {
     if (!user) return;
 
     try {
@@ -128,7 +130,7 @@ const Bookings = () => {
           const { data: { session } } = await supabase.auth.getSession();
           
           if (!session) {
-            throw new Error('No active session - please sign in again');
+            throw new Error(t('bookings.error.noSession', 'No active session - please sign in again'));
           }
 
           // Call the Edge Function with proper authorization
@@ -137,7 +139,7 @@ const Bookings = () => {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `${session.access_token}`
+                'Authorization': `Bearer ${session.access_token}`
               }
             });
           }, {
@@ -160,10 +162,12 @@ const Bookings = () => {
             // If no trips found, show appropriate message
             if (!data || data.length === 0) {
               toast({
-                title: `No ${activeTab} bookings`,
+                title: activeTab === 'upcoming' 
+                  ? t('bookings.toast.noUpcoming', 'No upcoming bookings')
+                  : t('bookings.toast.noPast', 'No past bookings'),
                 description: activeTab === 'upcoming' 
-                  ? "You don't have any upcoming bookings." 
-                  : "You don't have any past bookings.",
+                  ? t('bookings.toast.noUpcomingDesc', "You don't have any upcoming bookings.")
+                  : t('bookings.toast.noPastDesc', "You don't have any past bookings."),
                 variant: "default"
               });
             }
@@ -172,7 +176,7 @@ const Bookings = () => {
           } else {
             const errorText = await response.text();
             console.error('[fetchTrips] Edge Function failed:', response.status, errorText);
-            throw new Error(`Edge Function failed: ${response.status}`);
+            throw new Error(t('bookings.error.edgeFunctionFailed', 'Edge Function failed: {{status}}', { status: response.status.toString() }));
           }
         } catch (edgeFunctionError) {
           console.warn('[fetchTrips] Edge Function failed, falling back to direct query:', edgeFunctionError);
@@ -193,7 +197,7 @@ const Bookings = () => {
         if (session?.user?.email) {
           userEmail = session.user.email;
         } else {
-          throw new Error('Could not determine user email for booking lookup');
+          throw new Error(t('bookings.error.emailLookupFailed', 'Could not determine user email for booking lookup'));
         }
       }
 
@@ -252,10 +256,12 @@ const Bookings = () => {
       // If no trips found, show appropriate message
       if (!data || data.length === 0) {
         toast({
-          title: `No ${activeTab} bookings`,
+          title: activeTab === 'upcoming' 
+            ? t('bookings.toast.noUpcoming', 'No upcoming bookings') 
+            : t('bookings.toast.noPast', 'No past bookings'),
           description: activeTab === 'upcoming' 
-            ? "You don't have any upcoming bookings." 
-            : "You don't have any past bookings.",
+            ? t('bookings.toast.noUpcomingDesc', "You don't have any upcoming bookings.") 
+            : t('bookings.toast.noPastDesc', "You don't have any past bookings."),
           variant: "default"
         });
       }
@@ -267,7 +273,7 @@ const Bookings = () => {
       
       // Show user-friendly error message
       toast({
-        title: "Error Loading Bookings",
+        title: t('bookings.toast.error', "Error Loading Bookings"),
         description: classifiedError.message,
         variant: "destructive",
         action: classifiedError.type === 'network' ? (
@@ -275,7 +281,7 @@ const Bookings = () => {
             onClick={() => fetchTrips()} 
             className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
           >
-            Retry
+            {t('bookings.error.retry', 'Retry')}
           </button>
         ) : undefined
       });
@@ -284,7 +290,7 @@ const Bookings = () => {
       if (classifiedError.type === 'auth') {
         setTimeout(() => {
           navigate('/login', { 
-            state: { from: location, message: 'Please sign in again to access your bookings.' },
+            state: { from: location, message: t('bookings.error.reloginMessage', 'Please sign in again to access your bookings.') },
             replace: true 
           });
         }, 3000);
@@ -292,14 +298,14 @@ const Bookings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, activeTab, userData?.email, navigate, location, toast, retryCount, t]);
 
   // Fetch trips when user or activeTab changes
   useEffect(() => {
     if (user) {
       fetchTrips();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, fetchTrips]);
 
   const fetchBookingDetails = async (tripId: string) => {
     setLoadingDetails(true);
@@ -319,7 +325,7 @@ const Bookings = () => {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `${session.access_token}`
+              'Authorization': `Bearer ${session.access_token}`
             }
           });
           
@@ -358,8 +364,8 @@ const Bookings = () => {
       console.error('[fetchBookingDetails] Error fetching booking details:', error);
       
       toast({
-        title: "Error Loading Details",
-        description: "Could not load booking details. Please try again.",
+        title: t('bookings.toast.detailsError', "Error Loading Details"),
+        description: t('bookings.toast.detailsErrorDesc', "Could not load booking details. Please try again."),
         variant: "destructive"
       });
       
@@ -422,15 +428,15 @@ const Bookings = () => {
       }
       
       toast({
-        title: "Booking Linked",
-        description: "This booking has been linked to your account.",
+        title: t('bookings.toast.linkSuccess', "Booking Linked"),
+        description: t('bookings.toast.linkSuccessDesc', "This booking has been linked to your account."),
         variant: "default"
       });
     } catch (error: any) {
       console.error('Error linking booking:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to link booking to your account.",
+        title: t('bookings.toast.linkError', "Error"),
+        description: error.message || t('bookings.toast.linkErrorDesc', "Failed to link booking to your account."),
         variant: "destructive"
       });
     } finally {
@@ -445,24 +451,24 @@ const Bookings = () => {
       setTimeout(() => setCopiedRef(false), 2000);
       
       toast({
-        title: "Booking Reference Copied",
-        description: "Reference has been copied to clipboard",
+        title: t('bookings.toast.referenceCopied', "Booking Reference Copied"),
+        description: t('bookings.toast.referenceCopiedDesc', "Reference has been copied to clipboard"),
         variant: "default"
       });
     }
   };
 
   const formatDateTime = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('bookings.dateTime.na', 'N/A');
     try {
       return format(new Date(dateString), 'EEE, MMM d, yyyy • h:mm a');
     } catch (e) {
-      return 'Invalid date';
+      return t('bookings.dateTime.invalid', 'Invalid date');
     }
   };
 
   const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return 'N/A';
+    if (amount === undefined || amount === null) return t('bookings.currency.na', 'N/A');
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
@@ -482,7 +488,7 @@ const Bookings = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p>Loading authentication...</p>
+          <p>{t('bookings.loading.auth', 'Loading authentication...')}</p>
         </div>
       </div>
     );
@@ -497,7 +503,7 @@ const Bookings = () => {
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                <p>Loading your bookings...</p>
+                <p>{t('bookings.loading.bookings', 'Loading your bookings...')}</p>
               </div>
             </div>
           </div>
@@ -513,7 +519,7 @@ const Bookings = () => {
       <main className="pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Your Bookings</h1>
+            <h1 className="text-3xl font-bold">{t('bookings.header.title', 'Your Bookings')}</h1>
             
             {/* Refresh button */}
             <button
@@ -522,7 +528,7 @@ const Bookings = () => {
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <span>{t('bookings.header.refreshButton', 'Refresh')}</span>
             </button>
           </div>
 
@@ -536,7 +542,7 @@ const Bookings = () => {
                 onClick={() => fetchTrips()}
                 className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
               >
-                Retry
+                {t('bookings.error.retry', 'Retry')}
               </button>
             </div>
           )}
@@ -551,7 +557,7 @@ const Bookings = () => {
               }`}
               onClick={() => setActiveTab('upcoming')}
             >
-              Upcoming
+              {t('bookings.tabs.upcoming', 'Upcoming')}
             </button>
             <button
               className={`flex-1 py-3 text-center rounded-md transition-colors ${
@@ -561,7 +567,7 @@ const Bookings = () => {
               }`}
               onClick={() => setActiveTab('past')}
             >
-              Past
+              {t('bookings.tabs.past', 'Past')}
             </button>
           </div>
 
@@ -574,15 +580,15 @@ const Bookings = () => {
                 </div>
                 <p className="text-gray-600 mb-4">
                   {activeTab === 'upcoming' 
-                    ? 'No upcoming bookings' 
-                    : 'No past bookings'
+                    ? t('bookings.emptyState.upcoming', 'No upcoming bookings')
+                    : t('bookings.emptyState.past', 'No past bookings')
                   }
                 </p>
                 <button
                   onClick={() => navigate('/')}
                   className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Book a Transfer
+                  {t('bookings.emptyState.bookButton', 'Book a Transfer')}
                 </button>
               </div>
             ) : (
@@ -610,7 +616,7 @@ const Bookings = () => {
                       {/* Status and Reference - Stacked on mobile */}
                       <div className="flex flex-col xs:flex-row items-start sm:items-center gap-2">
                         <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${getStatusColor(trip.status)}`}>
-                          {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
+                          {t(`bookings.status.${trip.status}`, trip.status.charAt(0).toUpperCase() + trip.status.slice(1))}
                         </span>
                         <div className="flex items-center justify-between w-full sm:w-auto">
                           <div className="flex items-center bg-gray-100 px-2 py-0.5 rounded-full text-sm text-gray-700">
@@ -626,9 +632,9 @@ const Bookings = () => {
                                 handleLinkUnlinkedBooking(trip);
                               }}
                               className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200"
-                              title="Link to my account"
+                              title={t('bookings.bookingItem.linkTooltip', 'Link to my account')}
                             >
-                              Link
+                              {t('bookings.bookingItem.link', 'Link')}
                             </button>
                           )}
                           
@@ -642,14 +648,14 @@ const Bookings = () => {
                         <div className="flex items-start space-x-3">
                           <MapPin className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
                           <div>
-                            <div className="text-sm text-gray-500">From</div>
+                            <div className="text-sm text-gray-500">{t('bookings.bookingItem.from', 'From')}</div>
                             <div className="font-medium line-clamp-1">{trip.pickup_address}</div>
                           </div>
                         </div>
                         <div className="flex items-start space-x-3">
                           <MapPin className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
                           <div>
-                            <div className="text-sm text-gray-500">To</div>
+                            <div className="text-sm text-gray-500">{t('bookings.bookingItem.to', 'To')}</div>
                             <div className="font-medium line-clamp-1">{trip.dropoff_address}</div>
                           </div>
                         </div>
@@ -658,7 +664,7 @@ const Bookings = () => {
                       <div className="mt-4 md:mt-0 flex items-center justify-between md:justify-end md:space-x-8 border-t md:border-0 pt-4 md:pt-0">
                         <div className="flex items-center space-x-1">
                           <Car className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">{trip.vehicle_type || 'Standard'}</span>
+                          <span className="text-sm">{trip.vehicle_type || t('bookings.vehicle.standard', 'Standard')}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Users className="w-4 h-4 text-gray-500" />
@@ -712,20 +718,20 @@ const Bookings = () => {
                     <button 
                       onClick={() => setShowDetails(false)}
                       className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                      aria-label="Close details"
+                      aria-label={t('bookings.bookingDetails.buttons.closeLabel', 'Close details')}
                     >
                       <ArrowLeft className="w-5 h-5 text-gray-500" />
                     </button>
                     <div>
-                      <h2 className="text-xl font-bold">Booking Details</h2>
+                      <h2 className="text-xl font-bold">{t('bookings.bookingDetails.title', 'Booking Details')}</h2>
                       <div className="flex flex-col xs:flex-row xs:items-center gap-2">
                         <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${getStatusColor(selectedBooking.status)}`}>
-                          {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                          {t(`bookings.status.${selectedBooking.status}`, selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1))}
                         </span>
                         <div 
                           className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full text-xs cursor-pointer"
                           onClick={handleCopyBookingRef}
-                          title="Click to copy booking reference"
+                          title={t('bookings.bookingDetails.copyReference', 'Click to copy booking reference')}
                         >
                           <span className="font-mono truncate max-w-[150px]">{selectedBooking.booking_reference}</span>
                           {copiedRef ? (
@@ -751,13 +757,13 @@ const Bookings = () => {
                       <section className="bg-gray-50 p-4 rounded-lg space-y-4">
                         <h3 className="font-semibold flex items-center text-gray-800">
                           <Car className="w-4 h-4 mr-2 text-blue-500" />
-                          Trip Information
+                          {t('bookings.bookingDetails.trip.title', 'Trip Information')}
                         </h3>
                         
                         <div className="grid grid-cols-1 gap-4">
                           {/* Pickup details */}
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Pickup</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.pickup', 'Pickup')}</p>
                             <div className="flex items-start space-x-2">
                               <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                               <div>
@@ -769,7 +775,7 @@ const Bookings = () => {
                           
                           {/* Dropoff details */}
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Dropoff</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.dropoff', 'Dropoff')}</p>
                             <div className="flex items-start space-x-2">
                               <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                               <div>
@@ -785,15 +791,15 @@ const Bookings = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {/* Vehicle & Passengers */}
                           <div className="bg-white p-3 rounded-md border border-gray-200 col-span-1">
-                            <p className="text-sm text-gray-500 mb-1">Vehicle</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.vehicle', 'Vehicle')}</p>
                             <div className="flex items-center">
                               <Car className="w-4 h-4 text-gray-400 mr-1.5" />
-                              <p className="font-medium truncate">{selectedBooking.vehicle_type || 'Standard'}</p>
+                              <p className="font-medium truncate">{selectedBooking.vehicle_type || t('bookings.vehicle.standard', 'Standard')}</p>
                             </div>
                           </div>
                           
                           <div className="bg-white p-3 rounded-md border border-gray-200 col-span-1">
-                            <p className="text-sm text-gray-500 mb-1">Passengers</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.passengers', 'Passengers')}</p>
                             <div className="flex items-center">
                               <Users className="w-4 h-4 text-gray-400 mr-1.5" />
                               <p className="font-medium">{selectedBooking.passengers || 1}</p>
@@ -801,23 +807,23 @@ const Bookings = () => {
                           </div>
                           
                           <div className="bg-white p-3 rounded-md border border-gray-200 col-span-1">
-                            <p className="text-sm text-gray-500 mb-1">Luggage</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.luggage', 'Luggage')}</p>
                             <div className="flex items-center">
                               <Briefcase className="w-4 h-4 text-gray-400 mr-1.5" />
-                              <p className="font-medium">{selectedBooking.luggage_count || 0} items</p>
+                              <p className="font-medium">{selectedBooking.luggage_count || 0} {t('bookings.bookingDetails.trip.items', 'items')}</p>
                             </div>
                           </div>
                           
                           <div className="bg-white p-3 rounded-md border border-gray-200 col-span-1">
-                            <p className="text-sm text-gray-500 mb-1">Trip Type</p>
-                            <p className="font-medium">{selectedBooking.is_return ? 'Round Trip' : 'One Way'}</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.trip.tripType', 'Trip Type')}</p>
+                            <p className="font-medium">{selectedBooking.is_return ? t('bookings.bookingDetails.trip.roundTrip', 'Round Trip') : t('bookings.bookingDetails.trip.oneWay', 'One Way')}</p>
                           </div>
                         </div>
                         
                         {/* Price & Payment */}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Price</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.price.title', 'Price')}</p>
                             <div className="flex items-center">
                               <DollarSign className="w-4 h-4 text-gray-400 mr-1.5" />
                               <p className="font-medium text-blue-600">{formatCurrency(selectedBooking.estimated_price)}</p>
@@ -825,10 +831,10 @@ const Bookings = () => {
                           </div>
                           
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Payment Method</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.price.payment', 'Payment Method')}</p>
                             <div className="flex items-center">
                               <CreditCard className="w-4 h-4 text-gray-400 mr-1.5" />
-                              <p className="font-medium capitalize">{selectedBooking.payment_method || 'Card'}</p>
+                              <p className="font-medium capitalize">{selectedBooking.payment_method || t('bookings.payment.card', 'Card')}</p>
                             </div>
                           </div>
                         </div>
@@ -843,10 +849,10 @@ const Bookings = () => {
                                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path>
                               </svg>
                             </div>
-                            Flight Information
+                            {t('bookings.bookingDetails.flightInfo.title', 'Flight Information')}
                           </h3>
                           <div className="bg-white p-3 rounded-md border border-blue-200">
-                            <p className="text-sm text-gray-500 mb-1">Flight Number</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.flightInfo.flightNumber', 'Flight Number')}</p>
                             <p className="font-medium">{selectedBooking.flight_number}</p>
                           </div>
                         </section>
@@ -856,32 +862,32 @@ const Bookings = () => {
                       <section className="bg-gray-50 p-4 rounded-lg">
                         <h3 className="font-semibold flex items-center text-gray-800 mb-3">
                           <User className="w-4 h-4 mr-2 text-blue-500" />
-                          Contact Information
+                          {t('bookings.bookingDetails.contact.title', 'Contact Information')}
                         </h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Customer Name</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.contact.name', 'Customer Name')}</p>
                             <div className="flex items-center">
                               <User className="w-4 h-4 text-gray-400 mr-1.5" />
                               <p className="font-medium">
                                 {selectedBooking.customer_title && `${selectedBooking.customer_title}. `}
-                                {selectedBooking.customer_name || 'Not provided'}
+                                {selectedBooking.customer_name || t('bookings.contact.notProvided', 'Not provided')}
                               </p>
                             </div>
                           </div>
                           
                           <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-500 mb-1">Email</p>
+                            <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.contact.email', 'Email')}</p>
                             <div className="flex items-center">
                               <Mail className="w-4 h-4 text-gray-400 mr-1.5" />
-                              <p className="font-medium text-sm truncate">{selectedBooking.customer_email || 'Not provided'}</p>
+                              <p className="font-medium text-sm truncate">{selectedBooking.customer_email || t('bookings.contact.notProvided', 'Not provided')}</p>
                             </div>
                           </div>
                           
                           {selectedBooking.customer_phone && (
                             <div className="bg-white p-3 rounded-md border border-gray-200 sm:col-span-2">
-                              <p className="text-sm text-gray-500 mb-1">Phone</p>
+                              <p className="text-sm text-gray-500 mb-1">{t('bookings.bookingDetails.contact.phone', 'Phone')}</p>
                               <div className="flex items-center">
                                 <Phone className="w-4 h-4 text-gray-400 mr-1.5" />
                                 <p className="font-medium">{selectedBooking.customer_phone}</p>
@@ -903,7 +909,7 @@ const Bookings = () => {
                                 <line x1="17" x2="17" y1="5" y2="19" />
                               </svg>
                             </div>
-                            Additional Services
+                            {t('bookings.bookingDetails.extras.title', 'Additional Services')}
                           </h3>
                           <div className="bg-white p-3 rounded-md border border-gray-200">
                             <ul className="divide-y divide-gray-100">
@@ -925,7 +931,7 @@ const Bookings = () => {
                         <section className="bg-gray-50 p-4 rounded-lg">
                           <h3 className="font-semibold flex items-center text-gray-800 mb-3">
                             <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-                            Extra Stops
+                            {t('bookings.bookingDetails.stops.title', 'Extra Stops')}
                           </h3>
                           <div className="bg-white p-3 rounded-md border border-gray-200">
                             <ul className="divide-y divide-gray-100">
@@ -954,7 +960,7 @@ const Bookings = () => {
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                               </svg>
                             </div>
-                            Notes
+                            {t('bookings.bookingDetails.notes.title', 'Notes')}
                           </h3>
                           <div className="bg-white p-3 rounded-md border border-gray-200">
                             <p className="text-sm">{selectedBooking.notes}</p>
@@ -965,9 +971,9 @@ const Bookings = () => {
                       {/* Account linking section */}
                       {!selectedBooking.user_id && userData?.email === selectedBooking.customer_email && (
                         <section className="bg-blue-50 p-4 rounded-lg">
-                          <h3 className="font-semibold text-blue-700 mb-2">Link This Booking</h3>
+                          <h3 className="font-semibold text-blue-700 mb-2">{t('bookings.bookingDetails.linkBooking.title', 'Link This Booking')}</h3>
                           <p className="text-sm text-blue-600 mb-3">
-                            This booking matches your email but isn't linked to your account yet.
+                            {t('bookings.bookingDetails.linkBooking.description', 'This booking matches your email but isn\'t linked to your account yet.')}
                           </p>
                           <button
                             onClick={() => handleLinkUnlinkedBooking(selectedBooking)}
@@ -975,9 +981,9 @@ const Bookings = () => {
                             disabled={loadingDetails}
                           >
                             {loadingDetails ? (
-                              <><Loader2 className="w-4 h-4 mr-2 inline animate-spin" /> Linking...</>
+                              <>{t('bookings.bookingDetails.linkBooking.linking', 'Linking...')}<Loader2 className="w-4 h-4 ml-2 inline animate-spin" /></>
                             ) : (
-                              'Link to My Account'
+                              t('bookings.bookingDetails.linkBooking.button', 'Link to My Account')
                             )}
                           </button>
                         </section>
@@ -992,18 +998,18 @@ const Bookings = () => {
                     onClick={() => setShowDetails(false)}
                     className="mt-3 sm:mt-0 flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    Close
+                    {t('bookings.bookingDetails.buttons.close', 'Close')}
                   </button>
                   
                   <div className="grid grid-cols-2 gap-3">
                     <a
-                      href={`mailto:support@royaltransfer.eu?subject=Booking ${selectedBooking.booking_reference} Inquiry&body=Hello, I have a question about my booking reference ${selectedBooking.booking_reference}.`}
+                      href={`mailto:support@royaltransfereu.com?subject=Booking ${selectedBooking.booking_reference} Inquiry&body=Hello, I have a question about my booking reference ${selectedBooking.booking_reference}.`}
                       className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <Mail className="w-4 h-4 mr-2" />
-                      Support
+                      {t('bookings.bookingDetails.buttons.support', 'Support')}
                     </a>
                     
                     {activeTab === 'upcoming' && (
@@ -1016,7 +1022,7 @@ const Bookings = () => {
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        Manage
+                        {t('bookings.bookingDetails.buttons.manage', 'Manage')}
                       </button>
                     )}
                   </div>

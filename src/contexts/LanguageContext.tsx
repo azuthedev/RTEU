@@ -8,7 +8,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   translations: Record<string, any>;
-  t: (key: string, params?: Record<string, string>) => string;
+  t: (key: string, defaultValue?: string, options?: { returnObjects?: boolean }) => string | any;
   isLoading: boolean;
 }
 
@@ -80,6 +80,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     'hero.subhead': 'Enjoy the trip — we\'ll handle the rest',
     'common.loading': 'Loading...',
     'footer.copyright': '© 2025 Royal Transfer EU. All rights reserved.',
+    // Bookings page fallbacks
+    'header.title': 'Your Bookings',
+    'header.refreshButton': 'Refresh',
+    'tabs.upcoming': 'Upcoming',
+    'tabs.past': 'Past',
+    'loading.bookings': 'Loading your bookings...',
+    'error.retry': 'Retry',
+    'loading.auth': 'Loading authentication...'
   };
 
   // Create a memoized setLanguage function
@@ -109,7 +117,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       'transfer': 'bookingFlow', // Special case for booking flow pages
       'booking-success': 'bookingSuccess',
       'booking-cancelled': 'bookingCancelled',
-      'blogs': 'blogs'
+      'blogs': 'blogs',
+      'bookings': 'bookings' // Add explicit mapping for bookings page
     };
     
     return pageMap[path] || path;
@@ -254,20 +263,31 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     };
   }, [language, loadPageTranslations, getPageName]);
 
-  // Fixed translation function to handle flat key structure - memoized
-  const t = useCallback((key: string, params?: Record<string, string>): string => {
+  // Enhanced translation function to handle flat key structure and return objects when needed - memoized
+  const t = useCallback((key: string, defaultValue?: string, options?: { returnObjects?: boolean }): string | any => {
     try {
       // First try direct lookup (for flat keys in the translation files)
-      if (key in translations && typeof translations[key] === 'string') {
+      if (key in translations && translations[key] !== undefined) {
         let value = translations[key];
         
-        // Process parameters if any
-        if (params) {
-          Object.entries(params).forEach(([paramKey, paramValue]) => {
-            value = value.replace(`{{${paramKey}}}`, paramValue);
-          });
+        // If returnObjects is true, return the raw value
+        if (options?.returnObjects) {
+          // CRITICAL FIX: Ensure it's an array if .map is expected
+          if (Array.isArray(value)) {
+            return value;
+          } else {
+            console.warn(`Translation key "${key}" expected to be an array but found "${typeof value}". Returning empty array.`);
+            return []; // Return empty array to prevent .map error
+          }
         }
-        return value;
+        
+        // Only process string values for parameters
+        if (typeof value === 'string') {
+          return value;
+        }
+        
+        // If value is not a string and returnObjects is not true, 
+        // we can't process it as a string, so fall through to other lookups
       }
       
       // If direct lookup fails, try nested lookup
@@ -284,19 +304,32 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         }
       }
       
-      // If a valid string translation was found, return it
-      if (typeof value === 'string') {
-        // Process parameters if any
-        if (params) {
-          Object.entries(params).forEach(([paramKey, paramValue]) => {
-            value = value.replace(`{{${paramKey}}}`, paramValue);
-          });
+      // If a valid value was found
+      if (value !== undefined) {
+        // If returnObjects is true, return the raw value
+        if (options?.returnObjects) {
+          // CRITICAL FIX: Ensure it's an array if .map is expected
+          if (Array.isArray(value)) {
+            return value;
+          } else {
+            console.warn(`Translation key "${key}" expected to be an array but found "${typeof value}". Returning empty array.`);
+            return []; // Return empty array to prevent .map error
+          }
         }
-        return value;
+        
+        // Only process string values for parameters
+        if (typeof value === 'string') {
+          return value;
+        }
       }
       
       // If not found in main translations, try fallback
       if (key in fallbackTranslations) {
+        // CRITICAL FIX: If fallback is expected to be an array, ensure it is
+        if (options?.returnObjects && !Array.isArray(fallbackTranslations[key])) {
+          console.warn(`Fallback translation key "${key}" expected to be an array but found "${typeof fallbackTranslations[key]}". Returning empty array.`);
+          return [];
+        }
         return fallbackTranslations[key];
       }
       
@@ -304,15 +337,21 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       const englishKey = `en:global`;
       if (translationsCache.current[englishKey] && 
           key in translationsCache.current[englishKey]) {
+        // CRITICAL FIX: If English fallback is expected to be an array, ensure it is
+        if (options?.returnObjects && !Array.isArray(translationsCache.current[englishKey][key])) {
+          console.warn(`English fallback translation key "${key}" expected to be an array but found "${typeof translationsCache.current[englishKey][key]}". Returning empty array.`);
+          return [];
+        }
         return translationsCache.current[englishKey][key];
       }
       
-      // As last resort, return the key itself
-      console.warn(`Translation key not found: ${key}, language: ${language}`);
-      return key;
+      // As last resort, return the key itself or empty array if returnObjects is true
+      console.warn(`Translation key not found: ${key}, language: ${language}. Returning ${options?.returnObjects ? 'empty array' : 'key itself'}.`);
+      return options?.returnObjects ? [] : (defaultValue || key);
     } catch (error) {
       console.error(`Translation error for key "${key}":`, error);
-      return fallbackTranslations[key] || key;
+      // CRITICAL FIX: If error occurs and returnObjects is true, return empty array
+      return options?.returnObjects ? [] : (fallbackTranslations[key] || defaultValue || key);
     }
   }, [translations, language]);
 

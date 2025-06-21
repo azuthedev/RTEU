@@ -4,10 +4,13 @@ import { XCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import Header from '../components/Header';
 import { motion } from 'framer-motion';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Helmet } from 'react-helmet-async';
 
 const BookingCancelled = () => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
+  const { t } = useLanguage();
   
   useEffect(() => {
     // Track cancellation
@@ -16,6 +19,12 @@ const BookingCancelled = () => {
   
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>{t('meta.title', 'Booking Cancelled | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Your booking has been cancelled. No payment has been processed.')} />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      
       <Header />
       
       <main className="pt-32 pb-16">
@@ -32,15 +41,15 @@ const BookingCancelled = () => {
               </div>
             </div>
             
-            <h1 className="text-3xl font-bold mb-4">Booking Cancelled</h1>
+            <h1 className="text-3xl font-bold mb-4">{t('title', 'Booking Cancelled')}</h1>
             <p className="text-lg text-gray-600 mb-8">
-              Your booking process has been cancelled. No payment has been processed.
+              {t('message', 'Your booking process has been cancelled. No payment has been processed.')}
             </p>
             
             <div className="border-t border-b py-6 my-6">
-              <h2 className="text-xl font-semibold mb-4">What Would You Like to Do Next?</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('nextSteps.title', 'What Would You Like to Do Next?')}</h2>
               <p className="text-gray-600 mb-4">
-                You can try booking again or contact our support team if you need assistance.
+                {t('nextSteps.description', 'You can try booking again or contact our support team if you need assistance.')}
               </p>
             </div>
             
@@ -53,21 +62,20 @@ const BookingCancelled = () => {
                 className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-all duration-300 flex items-center justify-center"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" aria-hidden="true" />
-                Return to Home
+                {t('buttons.home', 'Return to Home')}
               </button>
               <Link
                 to="/contact"
                 onClick={() => trackEvent('Navigation', 'Post-Cancellation Click', 'Contact Support')}
                 className="border border-black text-black px-6 py-3 rounded-md hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
               >
-                Contact Support
+                {t('buttons.contact', 'Contact Support')}
                 <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
               </Link>
             </div>
           </motion.div>
         </div>
       </main>
-
     </div>
   );
 };

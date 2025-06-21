@@ -52,48 +52,48 @@ export const getPrimaryDomainUrl = (url: string): string => {
 // Map of original URLs to fallback URLs
 const fallbackImageMap: Record<string, string> = {
   // Logo fallbacks
-  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.webp": `${BACKUP_IMAGE_DOMAIN}/cDgm3025.webp`,
-  "https://files.royaltransfer.eu/assets/rt-logo-black-950-500.png": `${BACKUP_IMAGE_DOMAIN}/mijH1834.png`,
+  "https://files.royaltransfereu.com/assets/rt-logo-black-950-500.webp": `${BACKUP_IMAGE_DOMAIN}/cDgm3025.webp`,
+  "https://files.royaltransfereu.com/assets/rt-logo-black-950-500.png": `${BACKUP_IMAGE_DOMAIN}/mijH1834.png`,
   
   // Hero image fallbacks
-  "https://files.royaltransfer.eu/assets/newherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ZKj2573.webp`,
-  "https://files.royaltransfer.eu/assets/newherotest.png": `${BACKUP_IMAGE_DOMAIN}/Axi3104.png`,
-  "https://files.royaltransfer.eu/assets/mobileherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ohfj7576.webp`,
-  "https://files.royaltransfer.eu/assets/mobileherotest.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.png`,
+  "https://files.royaltransfereu.com/assets/newherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ZKj2573.webp`,
+  "https://files.royaltransfereu.com/assets/newherotest.png": `${BACKUP_IMAGE_DOMAIN}/Axi3104.png`,
+  "https://files.royaltransfereu.com/assets/mobileherotest.webp": `${BACKUP_IMAGE_DOMAIN}/ohfj7576.webp`,
+  "https://files.royaltransfereu.com/assets/mobileherotest.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.png`,
   
   // Vehicle images
-  "https://files.royaltransfer.eu/assets/Standard-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
-  "https://files.royaltransfer.eu/assets/Premium-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
-  "https://files.royaltransfer.eu/assets/VIP-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/DKdfE4r.jpeg`,
-  "https://files.royaltransfer.eu/assets/Standard-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
-  "https://files.royaltransfer.eu/assets/XL-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
-  "https://files.royaltransfer.eu/assets/VIP-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
-  "https://files.royaltransfer.eu/assets/Sprinter-8.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
-  "https://files.royaltransfer.eu/assets/Sprinter-16.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
-  "https://files.royaltransfer.eu/assets/Sprinter-21.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
-  "https://files.royaltransfer.eu/assets/Bus-51.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfereu.com/assets/Standard-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
+  "https://files.royaltransfereu.com/assets/Premium-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`,
+  "https://files.royaltransfereu.com/assets/VIP-Sedan.jpg": `${BACKUP_IMAGE_DOMAIN}/DKdfE4r.jpeg`,
+  "https://files.royaltransfereu.com/assets/Standard-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfereu.com/assets/XL-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfereu.com/assets/VIP-Minivan.jpg": `${BACKUP_IMAGE_DOMAIN}/0jlOuEe.jpeg`,
+  "https://files.royaltransfereu.com/assets/Sprinter-8.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfereu.com/assets/Sprinter-16.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfereu.com/assets/Sprinter-21.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfereu.com/assets/Bus-51.jpg": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
   
   // City images
-  "https://files.royaltransfer.eu/assets/rome327.webp": `${BACKUP_IMAGE_DOMAIN}/CFL9494.webp`,
-  "https://files.royaltransfer.eu/assets/rome1280png.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.jpg`,
-  "https://files.royaltransfer.eu/assets/paris136.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
-  "https://files.royaltransfer.eu/assets/paris1280png.png": `${BACKUP_IMAGE_DOMAIN}/IdwC2475.jpg`,
-  "https://files.royaltransfer.eu/assets/barc255.webp": `${BACKUP_IMAGE_DOMAIN}/iqAp5725.webp`,
-  "https://files.royaltransfer.eu/assets/barca1280png.png": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
-  "https://files.royaltransfer.eu/assets/milano250.webp": `${BACKUP_IMAGE_DOMAIN}/ZqBO3169.webp`,
-  "https://files.royaltransfer.eu/assets/milano1280png.png": `${BACKUP_IMAGE_DOMAIN}/rLX6532.jpeg`,
+  "https://files.royaltransfereu.com/assets/rome327.webp": `${BACKUP_IMAGE_DOMAIN}/CFL9494.webp`,
+  "https://files.royaltransfereu.com/assets/rome1280png.png": `${BACKUP_IMAGE_DOMAIN}/lTA7682.jpg`,
+  "https://files.royaltransfereu.com/assets/paris136.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
+  "https://files.royaltransfereu.com/assets/paris1280png.png": `${BACKUP_IMAGE_DOMAIN}/IdwC2475.jpg`,
+  "https://files.royaltransfereu.com/assets/barc255.webp": `${BACKUP_IMAGE_DOMAIN}/iqAp5725.webp`,
+  "https://files.royaltransfereu.com/assets/barca1280png.png": `${BACKUP_IMAGE_DOMAIN}/IZqo3474.jpg`,
+  "https://files.royaltransfereu.com/assets/milano250.webp": `${BACKUP_IMAGE_DOMAIN}/ZqBO3169.webp`,
+  "https://files.royaltransfereu.com/assets/milano1280png.png": `${BACKUP_IMAGE_DOMAIN}/rLX6532.jpeg`,
   
   // Payment logos
-  "https://files.royaltransfer.eu/assets/Visa.png": `${BACKUP_IMAGE_DOMAIN}/cbqV7Pf.png`,
-  "https://files.royaltransfer.eu/assets/Mastercard-logo.svg": `${BACKUP_IMAGE_DOMAIN}/X4LwdPQ.png`,
-  "https://files.royaltransfer.eu/assets/Google_Pay_Logo.png": `${BACKUP_IMAGE_DOMAIN}/PCTrbwf.png`,
-  "https://files.royaltransfer.eu/assets/applepay.png": `${BACKUP_IMAGE_DOMAIN}/Nx8h4vk.png`,
-  "https://files.royaltransfer.eu/assets/American_Express_logo.png": `${BACKUP_IMAGE_DOMAIN}/NL7bD8d.png`,
-  "https://files.royaltransfer.eu/assets/Stripe_Logo.png": `${BACKUP_IMAGE_DOMAIN}/1JL4TFb.png`,
+  "https://files.royaltransfereu.com/assets/Visa.png": `${BACKUP_IMAGE_DOMAIN}/cbqV7Pf.png`,
+  "https://files.royaltransfereu.com/assets/Mastercard-logo.svg": `${BACKUP_IMAGE_DOMAIN}/X4LwdPQ.png`,
+  "https://files.royaltransfereu.com/assets/Google_Pay_Logo.png": `${BACKUP_IMAGE_DOMAIN}/PCTrbwf.png`,
+  "https://files.royaltransfereu.com/assets/applepay.png": `${BACKUP_IMAGE_DOMAIN}/Nx8h4vk.png`,
+  "https://files.royaltransfereu.com/assets/American_Express_logo.png": `${BACKUP_IMAGE_DOMAIN}/NL7bD8d.png`,
+  "https://files.royaltransfereu.com/assets/Stripe_Logo.png": `${BACKUP_IMAGE_DOMAIN}/1JL4TFb.png`,
   
   // Additional images
-  "https://files.royaltransfer.eu/assets/about-hero.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
-  "https://files.royaltransfer.eu/assets/services-hero.webp": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`
+  "https://files.royaltransfereu.com/assets/about-hero.webp": `${BACKUP_IMAGE_DOMAIN}/sLs3440.webp`,
+  "https://files.royaltransfereu.com/assets/services-hero.webp": `${BACKUP_IMAGE_DOMAIN}/BUpN7Wn.jpeg`
 };
 
 /**
@@ -107,7 +107,7 @@ export const getFallbackImageUrl = (originalUrl: string): string => {
   if (fallback) return fallback;
   
   // If it's from the old domain, try to transform to the new one
-  if (originalUrl.includes('files.royaltransfer.eu')) {
+  if (originalUrl.includes('files.royaltransfereu.com')) {
     return getPrimaryDomainUrl(originalUrl);
   }
   
@@ -121,7 +121,7 @@ export const getFallbackImageUrl = (originalUrl: string): string => {
  */
 const cdnDomains = [
   "melodious-panda-7ef225.netlify.app",
-  "files.royaltransfer.eu",
+  "files.royaltransfereu.com",
   "i.imgur.com",
   "i.ibb.co"
 ];
@@ -136,7 +136,7 @@ const getAlternateCdnUrl = (url: string): string | null => {
   if (url.startsWith(PRIMARY_IMAGE_DOMAIN)) return null;
   
   // Try to transform old domain URLs to the primary domain
-  if (url.includes('files.royaltransfer.eu')) {
+  if (url.includes('files.royaltransfereu.com')) {
     return getPrimaryDomainUrl(url);
   }
   
@@ -189,7 +189,7 @@ const generateImageUrlStrategy = (originalUrl: string): string[] => {
   const urls = [];
   
   // First try the primary domain version
-  if (originalUrl.includes('files.royaltransfer.eu')) {
+  if (originalUrl.includes('files.royaltransfereu.com')) {
     urls.push(getPrimaryDomainUrl(originalUrl));
   } else {
     urls.push(originalUrl);

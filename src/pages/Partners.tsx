@@ -10,8 +10,10 @@ import { useToast } from '../components/ui/use-toast';
 import useFormValidation from '../hooks/useFormValidation';
 import { useAnalytics } from '../hooks/useAnalytics';
 import OTPVerificationModal from '../components/OTPVerificationModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Partners = () => {
+  const { t, isLoading } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
@@ -41,36 +43,49 @@ const Partners = () => {
   // Define validation rules for the form
   const validationRules = {
     name: [
-      { required: true, message: 'Please enter your name' }
+      { required: true, message: t('form.validation.name', 'Please enter your name') }
     ],
     email: [
-      { required: true, message: 'Email is required' },
-      { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' }
+      { required: true, message: t('form.validation.email', 'Email is required') },
+      { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t('form.validation.emailFormat', 'Please enter a valid email address') }
     ],
     phone: [
-      { required: true, message: 'Phone number is required' },
-      { pattern: /^\+?[0-9\s\-()]{6,20}$/, message: 'Please enter a valid phone number' }
+      { required: true, message: t('form.validation.phone', 'Phone number is required') },
+      { pattern: /^\+?[0-9\s\-()]{6,20}$/, message: t('form.validation.phoneFormat', 'Please enter a valid phone number') }
     ],
     company_name: [
-      { required: true, message: 'Company name is required' }
+      { required: true, message: t('form.validation.company', 'Company name is required') }
     ],
     vat_number: [
-      { required: true, message: 'VAT number is required' }
+      { required: true, message: t('form.validation.vat', 'VAT number is required') }
     ],
     message: [
-      { required: true, message: 'Additional information is required' }
+      { required: true, message: t('form.validation.message', 'Additional information is required') }
     ]
   };
 
   const {
     errors,
     isValid,
-    validateField,
     validateAllFields,
     handleBlur,
-    resetForm,
-    resetField
+    resetForm
   } = useFormValidation(formData, validationRules);
+
+  // If translations are still loading, show a loading spinner
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">{t('common.loading', 'Loading...')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Scroll to a specific element
   const scrollToElement = (id) => {
@@ -119,8 +134,8 @@ const Partners = () => {
       
       // Show error toast
       toast({
-        title: "Form Validation Error",
-        description: "Please check the form and fix the errors.",
+        title: t('form.toast.validationError.title', "Form Validation Error"),
+        description: t('form.toast.validationError.description', "Please check the form and fix the errors."),
         variant: "destructive"
       });
       
@@ -161,7 +176,7 @@ const Partners = () => {
 
       if (!response.ok) {
         // Handle error response
-        throw new Error(data.error || "Something went wrong. Please try again later.");
+        throw new Error(data.error || t('form.errors.default', "Something went wrong. Please try again later."));
       }
 
       // Check if we have a verification ID for OTP verification
@@ -178,8 +193,8 @@ const Partners = () => {
         
         // Show toast instructing the user to check their email
         toast({
-          title: "Verify Your Email",
-          description: "Please check your email for a verification code.",
+          title: t('form.toast.verifyEmail.title', "Verify Your Email"),
+          description: t('form.toast.verifyEmail.description', "Please check your email for a verification code."),
           variant: "default"
         });
       } else {
@@ -188,8 +203,8 @@ const Partners = () => {
         
         // Show success toast
         toast({
-          title: "Application Submitted",
-          description: "Your partner application has been received. We will contact you soon!",
+          title: t('form.toast.success.title', "Application Submitted"),
+          description: t('form.toast.success.description', "Your partner application has been received. We will contact you soon!"),
           variant: "default"
         });
         
@@ -217,8 +232,8 @@ const Partners = () => {
       
       // Show error toast
       toast({
-        title: "Form Submission Failed",
-        description: error.message || "Something went wrong. Please try again later.",
+        title: t('form.toast.error.title', "Form Submission Failed"),
+        description: error.message || t('form.toast.error.description', "Something went wrong. Please try again later."),
         variant: "destructive"
       });
       
@@ -245,8 +260,8 @@ const Partners = () => {
     
     // Show success toast
     toast({
-      title: "Email Verified Successfully",
-      description: "Your partner application has been received and your email is verified. Please check your email for an invitation link to complete your registration.",
+      title: t('form.toast.verificationSuccess.title', "Email Verified Successfully"),
+      description: t('form.toast.verificationSuccess.description', "Your partner application has been received and your email is verified. Please check your email for an invitation link to complete your registration."),
       variant: "default"
     });
     
@@ -268,10 +283,10 @@ const Partners = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>Become a Partner | Royal Transfer EU</title>
-        <meta name="description" content="Join the Royal Transfer EU partner network and grow your business. Apply now to become an official partner." />
+        <title>{t('meta.title', 'Become a Partner | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Join the Royal Transfer EU partner network and grow your business. Apply now to become an official partner.')} />
       </Helmet>
 
       <Header />
@@ -289,7 +304,7 @@ const Partners = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              Partner with Royal Transfer EU
+              {t('hero.title', 'Partner with Royal Transfer EU')}
             </motion.h1>
             <motion.p 
               className="text-xl md:text-2xl max-w-3xl mx-auto mb-8"
@@ -297,7 +312,7 @@ const Partners = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              Join our network of professional drivers and grow your business
+              {t('hero.subtitle', 'Join our network of professional drivers and grow your business')}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -308,7 +323,7 @@ const Partners = () => {
                 onClick={() => scrollToElement('partner-form')}
                 className="bg-white text-blue-600 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors shadow-md font-bold"
               >
-                Apply Now
+                {t('hero.cta', 'Apply Now')}
               </button>
             </motion.div>
           </div>
@@ -318,37 +333,37 @@ const Partners = () => {
         <section className="py-16 md:py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Why Partner With Us</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('benefits.title', 'Why Partner With Us')}</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Join a growing network of professional drivers and companies to expand your business opportunities and provide premium services to travelers across Europe.
+                {t('benefits.description', 'Join a growing network of professional drivers and companies to expand your business opportunities and provide premium services to travelers across Europe.')}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  title: "Consistent Bookings",
-                  description: "Receive a steady stream of pre-paid bookings through our platform, reducing empty returns and idle time."
+                  title: t('benefits.items.bookings.title', "Consistent Bookings"),
+                  description: t('benefits.items.bookings.description', "Receive a steady stream of pre-paid bookings through our platform, reducing empty returns and idle time.")
                 },
                 {
-                  title: "Premium Clientele",
-                  description: "Serve high-quality clients who value professional service and are willing to pay for superior experiences."
+                  title: t('benefits.items.clientele.title', "Premium Clientele"),
+                  description: t('benefits.items.clientele.description', "Serve high-quality clients who value professional service and are willing to pay for superior experiences.")
                 },
                 {
-                  title: "Flexible Schedule",
-                  description: "Choose when you work and which bookings you accept, maintaining full control of your schedule."
+                  title: t('benefits.items.schedule.title', "Flexible Schedule"),
+                  description: t('benefits.items.schedule.description', "Choose when you work and which bookings you accept, maintaining full control of your schedule.")
                 },
                 {
-                  title: "Professional Support",
-                  description: "Access our dedicated partner support team for assistance with bookings, client communication, and technical issues."
+                  title: t('benefits.items.support.title', "Professional Support"),
+                  description: t('benefits.items.support.description', "Access our dedicated partner support team for assistance with bookings, client communication, and technical issues.")
                 },
                 {
-                  title: "Technology Platform",
-                  description: "Use our driver app to manage bookings, navigation, and client communication all in one place."
+                  title: t('benefits.items.technology.title', "Technology Platform"),
+                  description: t('benefits.items.technology.description', "Use our driver app to manage bookings, navigation, and client communication all in one place.")
                 },
                 {
-                  title: "Growth Opportunities",
-                  description: "Expand your business with access to international travelers and corporate clients."
+                  title: t('benefits.items.growth.title', "Growth Opportunities"),
+                  description: t('benefits.items.growth.description', "Expand your business with access to international travelers and corporate clients.")
                 }
               ].map((benefit, index) => (
                 <motion.div
@@ -371,16 +386,16 @@ const Partners = () => {
         <section className="py-16 md:py-24 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Partner Requirements</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('requirements.title', 'Partner Requirements')}</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                We maintain high standards to ensure exceptional service for all our customers.
+                {t('requirements.description', 'We maintain high standards to ensure exceptional service for all our customers.')}
               </p>
             </div>
 
             <div className="max-w-3xl mx-auto">
               <div className="bg-white p-8 rounded-xl shadow-md">
                 <ul className="space-y-6">
-                  {[
+                  {t('requirements.list', [
                     "Valid professional driver's license and all required permits",
                     "Clean, well-maintained vehicle less than 5 years old",
                     "Commercial insurance with appropriate coverage",
@@ -390,8 +405,8 @@ const Partners = () => {
                     "Smartphone with reliable internet connection",
                     "Flexible availability including weekends and holidays",
                     "Background check and clean driving record"
-                  ].map((requirement, index) => (
-                    <motion.li 
+                  ], { returnObjects: true }).map((requirement, index) => (
+                    <motion.li
                       key={index}
                       className="flex items-start"
                       initial={{ opacity: 0, x: -20 }}
@@ -415,9 +430,9 @@ const Partners = () => {
         <section id="partner-form" className="py-16 md:py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Apply to Become a Partner</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('form.title', 'Apply to Become a Partner')}</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Fill out the form below to start your application process. Our team will review your application and contact you within 2-3 business days.
+                {t('form.description', 'Fill out the form below to start your application process. Our team will review your application and contact you within 2-3 business days.')}
               </p>
             </div>
 
@@ -429,25 +444,25 @@ const Partners = () => {
                   animate={{ opacity: 1, scale: 1 }}
                 >
                   <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                  <h3 className="text-2xl font-bold mb-3">Application Submitted!</h3>
+                  <h3 className="text-2xl font-bold mb-3">{t('form.success.title', 'Application Submitted!')}</h3>
                   {verificationComplete ? (
                     <div>
                       <p className="mb-4">
-                        Thank you for verifying your email! We have sent you an invitation link to complete your registration as a partner. Please check your email inbox.
+                        {t('form.verification.message', 'Thank you for verifying your email! We have sent you an invitation link to complete your registration as a partner. Please check your email inbox.')}
                       </p>
                       <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg mb-4">
                         <Mail className="w-6 h-6 text-blue-500 mr-3" />
                         <span className="text-blue-700">
-                          Invite link sent to: <strong>{verificationEmail}</strong>
+                          {t('form.verification.emailSent', 'Invite link sent to:')} <strong>{verificationEmail}</strong>
                         </span>
                       </div>
                       <p className="mb-6 text-sm text-gray-600">
-                        If you don't see the email in your inbox, please check your spam or junk folder.
+                        {t('form.verification.checkSpam', "If you don't see the email in your inbox, please check your spam or junk folder.")}
                       </p>
                     </div>
                   ) : (
                     <p className="mb-6">
-                      Thank you for your interest in partnering with Royal Transfer EU. We've received your application and our team will review it shortly. We'll contact you within 2-3 business days with next steps.
+                      {t('form.success.message', "Thank you for your interest in partnering with Royal Transfer EU. We've received your application and our team will review it shortly. We'll contact you within 2-3 business days with next steps.")}
                     </p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -459,13 +474,13 @@ const Partners = () => {
                       }}
                       className="px-6 py-2 border border-green-600 text-green-700 rounded-md hover:bg-green-50 transition-colors"
                     >
-                      Submit Another Application
+                      {t('form.success.button.another', 'Submit Another Application')}
                     </button>
                     <Link
                       to="/"
                       className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                     >
-                      Return to Home <ArrowRight className="w-4 h-4 ml-2" />
+                      {t('form.success.button.home', 'Return to Home')} <ArrowRight className="w-4 h-4 ml-2" />
                     </Link>
                   </div>
                 </motion.div>
@@ -483,7 +498,7 @@ const Partners = () => {
                     <FormField
                       id="name"
                       name="name"
-                      label="Full Name"
+                      label={t('form.fields.name.label', 'Full Name')}
                       value={formData.name}
                       onChange={handleInputChange}
                       onBlur={() => handleBlur('name')}
@@ -495,7 +510,7 @@ const Partners = () => {
                     <FormField
                       id="email"
                       name="email"
-                      label="Email Address"
+                      label={t('form.fields.email.label', 'Email Address')}
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
@@ -508,7 +523,7 @@ const Partners = () => {
                     <FormField
                       id="phone"
                       name="phone"
-                      label="Phone Number"
+                      label={t('form.fields.phone.label', 'Phone Number')}
                       type="tel"
                       value={formData.phone}
                       onChange={handleInputChange}
@@ -516,13 +531,13 @@ const Partners = () => {
                       error={errors.phone}
                       required
                       autoComplete="tel"
-                      helpText="Include country code, e.g., +39"
+                      helpText={t('form.fields.phone.help', 'Include country code, e.g., +39')}
                     />
 
                     <FormField
                       id="company_name"
                       name="company_name"
-                      label="Company Name"
+                      label={t('form.fields.company.label', 'Company Name')}
                       value={formData.company_name}
                       onChange={handleInputChange}
                       onBlur={() => handleBlur('company_name')}
@@ -533,25 +548,25 @@ const Partners = () => {
                     <FormField
                       id="vat_number"
                       name="vat_number"
-                      label="VAT Number"
+                      label={t('form.fields.vat.label', 'VAT Number')}
                       value={formData.vat_number}
                       onChange={handleInputChange}
                       onBlur={() => handleBlur('vat_number')}
                       error={errors.vat_number}
                       required
-                      helpText="Tax identification number for your business"
+                      helpText={t('form.fields.vat.help', 'Tax identification number for your business')}
                     />
 
                     <FormSelect
                       id="vehicle_type"
                       name="vehicle_type"
-                      label="Vehicle Type (Optional)"
+                      label={t('form.fields.vehicle.label', 'Vehicle Type (Optional)')}
                       options={[
-                        { value: "", label: "Select a vehicle type" },
-                        { value: "sedan", label: "Sedan" },
-                        { value: "minivan", label: "Minivan" },
-                        { value: "sprinter", label: "Sprinter" },
-                        { value: "bus", label: "Bus" }
+                        { value: "", label: t('form.fields.vehicle.placeholder', "Select a vehicle type") },
+                        { value: "sedan", label: t('form.fields.vehicle.options.sedan', "Sedan") },
+                        { value: "minivan", label: t('form.fields.vehicle.options.minivan', "Minivan") },
+                        { value: "sprinter", label: t('form.fields.vehicle.options.sprinter', "Sprinter") },
+                        { value: "bus", label: t('form.fields.vehicle.options.bus', "Bus") }
                       ]}
                       value={formData.vehicle_type}
                       onChange={handleInputChange}
@@ -559,7 +574,7 @@ const Partners = () => {
 
                     <div>
                       <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                        Additional Information <span className="text-red-500">*</span>
+                        {t('form.fields.message.label', 'Additional Information')} <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         id="message"
@@ -569,7 +584,7 @@ const Partners = () => {
                         value={formData.message}
                         onChange={handleInputChange}
                         onBlur={() => handleBlur('message')}
-                        placeholder="Tell us about your experience, vehicle details, and availability"
+                        placeholder={t('form.fields.message.placeholder', "Tell us about your experience, vehicle details, and availability")}
                         required
                       ></textarea>
                       {errors.message && (
@@ -590,10 +605,10 @@ const Partners = () => {
                         {isSubmitting ? (
                           <>
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Submitting...
+                            {t('form.buttons.submitting', 'Submitting...')}
                           </>
                         ) : (
-                          'Submit Application'
+                          t('form.buttons.submit', 'Submit Application')
                         )}
                       </button>
                     </div>
@@ -608,9 +623,9 @@ const Partners = () => {
         <section className="py-16 md:py-24 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Frequently Asked Questions</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('faq.title', 'Frequently Asked Questions')}</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Everything you need to know about becoming a partner with Royal Transfer EU
+                {t('faq.description', 'Everything you need to know about becoming a partner with Royal Transfer EU')}
               </p>
             </div>
 
@@ -618,28 +633,28 @@ const Partners = () => {
               <div className="space-y-6">
                 {[
                   {
-                    question: "How soon can I start after applying?",
-                    answer: "After your application is approved, we'll guide you through onboarding which typically takes 3-7 days depending on document verification and training completion."
+                    question: t('faq.items.start.question', 'How soon can I start after applying?'),
+                    answer: t('faq.items.start.answer', "After your application is approved, we'll guide you through onboarding which typically takes 3-7 days depending on document verification and training completion.")
                   },
                   {
-                    question: "How do I get paid for completed trips?",
-                    answer: "Payments are processed on a weekly basis. You'll receive direct deposits to your registered bank account for all completed trips, minus the platform fee."
+                    question: t('faq.items.payment.question', 'How do I get paid for completed trips?'),
+                    answer: t('faq.items.payment.answer', "Payments are processed on a weekly basis. You'll receive direct deposits to your registered bank account for all completed trips, minus the platform fee.")
                   },
                   {
-                    question: "What areas can I provide service in?",
-                    answer: "You can choose your preferred service areas during registration. You can serve any areas where you're legally permitted to operate as a driver."
+                    question: t('faq.items.areas.question', 'What areas can I provide service in?'),
+                    answer: t('faq.items.areas.answer', "You can choose your preferred service areas during registration. You can serve any areas where you're legally permitted to operate as a driver.")
                   },
                   {
-                    question: "Do I need to provide my own vehicle?",
-                    answer: "Yes, partners are required to have their own vehicles that meet our quality standards. Your vehicle must be clean, well-maintained, and less than 5 years old."
+                    question: t('faq.items.vehicle.question', 'Do I need to provide my own vehicle?'),
+                    answer: t('faq.items.vehicle.answer', "Yes, partners are required to have their own vehicles that meet our quality standards. Your vehicle must be clean, well-maintained, and less than 5 years old.")
                   },
                   {
-                    question: "What is the commission structure?",
-                    answer: "Our commission varies based on service type and location, typically ranging from 15-25%. Full details will be provided during the onboarding process."
+                    question: t('faq.items.commission.question', 'What is the commission structure?'),
+                    answer: t('faq.items.commission.answer', "Our commission varies based on service type and location, typically ranging from 15-25%. Full details will be provided during the onboarding process.")
                   },
                   {
-                    question: "Can I work for other transfer companies simultaneously?",
-                    answer: "Yes, our partnership is non-exclusive. You're welcome to work with other companies or maintain your independent business alongside partnering with us."
+                    question: t('faq.items.exclusivity.question', 'Can I work for other transfer companies simultaneously?'),
+                    answer: t('faq.items.exclusivity.answer', "Yes, our partnership is non-exclusive. You're welcome to work with other companies or maintain your independent business alongside partnering with us.")
                   }
                 ].map((faq, index) => (
                   <motion.div

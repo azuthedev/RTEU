@@ -6,17 +6,20 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
-import Sitemap from '../components/Sitemap';
 import FormField from '../components/ui/form-field';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnalytics } from '../hooks/useAnalytics';
 import PasswordResetModal from '../components/PasswordResetModal';
 import { withRetry } from '../utils/retryHelper';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Helmet } from 'react-helmet-async';
+import { supabase } from '../lib/supabase';
 
 const Profile = () => {
   const { user, userData, loading, updateUserData, signOut } = useAuth();
   const { trackEvent } = useAnalytics();
   const navigate = useNavigate();
+  const { t, isLoading } = useLanguage();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -84,13 +87,13 @@ const Profile = () => {
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
-          setUpdateError('Failed to load your profile data. Please try refreshing the page.');
+          setUpdateError(t('messages.error.loading', 'Failed to load your profile data. Please try refreshing the page.'));
         }
       };
       
       fetchUserData();
     }
-  }, [userData, user]);
+  }, [userData, user, t]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -107,7 +110,7 @@ const Profile = () => {
     
     // Validate form data
     if (!formData.name.trim()) {
-      setUpdateError('Name is required');
+      setUpdateError(t('messages.error.nameRequired', 'Name is required'));
       return;
     }
     
@@ -138,7 +141,7 @@ const Profile = () => {
       }, 3000);
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      setUpdateError(error.message || 'Failed to update profile');
+      setUpdateError(error.message || t('messages.error.general', 'Failed to update profile'));
       trackEvent('User', 'Profile Update Error', error.message);
     } finally {
       setIsUpdating(false);
@@ -160,14 +163,14 @@ const Profile = () => {
     }
   };
   
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading your profile...</p>
+            <p className="text-gray-600">{t('loading', 'Loading your profile...')}</p>
           </div>
         </div>
       </div>
@@ -176,14 +179,18 @@ const Profile = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Helmet>
+        <title>{t('meta.title', 'Your Profile | Royal Transfer EU')}</title>
+        <meta name="description" content={t('meta.description', 'Manage your account information and preferences.')} />
+      </Helmet>
       <Header />
       
       <main className="flex-1 pt-28 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Your Profile</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('header.title', 'Your Profile')}</h1>
             <p className="text-gray-600 mt-2">
-              Manage your account information and preferences
+              {t('header.description', 'Manage your account information and preferences')}
             </p>
           </div>
           
@@ -198,7 +205,7 @@ const Profile = () => {
               >
                 <h2 className="text-xl font-semibold mb-6 flex items-center">
                   <User className="w-5 h-5 mr-2 text-blue-600" />
-                  Personal Information
+                  {t('personalInfo.title', 'Personal Information')}
                 </h2>
                 
                 <form onSubmit={handleSubmit}>
@@ -206,7 +213,7 @@ const Profile = () => {
                     <FormField
                       id="name"
                       name="name"
-                      label="Full Name"
+                      label={t('personalInfo.fields.name', 'Full Name')}
                       value={formData.name}
                       onChange={handleInputChange}
                       required
@@ -216,20 +223,20 @@ const Profile = () => {
                     <FormField
                       id="email"
                       name="email"
-                      label="Email Address"
+                      label={t('personalInfo.fields.email', 'Email Address')}
                       value={formData.email}
                       disabled
-                      helpText="Email cannot be changed"
+                      helpText={t('personalInfo.fields.emailHelp', 'Email cannot be changed')}
                       icon={<Mail className="h-5 w-5" />}
                     />
                     
                     <FormField
                       id="phone"
                       name="phone"
-                      label="Phone Number"
+                      label={t('personalInfo.fields.phone', 'Phone Number')}
                       value={formData.phone}
                       onChange={handleInputChange}
-                      helpText="For booking notifications (optional)"
+                      helpText={t('personalInfo.fields.phoneHelp', 'For booking notifications (optional)')}
                       autoComplete="tel"
                     />
                   </div>
@@ -237,7 +244,7 @@ const Profile = () => {
                   {updateSuccess && (
                     <div className="mt-6 p-3 bg-green-50 text-green-700 rounded-md flex items-start">
                       <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                      <p>Your profile has been updated successfully!</p>
+                      <p>{t('messages.success', 'Your profile has been updated successfully!')}</p>
                     </div>
                   )}
                   
@@ -261,12 +268,12 @@ const Profile = () => {
                       {isUpdating ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+                          {t('buttons.saving', 'Saving...')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+                          {t('buttons.save', 'Save Changes')}
                         </>
                       )}
                     </button>
@@ -286,7 +293,7 @@ const Profile = () => {
               >
                 <h2 className="text-xl font-semibold mb-4 flex items-center">
                   <Shield className="w-5 h-5 mr-2 text-blue-600" />
-                  Account Security
+                  {t('security.title', 'Account Security')}
                 </h2>
                 
                 <div className="space-y-4">
@@ -296,7 +303,7 @@ const Profile = () => {
                   >
                     <div className="flex items-center">
                       <Key className="w-5 h-5 mr-3 text-gray-500" />
-                      <span>Reset Password</span>
+                      <span>{t('security.passwordReset', 'Reset Password')}</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
@@ -307,7 +314,7 @@ const Profile = () => {
                   >
                     <div className="flex items-center">
                       <LogOut className="w-5 h-5 mr-3 text-gray-500" />
-                      <span>Sign Out</span>
+                      <span>{t('security.signOut', 'Sign Out')}</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
@@ -321,15 +328,15 @@ const Profile = () => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="bg-blue-50 rounded-lg shadow-sm p-6"
               >
-                <h3 className="font-medium text-blue-800 mb-2">Need Help?</h3>
+                <h3 className="font-medium text-blue-800 mb-2">{t('helpBox.title', 'Need Help?')}</h3>
                 <p className="text-sm text-blue-700 mb-4">
-                  If you're having trouble with your account, our support team is here to help.
+                  {t('helpBox.description', "If you're having trouble with your account, our support team is here to help.")}
                 </p>
                 <a 
                   href="/contact"
                   className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center"
                 >
-                  Contact Support
+                  {t('helpBox.contactLink', 'Contact Support')}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </a>
               </motion.div>
