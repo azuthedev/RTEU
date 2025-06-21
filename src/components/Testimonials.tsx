@@ -49,11 +49,12 @@ const Testimonials = () => {
   return (
     <section className="py-16 bg-blue-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl text-center text-white mb-12">{t('testimonials.head')}</h2>
+        <h2 className="text-3xl text-center text-white mb-12">{t('testimonials.title')}</h2>
         <div className="relative max-w-3xl mx-auto px-8">
           <button 
             onClick={prevTestimonial}
             className="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 text-white hover:text-gray-400"
+            aria-label="Previous testimonial"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -74,6 +75,7 @@ const Testimonials = () => {
           <button 
             onClick={nextTestimonial}
             className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-white hover:text-gray-400"
+            aria-label="Next testimonial"
           >
             <ChevronRight className="w-6 h-6" />
           </button>

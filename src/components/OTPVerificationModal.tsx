@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { X, CheckCircle, AlertCircle, Loader2, MailQuestion, RefreshCw, ExternalLink, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { verifyOtp, sendOtpEmail } from '../utils/emailValidator';
-import { VerificationConfig } from '../config/verification';
 import { useAuth } from '../contexts/AuthContext';
 
 interface OTPVerificationModalProps {
@@ -28,29 +26,13 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(VerificationConfig.OTP_EXPIRY_MINUTES * 60); // 15 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
   const [isResending, setIsResending] = useState(false);
   const [showSpamWarning, setShowSpamWarning] = useState(emailSent);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const otpRefs = Array(6).fill(0).map(() => useRef<HTMLInputElement>(null));
   const { trackEvent } = useAnalytics();
   const { refreshSession } = useAuth();
-  const [isDevEnvironment, setIsDevEnvironment] = useState(false);
-  
-  // Check if in development environment
-  useEffect(() => {
-    const isDev = window.location.hostname === 'localhost' || 
-                window.location.hostname.includes('local-credentialless') ||
-                window.location.hostname.includes('webcontainer');
-    setIsDevEnvironment(isDev);
-    
-    if (isDev) {
-      console.log('DEVELOPMENT MODE: OTP for testing:', verificationId);
-      if (verificationId.startsWith('dev-')) {
-        console.log('DEVELOPMENT MODE: Any 6-character code will be accepted');
-      }
-    }
-  }, [verificationId]);
 
   // Handle OTP timer
   useEffect(() => {
@@ -79,7 +61,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   // Handle input change
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
-    
+
     // Only allow valid characters based on position
     if (index === 2) { // Third position (letter)
       // Only allow letters a-z
@@ -92,12 +74,12 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         return;
       }
     }
-    
+
     // Update OTP array
     const newOtp = [...otp];
     newOtp[index] = value.toLowerCase();
     setOtp(newOtp);
-    
+
     // Auto-focus next input if this one is filled
     if (value && index < 5) {
       otpRefs[index + 1].current?.focus();
@@ -116,7 +98,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').replace(/\s/g, '');
-    
+
     // Only process if we have exactly 6 characters
     if (pastedData.length === 6) {
       const newOtp = pastedData.split('').map(char => char.toLowerCase());
@@ -143,12 +125,6 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
 
       const otpString = otp.join('');
       
-      // In development environment, show verification code for testing
-      if (isDevEnvironment) {
-        console.log('DEVELOPMENT MODE: Verifying OTP:', otpString);
-        console.log('DEVELOPMENT MODE: Verification ID:', verificationId);
-      }
-      
       // Call the verification function
       const result = await verifyOtp(otpString, verificationId);
 
@@ -172,21 +148,6 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
       }, 1500);
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
-      
-      // In development, allow any 6-character code
-      if (isDevEnvironment && otp.length === 6 && otp.every(char => char)) {
-        console.log('DEVELOPMENT MODE: Accepting any OTP for testing');
-        setSuccess(true);
-        trackEvent('Authentication', 'OTP Verification Dev Success');
-        
-        // Refresh the session to update JWT claims
-        await refreshSession();
-        
-        setTimeout(() => {
-          onVerified();
-        }, 1500);
-        return;
-      }
       
       setError(err.message || 'Failed to verify OTP. Please try again.');
       
@@ -228,7 +189,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         setVerificationId(newVerificationId);
         
         // Reset the timer
-        setTimeLeft(VerificationConfig.OTP_EXPIRY_MINUTES * 60);
+        setTimeLeft(15 * 60);
         
         // Update remaining attempts if provided
         if (result.remainingAttempts !== undefined) {
@@ -273,7 +234,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
             className="fixed inset-0 bg-black bg-opacity-50 z-[400] backdrop-blur-sm"
             onClick={onClose}
           />
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -318,13 +279,6 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                       <p className="text-sm text-blue-600 mt-2">
                         A verification link was also sent to your email that you can use later if needed.
                       </p>
-                      
-                      {isDevEnvironment && (
-                        <div className="mt-3 p-2 bg-amber-50 text-amber-700 text-sm rounded-md">
-                          <p className="font-medium">Development Mode Active</p>
-                          <p className="mt-1">Any 6-character code will be accepted for testing.</p>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>

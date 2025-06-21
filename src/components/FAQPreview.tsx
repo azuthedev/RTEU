@@ -14,10 +14,6 @@ const FAQPreview = () => {
       answer: t('faq.how.sub')
     },
     {
-      question: t('faq.delay.head'),
-      answer: t('faq.delay.sub')
-    },
-    {
       question: t('faq.prices.head'),
       answer: t('faq.prices.sub')
     },

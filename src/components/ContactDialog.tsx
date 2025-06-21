@@ -77,14 +77,14 @@ const ContactDialog = ({ isOpen, onClose }: ContactDialogProps) => {
                 </a>
 
                 <a
-                  href="mailto:support@royaltransfer.eu"
+                  href="mailto:support@royaltransfereu.com"
                   className="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                   aria-label="Email Royal Transfer EU support team"
                 >
                   <Mail className="w-6 h-6 text-blue-600 mr-3" aria-hidden="true" />
                   <div>
                     <div className="font-semibold">Email</div>
-                    <div className="text-sm text-gray-600">support@royaltransfer.eu</div>
+                    <div className="text-sm text-gray-600">support@royaltransfereu.com</div>
                   </div>
                 </a>
 

@@ -213,14 +213,6 @@ const Header = ({ isAboutPage = false, hideSignIn = false }: HeaderProps) => {
               <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
             </a>
             <a 
-              href="/blogs/destinations" 
-              className="relative py-2 text-gray-700 group font-sans text-[15px]"
-              onClick={() => trackEvent('Navigation', 'Menu Click', 'Destinations')}
-            >
-              {t('nav.destinations')}
-              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-full group-active:bg-blue-700 transition-all duration-300 -translate-x-1/2"></span>
-            </a>
-            <a 
               href="/faq" 
               className="relative py-2 text-gray-700 group font-sans text-[15px]"
               onClick={() => trackEvent('Navigation', 'Menu Click', 'FAQs')}
