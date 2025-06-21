@@ -49,7 +49,7 @@ const BlogPosts = [
     id: 'milan',
     title: 'Milan: Fashion, Business, and Efficient Transit',
     slug: 'milan',
-    excerpt: 'Explore Italy\'s business capital with our comprehensive guide to Milan's transportation network, fashion districts, and cultural landmarks.',
+    excerpt: 'Explore Italy`s business capital with our comprehensive guide to Milan`s transportation network, fashion districts, and cultural landmarks.',
     image: 'https://files.royaltransfereu.com/assets/milano250.webp',
     imageAlt: 'Milan Cathedral (Duomo di Milano) and square',
     date: '2024-11-22',
